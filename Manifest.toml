@@ -12,6 +12,29 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
+[[deps.CEnum]]
+git-tree-sha1 = "eb4cb44a499229b3b8426dcfb5dd85333951ff90"
+uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
+version = "0.4.2"
+
+[[deps.CImGui]]
+deps = ["CImGui_jll", "CSyntax", "GLFW", "Libdl", "ModernGL"]
+git-tree-sha1 = "07736bde1ad9ddd3d8177de19c4cb1cafd658ff9"
+uuid = "5d785b6c-b76f-510e-a07c-3070796c7e87"
+version = "1.79.0"
+
+[[deps.CImGui_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "880a144921b99bf92b39bbf99817706391bf2448"
+uuid = "7dd61d3b-0da5-5c94-bbf9-a0296c6e3925"
+version = "1.79.0+0"
+
+[[deps.CSyntax]]
+deps = ["CEnum"]
+git-tree-sha1 = "50a830730a04cd9ab8468a60b93ac2ca9d34ba17"
+uuid = "ea656a56-6ca6-5dda-bba5-7b6963a5f74c"
+version = "0.4.0"
+
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
@@ -124,6 +147,12 @@ uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+
+[[deps.ModernGL]]
+deps = ["Libdl"]
+git-tree-sha1 = "344f8896e55541e30d5ccffcbf747c98ad57ca47"
+uuid = "66fc600b-dfda-50eb-8b99-91cfa97b1301"
+version = "1.1.4"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"

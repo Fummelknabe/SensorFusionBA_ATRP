@@ -1,3 +1,4 @@
 [deps]
+CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
 GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
