@@ -1,4 +1,3 @@
-using Sockets
 using PyCall
 
 pysockets = pyimport("socket")
