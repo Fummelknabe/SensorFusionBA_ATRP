@@ -11,7 +11,10 @@ using CImGui.CSyntax.CStatic
 include("Client.jl")
 include("View.jl")
 
-running = true
+#running = true
+
+# Status Text for connection Window
+connectStatus = ""
 
 function mainLoop(window::GLFW.Window, ctx)
     glClear() = ccall(@eval(GLFW.GetProcAddress("glClear")), Cvoid, (Cuint,), 0x00004000)
@@ -43,6 +46,7 @@ function mainLoop(window::GLFW.Window, ctx)
                 CImGui.SameLine()
                 CImGui.InputText(" ", portData, length(portData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                             
                 CImGui.Button("Connect") && buttonPress(ipData, portData)
+                CImGui.Text(connectStatus)
 
                 CImGui.End()
             end            
@@ -76,23 +80,8 @@ function buttonPress(ipData::String, portData::String)
         end
     end
 
-    if !(length(port) == 4)
-        @error "The specified Port must be 4 digits!"
-    end
-
-    try
-        if connectToJetson(ip, parse(Int64, port))
-            println("Connection established!")
-        end
-    catch error
-        if isa(error, ArgumentError)
-            @warn "Port or IP incorrect \n Connection to standard port and IP"
-            connectToJetson()
-        end
-    end
-
-    # Send a few commands for testing purposes:
-    println(sendAndRecvData("Hallo Jetson!"))
+    global connectStatus = "Trying to connect to: " * ip * " on " * port
+    global connectStatus = checkConnction(ip, port)
 end
 
 function inputTextCallback()

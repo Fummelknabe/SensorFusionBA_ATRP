@@ -22,9 +22,7 @@ Connects to the Jetson
 # Returns
 - `boolean`: True if connection to a valid controller was succesful.
 """
-function connectToJetson(ip::String=HOST, port::Integer=PORT)
-    println("Trying to connect to: " * ip * " on " * string(port))
-
+function connectToJetson(ip::String=HOST, port::Integer=PORT)    
     try
         pysocket.connect((ip, port))
     catch error
@@ -47,6 +45,7 @@ function connectToJetson(ip::String=HOST, port::Integer=PORT)
     return data == "atsv_brain_welcome"
 end
 
+export sendAndRecvData
 """
 This function sends and receives data over the established tcp connection.
 
@@ -60,4 +59,25 @@ function sendAndRecvData(data::String)
     pysocket.send(codeunits(data))
 
     return pysocket.recv(1024)
+end
+
+function checkConnction(ip::String, port::String)    
+    try        
+        if connectToJetson(ip, parse(Int64, port))
+            return "Connection established!"
+        end
+           
+        return "Connection failed, try again!"
+    catch error
+        if isa(error, ArgumentError)
+            @warn "Port or IP incorrect \n Connection to standard port and IP"
+            if connectToJetson()
+                return "Connection established!"
+            end
+
+            return "Connection failed, try again!"
+        end
+
+        return "Connection failed, try again!"
+    end
 end
