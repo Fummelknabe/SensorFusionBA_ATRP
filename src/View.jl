@@ -1,4 +1,5 @@
 using GLFW
+using CImGui
 
 
 export setUpWindow
@@ -12,6 +13,12 @@ Set up a GLFW window, callbacks and render context.
 function setUpWindow(size::Tuple{Integer, Integer}, title::String)
     window = GLFW.CreateWindow(size[1], size[2], title)
     GLFW.MakeContextCurrent(window)
+    ctx = CImGui.CreateContext()
+
+    # Load fonts and select style....
+
+    CImGui.ImGui_ImplGlfw_InitForOpenGL(window, true)
+    CImGui.ImGui_ImplOpenGL3_Init(130) # GLSL Version
 
     GLFW.SetWindowCloseCallback(window, (_) -> onWindowClose())
     GLFW.SetMouseButtonCallback(window, (_, button, action, mods) -> onMouseButton(button, action))
@@ -26,7 +33,7 @@ function setUpWindow(size::Tuple{Integer, Integer}, title::String)
     
     GC.gc()
 
-    return window
+    return window, ctx
 end
 
 function onWindowClose()
