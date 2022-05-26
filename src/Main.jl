@@ -8,13 +8,15 @@ using CImGui.OpenGLBackend.ModernGL
 using CImGui.CSyntax
 using CImGui.CSyntax.CStatic
 
+# Status Text for connection Window
+connectStatus = ""
+
 include("Client.jl")
 include("View.jl")
 
 #running = true
-
-# Status Text for connection Window
-connectStatus = ""
+showHelperWindow = false;
+showConnectWindow = false
 
 function mainLoop(window::GLFW.Window, ctx)
     glClear() = ccall(@eval(GLFW.GetProcAddress("glClear")), Cvoid, (Cuint,), 0x00004000)
@@ -25,31 +27,42 @@ function mainLoop(window::GLFW.Window, ctx)
             ImGui_ImplGlfw_NewFrame()            
             CImGui.NewFrame()
 
-            # Helper Window
-            begin
+            # Menu Bar
+            begin 
+                CImGui.BeginMainMenuBar()
+                CImGui.MenuItem("Help") && global showHelperWindow = !showHelperWindow
+                CImGui.MenuItem("Connect Window") && global showConnectWindow = !showConnectWindow
+                CImGui.EndMainMenuBar()
+            end
+
+            # Helper Window             
+            if showHelperWindow
+                CImGui.SetNextWindowPos((0, 20))
                 CImGui.Begin("Help")
                 CImGui.ShowUserGuide()
                 CImGui.End()
             end
 
-            # Connection Window            
+            # Connection Window  
+            if showConnectWindow          
             @cstatic portData = ""*"\0"^115 i0=Cint(123) @cstatic ipData = ""*"\0"^115 i0=Cint(123) begin
-                # Create a window
-                CImGui.Begin("Connect to Jetson")
+                    # Create a window
+                    CImGui.Begin("Connect to Jetson", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize | CImGui.ImGuiWindowFlags_NoCollapse)
 
-                CImGui.Text("Please Enter the IP Adress and Port for the Jetson")
-               
-                CImGui.Text("Enter IP:")
-                CImGui.SameLine()
-                CImGui.InputText("", ipData, length(ipData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                   
-                CImGui.Text("Enter Port:")
-                CImGui.SameLine()
-                CImGui.InputText(" ", portData, length(portData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                             
-                CImGui.Button("Connect") && buttonPress(ipData, portData)
-                CImGui.Text(connectStatus)
+                    CImGui.Text("Please Enter the IP Adress and Port for the Jetson")
+                
+                    CImGui.Text("Enter IP:")
+                    CImGui.SameLine()
+                    CImGui.InputText("", ipData, length(ipData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                   
+                    CImGui.Text("Enter Port:")
+                    CImGui.SameLine()
+                    CImGui.InputText(" ", portData, length(portData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                             
+                    CImGui.Button("Connect") && buttonPress(ipData, portData)
+                    CImGui.Text(connectStatus)
 
-                CImGui.End()
-            end            
+                    CImGui.End()
+                end  
+            end          
 
             CImGui.Render()
             glClear()

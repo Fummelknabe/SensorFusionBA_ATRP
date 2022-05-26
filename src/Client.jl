@@ -23,6 +23,8 @@ Connects to the Jetson
 - `boolean`: True if connection to a valid controller was succesful.
 """
 function connectToJetson(ip::String=HOST, port::Integer=PORT)    
+    global connectStatus = "Trying to connect to: " * ip * " on " * port
+
     try
         pysocket.connect((ip, port))
     catch error
