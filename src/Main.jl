@@ -37,30 +37,13 @@ function mainLoop(window::GLFW.Window, ctx)
 
             # Helper Window             
             if showHelperWindow
-                CImGui.SetNextWindowPos((0, 20))
-                CImGui.Begin("Help")
-                CImGui.ShowUserGuide()
-                CImGui.End()
+                handleHelperWidow()
             end
 
             # Connection Window  
             if showConnectWindow          
             @cstatic portData = ""*"\0"^115 i0=Cint(123) @cstatic ipData = ""*"\0"^115 i0=Cint(123) begin
-                    # Create a window
-                    CImGui.Begin("Connect to Jetson", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize | CImGui.ImGuiWindowFlags_NoCollapse)
-
-                    CImGui.Text("Please Enter the IP Adress and Port for the Jetson")
-                
-                    CImGui.Text("Enter IP:")
-                    CImGui.SameLine()
-                    CImGui.InputText("", ipData, length(ipData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                   
-                    CImGui.Text("Enter Port:")
-                    CImGui.SameLine()
-                    CImGui.InputText(" ", portData, length(portData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                             
-                    CImGui.Button("Connect") && buttonPress(ipData, portData)
-                    CImGui.Text(connectStatus)
-
-                    CImGui.End()
+                    handleConnectWindow(portData, ipData)
                 end  
             end          
 
@@ -94,7 +77,7 @@ function buttonPress(ipData::String, portData::String)
     end
 
     global connectStatus = "Trying to connect to: " * ip * " on " * port
-    global connectStatus = checkConnction(ip, port)
+    global connectStatus = checkConnection(ip, port)
 end
 
 function inputTextCallback()

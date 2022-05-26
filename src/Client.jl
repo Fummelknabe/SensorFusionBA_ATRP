@@ -63,7 +63,7 @@ function sendAndRecvData(data::String)
     return pysocket.recv(1024)
 end
 
-function checkConnction(ip::String, port::String)    
+function checkConnection(ip::String, port::String)    
     try        
         if connectToJetson(ip, parse(Int64, port))
             return "Connection established!"
