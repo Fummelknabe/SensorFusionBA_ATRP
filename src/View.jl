@@ -1,6 +1,7 @@
 using GLFW
 using CImGui
 
+include("InputHandler.jl")
 
 export setUpWindow
 """
@@ -23,14 +24,6 @@ function setUpWindow(size::Tuple{Integer, Integer}, title::String)
 
     GLFW.SetWindowCloseCallback(window, (_) -> onWindowClose())
     GLFW.SetMouseButtonCallback(window, (_, button, action, mods) -> onMouseButton(button, action))
-    #GLFW.SetKeyCallback(window, (_, key, scancode, action, mods) -> begin
-    #    name = GLFW.GetKeyName(key, scancode)
-    #    if name === nothing
-    #        println("scancode $scancode ", action)
-    #    else
-    #        onKeyPressed(name, action)
-    #    end
-    #end)
 
     GC.gc()
 
@@ -74,12 +67,4 @@ end
 
 function onWindowClose()
     println("window closed")
-end
-
-#function onKeyPressed(key, action)
-#    #println(key, action)
-#end
-
-function onMouseButton(button, action)
-    #println(button, action)
 end

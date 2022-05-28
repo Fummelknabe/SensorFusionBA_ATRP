@@ -45,7 +45,9 @@ function mainLoop(window::GLFW.Window, ctx)
             @cstatic portData = ""*"\0"^115 i0=Cint(123) @cstatic ipData = ""*"\0"^115 i0=Cint(123) begin
                     handleConnectWindow(portData, ipData)
                 end  
-            end          
+            end      
+            
+            handleKeyInputs()
 
             CImGui.Render()
             glClear()
@@ -89,7 +91,7 @@ This is the starting point of the program.
 """
 function main()
     # Create window and start main loop
-    window, ctx = setUpWindow((600, 400), "AT-RP Controller")
+    window, ctx = setUpWindow((1000, 800), "AT-RP Controller")
     mainLoop(window, ctx)
 end
 
