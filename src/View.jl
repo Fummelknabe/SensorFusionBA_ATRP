@@ -1,6 +1,10 @@
 using GLFW
 using CImGui
 
+# Status Text for connection Window
+connectStatus = ""
+
+include("Client.jl")
 include("InputHandler.jl")
 
 export setUpWindow
@@ -59,7 +63,7 @@ function handleConnectWindow(ipData, portData)
     CImGui.Text("Enter Port:")
     CImGui.SameLine()
     CImGui.InputText(" ", portData, length(portData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                             
-    CImGui.Button("Connect") && buttonPress(ipData, portData)
+    CImGui.Button(connected == false ? "Connect" : "Disconnect") && connectButtonPress(ipData, portData)
     CImGui.Text(connectStatus)
 
     CImGui.End()
@@ -68,3 +72,5 @@ end
 function onWindowClose()
     println("window closed")
 end
+
+

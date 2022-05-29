@@ -6,6 +6,9 @@ export HOST, PORT
 const HOST = "192.168.0.103"; #"10.42.0.1"
       PORT = 2222
 
+export connected
+connected = false
+
 # Create a python socket
 export pysocket
 pysocket = pysockets.socket(pysockets.AF_INET, pysockets.SOCK_STREAM)
@@ -23,12 +26,13 @@ Connects to the Jetson
 - `boolean`: True if connection to a valid controller was succesful.
 """
 function connectToJetson(ip::String=HOST, port::Integer=PORT)    
-    global connectStatus = "Trying to connect to: " * ip * " on " * port
+    global connectStatus = "Trying to connect to: " * string(ip) * " on " * string(port)
 
     try
+        pysocket.settimeout(20)
         pysocket.connect((ip, port))
     catch error
-        if isa(error, Base.IOError)
+        if isa(error, PyCall.PyError)
             @warn "Connection to Jetson Timed Out!"
         else
             print(error)
@@ -66,6 +70,7 @@ end
 function checkConnection(ip::String, port::String)    
     try        
         if connectToJetson(ip, parse(Int64, port))
+            global connected = true
             return "Connection established!"
         end
            
@@ -74,6 +79,7 @@ function checkConnection(ip::String, port::String)
         if isa(error, ArgumentError)
             @warn "Port or IP incorrect \n Connection to standard port and IP"
             if connectToJetson()
+                global connected = true
                 return "Connection established!"
             end
 

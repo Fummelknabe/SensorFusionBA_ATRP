@@ -8,10 +8,6 @@ using CImGui.OpenGLBackend.ModernGL
 using CImGui.CSyntax
 using CImGui.CSyntax.CStatic
 
-# Status Text for connection Window
-connectStatus = ""
-
-include("Client.jl")
 include("View.jl")
 
 #running = true
@@ -47,7 +43,8 @@ function mainLoop(window::GLFW.Window, ctx)
                 end  
             end      
             
-            handleKeyInputs()
+            # if connected this call interupts for 0.05sec
+            commandLoop()
 
             CImGui.Render()
             glClear()
@@ -60,26 +57,6 @@ function mainLoop(window::GLFW.Window, ctx)
         CImGui.DestroyContext(ctx)
         GLFW.DestroyWindow(window)
     end
-end
-
-function buttonPress(ipData::String, portData::String)
-    ip = ""
-    port = ""
-
-    for char in ipData
-        if char === '.' || isdigit(char)
-            ip = ip * char
-        end
-    end
-
-    for char in portData
-        if isdigit(char)
-            port = port * char
-        end
-    end
-
-    global connectStatus = "Trying to connect to: " * ip * " on " * port
-    global connectStatus = checkConnection(ip, port)
 end
 
 function inputTextCallback()
