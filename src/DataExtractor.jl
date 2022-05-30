@@ -22,18 +22,22 @@ stores them into the PositionalData Type.
 <repetition of command>-<status>-<speed value>-<steering angle>-<detected speed in m/s>-<camera vector>-<imu data>.
 """
 function extractData(data::String)
-    splitted = split(data, "-")
+    splitted = split(data, "|")
 
     # if data is corrupted
-    if !length(splitted) == 7
-        throw(MethodError(extractData, "Missing data from AT-SV => Cannot Extract Data"))
+    if !(length(splitted) == 8)
+        println(splitted)
+        println("Length was not correct: " * string(length(splitted)))
+        return
+        #throw(MethodError(extractData, "Missing data from AT-SV => Cannot Extract Data"))
     end
 
-    println("Command: " * splitted[1] * "\n" *
-            "Status: " * splitted[2] * "\n" *
-            "Set Speed: " * splitted[3] * "\n" *
-            "Steer Angle: " * splitted[4] * "\n" *
-            "Detected Speed: " * splitted[5] * "\n" *
-            "Camera Vector: " * splitted[6] * "\n" *
-            "IMU Data: " * splitted[7])
+    println("Status: " * splitted[1] * "\n" *
+            "Set Speed: " * splitted[2] * "\n" *
+            "Steer Angle: " * splitted[3] * "\n" *
+            "Detected Speed: " * splitted[4] * "\n" *
+            "Camera Vector: " * splitted[5] * "\n" *
+            "IMU Acceleration: " * splitted[6] * "\n" *
+            "IMU Angular Rate: " * splitted[7] * "\n" *
+            "IMU Magnetic Field: " * splitted[8])
 end

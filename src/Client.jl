@@ -64,7 +64,7 @@ This function sends and receives data over the established tcp connection.
 function sendAndRecvData(data::String)
     pysocket.send(codeunits(data))
 
-    return pysocket.recv(1024)
+    return pysocket.recv(2048)
 end
 
 function checkConnection(ip::String, port::String)    
