@@ -1,5 +1,6 @@
 [deps]
 CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
 GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
+ImPlot = "e8efc688-5342-4ad4-b4ba-9025a731b363"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
