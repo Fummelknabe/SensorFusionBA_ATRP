@@ -6,14 +6,14 @@ Struct to store the data acquired by the AT-RP
 """
 mutable struct PositionalData
     steerAngle::Integer
-    maxSpeed::Integer
+    maxSpeed::Float32
     sensorSpeed::Float32
     cameraPos::Vector{Float32}
     imuGyro::Vector{Float32}
     imuAcc::Vector{Float32}
     imuMag::Float32
 
-    PositionalData() = new(0, 0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0)
+    PositionalData() = new(0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0)
 end
 
 export extractData
@@ -36,18 +36,8 @@ function extractData(data::String)
         #throw(MethodError(extractData, "Missing data from AT-SV => Cannot Extract Data"))
     end
 
-    """
-    println("Status: " * splitted[1] * "\n" *
-            "Set Speed: " * splitted[2] * "\n" *
-            "Steer Angle: " * splitted[3] * "\n" *
-            "Detected Speed: " * splitted[4] * "\n" *
-            "Camera Vector: " * splitted[5] * "\n" *
-            "IMU Acceleration: " * splitted[6] * "\n" *
-            "IMU Angular Rate: " * splitted[7] * "\n" *
-            "IMU Magnetic Field: " * splitted[8])
-            """
     posData = PositionalData()
-    posData.maxSpeed = parse(Int, splitted[2])
+    posData.maxSpeed = parse(Float32, splitted[2])
     posData.steerAngle = parse(Int, splitted[3])
     posData.sensorSpeed = parse(Float32, splitted[4])
     posData.cameraPos = parse.(Float32, split(chop(splitted[5]; head=1, tail=1), ','))

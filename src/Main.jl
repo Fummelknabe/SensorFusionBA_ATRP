@@ -45,13 +45,13 @@ function mainLoop(window::GLFW.Window, ctx)
                 end  
             end      
             
-            vec = collect(ones(100))
-            CImGui.Begin("Plot", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize | CImGui.ImGuiWindowFlags_NoCollapse)
-            if ImPlot.BeginPlot("Test Data", "x", "y", CImGui.ImVec2(-1,300))
-                ImPlot.PlotLine(vec)
-                ImPlot.EndPlot()
-            end
-            CImGui.End()
+            #vec = collect(ones(100))
+            #CImGui.Begin("Plot", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize | CImGui.ImGuiWindowFlags_NoCollapse)
+            #if ImPlot.BeginPlot("Test Data", "x", "y", CImGui.ImVec2(-1,300))
+            #    ImPlot.PlotLine(vec)
+            #    ImPlot.EndPlot()
+            #end
+            #CImGui.End()
 
             # if connected this call interupts for 0.05sec
             commandLoop()
