@@ -24,6 +24,9 @@ stores them into the PositionalData Type.
 # Arguments
 - `data::String`: The data as a string with structure: \n
 <repetition of command>-<status>-<speed value>-<steering angle>-<detected speed in m/s>-<camera vector>-<imu data>.
+
+# Returns 
+- `PositionalData`: All the positional data combined in one datatype.
 """
 function extractData(data::String)
     splitted = split(data, "|")
@@ -33,7 +36,6 @@ function extractData(data::String)
         println(splitted)
         println("Length was not correct: " * string(length(splitted)))
         return
-        #throw(MethodError(extractData, "Missing data from AT-SV => Cannot Extract Data"))
     end
 
     posData = PositionalData()
@@ -45,5 +47,5 @@ function extractData(data::String)
     posData.imuGyro = parse.(Float32, split(chop(splitted[7]; head=1, tail=1), ','))
     posData.imuMag = parse(Float32, splitted[8])
 
-    println(posData)
+    return posData
 end

@@ -1,5 +1,4 @@
 using CImGui
-using ImPlot
 
 using CImGui.GLFWBackend
 using CImGui.OpenGLBackend
@@ -8,13 +7,21 @@ using CImGui.OpenGLBackend.ModernGL
 
 using CImGui.CSyntax
 using CImGui.CSyntax.CStatic
-import CImGui.LibCImGui: ImGuiCond_Once
+
+using StructArrays
+
+# How many positional data points to save
+const rawDataLength = 100
+
+#running = true
+showHelperWindow = false
+showConnectWindow = false
+showDataPlots = false
 
 include("View.jl")
 
-#running = true
-showHelperWindow = false;
-showConnectWindow = false
+# Raw Data
+rawPositionalData = StructArray(PositionalData[])
 
 function mainLoop(window::GLFW.Window, ctx)
     glClear() = ccall(@eval(GLFW.GetProcAddress("glClear")), Cvoid, (Cuint,), 0x00004000)
@@ -30,6 +37,7 @@ function mainLoop(window::GLFW.Window, ctx)
                 CImGui.BeginMainMenuBar()
                 CImGui.MenuItem("Help") && global showHelperWindow = !showHelperWindow
                 CImGui.MenuItem("Connect Window") && global showConnectWindow = !showConnectWindow
+                CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots
                 CImGui.EndMainMenuBar()
             end
 
@@ -44,24 +52,28 @@ function mainLoop(window::GLFW.Window, ctx)
                     handleConnectWindow(portData, ipData)
                 end  
             end      
-            
-            #vec = collect(ones(100))
-            #CImGui.Begin("Plot", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize | CImGui.ImGuiWindowFlags_NoCollapse)
-            #if ImPlot.BeginPlot("Test Data", "x", "y", CImGui.ImVec2(-1,300))
-            #    ImPlot.PlotLine(vec)
-            #    ImPlot.EndPlot()
-            #end
-            #CImGui.End()
-
+ 
             # if connected this call interupts for 0.05sec
-            commandLoop()
+            posData = commandLoop()
+
+            # Add Positional Data to storage
+            if posData != 0
+                push!(rawPositionalData, posData)
+                if size(rawPositionalData, 1) > rawDataLength
+                    popfirst!(rawPositionalData)
+                end
+            end
+
+            if showDataPlots
+                plotRawData(rawPositionalData)
+            end
 
             CImGui.Render()
             glClear()
             ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())
 
             GLFW.SwapBuffers(window)
-            GLFW.WaitEvents()
+            GLFW.WaitEvents(0.01)
         end
     finally
         CImGui.DestroyContext(ctx)
@@ -78,7 +90,7 @@ This is the starting point of the program.
 """
 function main()
     # Create window and start main loop
-    window, ctx = setUpWindow((1000, 800), "AT-RP Controller")
+    window, ctx = setUpWindow((1400, 1000), "AT-RP Controller")
     mainLoop(window, ctx)
 end
 

@@ -4,7 +4,12 @@ function commandLoop()
     # Key Inputs:
     #a = 65, d=68, w=87, s=83, shift =340,ctrl = 341, space=32, esc = 256
     if !connected
-        return
+        """TESTING
+        
+        """
+        posData = PositionalData()
+        posData.steerAngle = Int(round(rand()*16+117))
+        return posData#return 0
     end
     
     command = ""
@@ -20,7 +25,7 @@ function commandLoop()
             global connected = false
             global connectStatus = ""
             pysocket.close()
-            return
+            return 0
         end
     end
 
@@ -52,7 +57,7 @@ function commandLoop()
     try
         answer = sendAndRecvData(command)
 
-        extractData(answer)
+        return extractData(answer)
     catch error
         @warn "Error was caught: " * string(error)
     end    

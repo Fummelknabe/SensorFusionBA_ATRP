@@ -1,5 +1,6 @@
 using GLFW
 using CImGui
+using ImPlot
 
 # Status Text for connection Window
 connectStatus = ""
@@ -19,6 +20,10 @@ function setUpWindow(size::Tuple{Integer, Integer}, title::String)
     window = GLFW.CreateWindow(size[1], size[2], title)
     GLFW.MakeContextCurrent(window)
     ctx = CImGui.CreateContext()
+
+    # Create ImPlot context
+    ctxp = ImPlot.CreateContext()
+    ImPlot.SetImGuiContext(ctx)
 
     # Load fonts and select style....
     CImGui.StyleColorsDark()
@@ -66,6 +71,35 @@ function handleConnectWindow(ipData, portData)
     CImGui.Button(connected == false ? "Connect" : "Disconnect") && connectButtonPress(ipData, portData)
     CImGui.Text(connectStatus)
 
+    CImGui.End()
+end
+
+function plotRawData(posData::StructVector{PositionalData})      
+    CImGui.SetNextWindowSize((600, 900))         
+    CImGui.Begin("Plots", C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
+
+    if size(posData, 1) == 0
+        @info "No PositionalData to Plot"
+        global showDataPlots = false
+        CImGui.End()
+        return
+    end
+
+    ImPlot.SetNextPlotLimits(0, size(posData, 1), 117, 133)
+    if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
+        xValues = collect(Int, 0:size(posData, 1))
+        yValues = Int64.(posData.steerAngle)  
+        ImPlot.PlotLine("", xValues, yValues, size(xValues, 1))
+        ImPlot.EndPlot()
+    end
+
+    ImPlot.SetNextPlotLimits(0, 6*π, -1, 1)
+    if ImPlot.BeginPlot("Test Data", "x", "y")
+        xValues = collect(LinRange(0, 6*π, 1000))
+        yValues = sin.(xValues)   
+        ImPlot.PlotLine("", xValues, yValues, size(xValues, 1))
+        ImPlot.EndPlot()
+    end
     CImGui.End()
 end
 
