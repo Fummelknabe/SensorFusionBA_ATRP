@@ -9,6 +9,9 @@ function commandLoop()
         """
         posData = PositionalData()
         posData.steerAngle = Int(round(rand()*16+117))
+        posData.maxSpeed = Int(round(rand()*21+19))+ (rand() > 0.5 ? 0.5 : 0.0)
+        posData.sensorSpeed = rand() * 15
+        posData.imuMag = rand() * 360
         return posData#return 0
     end
     

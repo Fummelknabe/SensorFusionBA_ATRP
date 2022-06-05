@@ -74,6 +74,13 @@ function handleConnectWindow(ipData, portData)
     CImGui.End()
 end
 
+"""
+Plot the positional data received from the AT-RP.
+Has to be called inside the render loop.
+
+# Arguments 
+- `posData::StructVector{PositionalData}`: The positional data from the atrp to plot.
+"""
 function plotRawData(posData::StructVector{PositionalData})      
     CImGui.SetNextWindowSize((600, 900))         
     CImGui.Begin("Plots", C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
@@ -85,21 +92,34 @@ function plotRawData(posData::StructVector{PositionalData})
         return
     end
 
-    ImPlot.SetNextPlotLimits(0, size(posData, 1), 117, 133)
+    ImPlot.SetNextPlotLimits(0, rawDataLength, 117, 133)
     if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
-        xValues = collect(Int, 0:size(posData, 1))
         yValues = Int64.(posData.steerAngle)  
-        ImPlot.PlotLine("", xValues, yValues, size(xValues, 1))
+        ImPlot.PlotLine("", yValues, size(yValues, 1))
         ImPlot.EndPlot()
     end
 
-    ImPlot.SetNextPlotLimits(0, 6*π, -1, 1)
-    if ImPlot.BeginPlot("Test Data", "x", "y")
-        xValues = collect(LinRange(0, 6*π, 1000))
-        yValues = sin.(xValues)   
-        ImPlot.PlotLine("", xValues, yValues, size(xValues, 1))
+    ImPlot.SetNextPlotLimits(0, rawDataLength, 19, 40)
+    if ImPlot.BeginPlot("Max Speed", "Data Point", "Max Speed [PWM - Duty Cycle]")
+        yValues = float.(posData.maxSpeed)  
+        ImPlot.PlotLine("", yValues, size(yValues, 1))
         ImPlot.EndPlot()
     end
+
+    ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 15)
+    if ImPlot.BeginPlot("Speed", "Data Point", "Speed [m/s]")
+        yValues = float.(posData.sensorSpeed) 
+        ImPlot.PlotLine("", yValues, size(yValues, 1))
+        ImPlot.EndPlot()
+    end
+
+    ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 360)
+    if ImPlot.BeginPlot("Angle to Magnetic North", "Data Point", "Degrees [°]")
+        yValues = float.(posData.imuMag) 
+        ImPlot.PlotLine("", yValues, size(yValues, 1))
+        ImPlot.EndPlot()
+    end
+    
     CImGui.End()
 end
 
