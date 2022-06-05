@@ -92,34 +92,51 @@ function plotRawData(posData::StructVector{PositionalData})
         return
     end
 
-    ImPlot.SetNextPlotLimits(0, rawDataLength, 117, 133)
-    if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
-        yValues = Int64.(posData.steerAngle)  
-        ImPlot.PlotLine("", yValues, size(yValues, 1))
-        ImPlot.EndPlot()
+    if CImGui.CollapsingHeader("Steering Angle")
+        ImPlot.SetNextPlotLimits(0, rawDataLength, 117, 133)
+        if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
+            yValues = Int64.(posData.steerAngle)  
+            ImPlot.PlotLine("", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end
     end
 
-    ImPlot.SetNextPlotLimits(0, rawDataLength, 19, 40)
-    if ImPlot.BeginPlot("Max Speed", "Data Point", "Max Speed [PWM - Duty Cycle]")
-        yValues = float.(posData.maxSpeed)  
-        ImPlot.PlotLine("", yValues, size(yValues, 1))
-        ImPlot.EndPlot()
-    end
-
-    ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 15)
-    if ImPlot.BeginPlot("Speed", "Data Point", "Speed [m/s]")
-        yValues = float.(posData.sensorSpeed) 
-        ImPlot.PlotLine("", yValues, size(yValues, 1))
-        ImPlot.EndPlot()
-    end
-
-    ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 360)
-    if ImPlot.BeginPlot("Angle to Magnetic North", "Data Point", "Degrees [°]")
-        yValues = float.(posData.imuMag) 
-        ImPlot.PlotLine("", yValues, size(yValues, 1))
-        ImPlot.EndPlot()
+    if CImGui.CollapsingHeader("Max Speed")
+        ImPlot.SetNextPlotLimits(0, rawDataLength, 19, 40)
+        if ImPlot.BeginPlot("Max Speed", "Data Point", "Max Speed [PWM - Duty Cycle]")
+            yValues = float.(posData.maxSpeed)  
+            ImPlot.PlotLine("", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end
     end
     
+    if CImGui.CollapsingHeader("Speed")
+        ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 15)
+        if ImPlot.BeginPlot("Speed", "Data Point", "Speed [m/s]")
+            yValues = float.(posData.sensorSpeed) 
+            ImPlot.PlotLine("", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Compass Course")
+        ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 360)
+        if ImPlot.BeginPlot("Angle to Magnetic North", "Data Point", "Degrees [°]")
+            yValues = float.(posData.imuMag) 
+            ImPlot.PlotLine("", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Test")
+        ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 360)
+        if ImPlot.BeginPlot("Test Plot", "Data Point", "Degrees [°]")
+            yValues = float.(posData.imuMag) 
+            ImPlot.PlotScatter("", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
     CImGui.End()
 end
 
