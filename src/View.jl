@@ -128,11 +128,58 @@ function plotRawData(posData::StructVector{PositionalData})
         end
     end
 
-    if CImGui.CollapsingHeader("Test")
-        ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 360)
-        if ImPlot.BeginPlot("Test Plot", "Data Point", "Degrees [°]")
-            yValues = float.(posData.imuMag) 
-            ImPlot.PlotScatter("", yValues, size(yValues, 1))
+    if CImGui.CollapsingHeader("Camera Position Change")
+        ImPlot.SetNextPlotLimits(0, rawDataLength, -0.1, 0.1)
+        if ImPlot.BeginPlot("Positional Change", "Data Point", "Absolute Change")
+            # Convert vector of vectors to matrix:
+            cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
+            yValues = float.(cameraPosMatrix[:, 4]) 
+            ImPlot.PlotLine("", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Camera Position")
+        # Convert vector of vectors to matrix:
+        cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
+        ImPlot.SetNextPlotLimits(0, rawDataLength, minimum(cameraPosMatrix), maximum(cameraPosMatrix))
+        if ImPlot.BeginPlot("Relative Camera Position", "Data Point", "Distance [m]")            
+            yValues = float.(cameraPosMatrix[:, 1]) 
+            ImPlot.PlotLine("x", yValues, size(yValues, 1))
+            yValues = float.(cameraPosMatrix[:, 2]) 
+            ImPlot.PlotLine("y", yValues, size(yValues, 1))
+            yValues = float.(cameraPosMatrix[:, 3]) 
+            ImPlot.PlotLine("z", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Angular Velocity")
+        # Convert vector of vectors to matrix:
+        imuGyroMatrix = reduce(vcat, transpose.(posData.imuGyro))
+        ImPlot.SetNextPlotLimits(0, rawDataLength, minimum(imuGyroMatrix), maximum(imuGyroMatrix))
+        if ImPlot.BeginPlot("Angular Velocity", "Data Point", "Distance [°/s]")            
+            yValues = float.(imuGyroMatrix[:, 1]) 
+            ImPlot.PlotLine("x", yValues, size(yValues, 1))
+            yValues = float.(imuGyroMatrix[:, 2]) 
+            ImPlot.PlotLine("y", yValues, size(yValues, 1))
+            yValues = float.(imuGyroMatrix[:, 3]) 
+            ImPlot.PlotLine("z", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end 
+    end
+
+    if CImGui.CollapsingHeader("Acceleration")
+        # Convert vector of vectors to matrix:
+        imuAccMatrix = reduce(vcat, transpose.(posData.imuAcc))
+        ImPlot.SetNextPlotLimits(0, rawDataLength, minimum(imuAccMatrix), maximum(imuAccMatrix))
+        if ImPlot.BeginPlot("Acceleration", "Data Point", "Distance [m/s^2]")            
+            yValues = float.(imuAccMatrix[:, 1]) 
+            ImPlot.PlotLine("x", yValues, size(yValues, 1))
+            yValues = float.(imuAccMatrix[:, 2]) 
+            ImPlot.PlotLine("y", yValues, size(yValues, 1))
+            yValues = float.(imuAccMatrix[:, 3]) 
+            ImPlot.PlotLine("z", yValues, size(yValues, 1))
             ImPlot.EndPlot()
         end
     end

@@ -12,6 +12,9 @@ function commandLoop()
         posData.maxSpeed = Int(round(rand()*21+19))+ (rand() > 0.5 ? 0.5 : 0.0)
         posData.sensorSpeed = rand() * 15
         posData.imuMag = rand() * 360
+        posData.cameraPos = [-0.5, 1, 2*rand(), rand() * 0.1 * (rand() > 0.5 ? -1 : 1)]
+        posData.imuAcc = [rand(), rand(), rand()]
+        posData.imuGyro = [rand(), rand(), rand()]
         return posData#return 0
     end
     
