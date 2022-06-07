@@ -29,7 +29,7 @@ function setUpWindow(size::Tuple{Integer, Integer}, title::String)
     CImGui.StyleColorsDark()
 
     CImGui.ImGui_ImplGlfw_InitForOpenGL(window, true)
-    CImGui.ImGui_ImplOpenGL3_Init(130) # GLSL Version
+    CImGui.ImGui_ImplOpenGL3_Init(330) # GLSL Version
 
     GLFW.SetWindowCloseCallback(window, (_) -> onWindowClose())
     GLFW.SetMouseButtonCallback(window, (_, button, action, mods) -> onMouseButton(button, action))
