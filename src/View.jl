@@ -1,6 +1,7 @@
 using GLFW
 using CImGui
 using ImPlot
+using ModernGL
 
 # Status Text for connection Window
 connectStatus = ""
