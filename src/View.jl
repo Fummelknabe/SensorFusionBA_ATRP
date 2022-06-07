@@ -2,12 +2,33 @@ using GLFW
 using CImGui
 using ImPlot
 using ModernGL
+using CSyntax
 
 # Status Text for connection Window
 connectStatus = ""
 
 include("Client.jl")
 include("InputHandler.jl")
+
+const vertShaderScript = """
+# version 330
+
+in vec3 position;
+
+void main(void){
+    gl_Position = vec4(position, 1.0);
+}
+"""
+const fragShaderScript = """
+# version 330
+out vec4 color;
+
+void main(void){
+    color = vec4(0.5, 0.0, 0.5, 1.0);
+}
+"""
+
+
 
 export setUpWindow
 """
@@ -35,9 +56,55 @@ function setUpWindow(size::Tuple{Integer, Integer}, title::String)
     GLFW.SetWindowCloseCallback(window, (_) -> onWindowClose())
     GLFW.SetMouseButtonCallback(window, (_, button, action, mods) -> onMouseButton(button, action))
 
+    #enable depth test 
+    glEnable(GL_DEPTH_TEST)
+    glDepthFunc(GL_LESS)
+
+    vao, program = openGlSetUp()
+
     GC.gc()
 
-    return window, ctx
+    return window, ctx, vao, program
+end
+
+function openGlSetUp()
+    # compile shaders
+    vertShader = glCreateShader(GL_VERTEX_SHADER)
+    glShaderSource(vertShader, 1, Ptr{GLchar}[pointer(vertShaderScript)], C_NULL)
+    glCompileShader(vertShader)
+    fragShader = glCreateShader(GL_FRAGMENT_SHADER)
+    glShaderSource(fragShader, 1, Ptr{GLchar}[pointer(fragShaderScript)], C_NULL)
+    glCompileShader(fragShader)
+
+    # create and link shader program
+    program = glCreateProgram()
+    glAttachShader(program, vertShader)
+    glAttachShader(program, fragShader)
+    glLinkProgram(program)
+
+    # vertex data
+    points = GLfloat[ 0.0,  0.5, 0.0,
+                    0.5, -0.5, 0.0,
+                    -0.5, -0.5, 0.0]
+
+    # create buffers located in the memory of graphic card
+    vbo = GLuint(0)
+    @c glGenBuffers(1, &vbo)
+    glBindBuffer(GL_ARRAY_BUFFER, vbo)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW)
+
+    # create VAO
+    vao = GLuint(0)
+    @c glGenVertexArrays(1, &vao)
+    glBindVertexArray(vao)
+    glBindBuffer(GL_ARRAY_BUFFER, vbo)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, C_NULL)
+    glEnableVertexAttribArray(0)
+
+    # set background color to gray
+    glClearColor(0.2, 0.2, 0.2, 1.0)
+
+    return vao, program
 end
 
 function handleHelperWidow()

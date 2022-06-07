@@ -23,14 +23,20 @@ include("View.jl")
 # Raw Data
 rawPositionalData = StructArray(PositionalData[])
 
-function mainLoop(window::GLFW.Window, ctx)
-    glClear() = ccall(@eval(GLFW.GetProcAddress("glClear")), Cvoid, (Cuint,), 0x00004000)
+function mainLoop(window::GLFW.Window, ctx, vao, program)
+    #glClear() = ccall(@eval(GLFW.GetProcAddress("glClear")), Cvoid, (Cuint,), 0x00004000)
     
     try
         while !GLFW.WindowShouldClose(window)
+            #glClear()
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             ImGui_ImplOpenGL3_NewFrame()
             ImGui_ImplGlfw_NewFrame()            
             CImGui.NewFrame()
+
+            glUseProgram(program)
+            glBindVertexArray(vao)
+            glDrawArrays(GL_TRIANGLES, 0, 3)
 
             # Menu Bar
             begin 
@@ -69,8 +75,8 @@ function mainLoop(window::GLFW.Window, ctx)
             end
 
             CImGui.Render()
-            glClear()
             ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())
+                 
 
             GLFW.SwapBuffers(window)
             GLFW.WaitEvents(0.01)
@@ -90,8 +96,8 @@ This is the starting point of the program.
 """
 function main()
     # Create window and start main loop
-    window, ctx = setUpWindow((1400, 1000), "AT-RP Controller")
-    mainLoop(window, ctx)
+    window, ctx, vao, program = setUpWindow((1400, 1000), "AT-RP Controller")
+    mainLoop(window, ctx, vao, program)
 end
 
 main()
