@@ -10,23 +10,8 @@ connectStatus = ""
 include("Client.jl")
 include("InputHandler.jl")
 
-const vertShaderScript = """
-# version 330
-
-in vec3 position;
-
-void main(void){
-    gl_Position = vec4(position, 1.0);
-}
-"""
-const fragShaderScript = """
-# version 330
-out vec4 color;
-
-void main(void){
-    color = vec4(0.5, 0.0, 0.5, 1.0);
-}
-"""
+const vertShaderScript = read("shader/shader.vert", String)
+const fragShaderScript = read("shader/shader.frag", String)
 
 
 
