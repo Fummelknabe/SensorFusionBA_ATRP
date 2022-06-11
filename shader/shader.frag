@@ -50,10 +50,10 @@ void main()
     vec3 norm = normalize(normal);
 
     for (int i = 0; i < numLights; i++){
-	   	vec3 dir_to_light = normalize(pointLight[i].position.xyz - myWorldPosition.xyz);
+	   	vec3 dir_to_light = normalize(pointLight[i].position.xyz - worldPosition.xyz);
    		myColor += ComputeLambertian(dir_to_light, pointLight[i].color, norm, diffuse_color);
 
-        vec3 dir_to_camera = normalize(cameraPosition - vec3(myWorldPosition));
+        vec3 dir_to_camera = normalize(cameraPosition - vec3(worldPosition));
         myColor += ComputeSpecular(dir_to_light, dir_to_camera, pointLight[i].color, norm, specular_color, material.shininess);
     }     
 
