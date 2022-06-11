@@ -9,6 +9,7 @@ using CImGui.CSyntax
 using CImGui.CSyntax.CStatic
 
 using StructArrays
+using LinearAlgebra
 
 # How many positional data points to save
 const rawDataLength = 100
@@ -30,9 +31,7 @@ include("View.jl")
 # Raw Data
 rawPositionalData = StructArray(PositionalData[])
 
-function mainLoop(window::GLFW.Window, ctx, vao, program)
-    #glClear() = ccall(@eval(GLFW.GetProcAddress("glClear")), Cvoid, (Cuint,), 0x00004000)
-    
+function mainLoop(window::GLFW.Window, ctx, vao, program) 
     try
         while !GLFW.WindowShouldClose(window)
             #glClear()
@@ -44,14 +43,22 @@ function mainLoop(window::GLFW.Window, ctx, vao, program)
             # Before calculatin camera matrices check Inputs
             checkCameraMovement()
 
+            modelMatrixLoc = glGetUniformLocation(program, "modelMatrix")
             viewMatrixLoc = glGetUniformLocation(program, "viewMatrix")
             projMatrixLoc = glGetUniformLocation(program, "projMatrix")
+            camPositionLoc = glGetUniformLocation(program, "cameraPosition")
+            ambientLightCoLoc = glGetUniformLocation(program, "ambientLightColor")
             glUseProgram(program)
+            glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, Matrix{GLfloat}(I, 4, 4))
             glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, getViewMatrix(cam))
             glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, getProjectionMatrix(cam))
+            glUniform3fv(camPositionLoc, 1, cam.position)
+            glUniform3fv(ambientLightCoLoc, 1, GLfloat[1.0, 1.0, 1.0])
+
             glBindVertexArray(vao)
             glDrawArrays(GL_TRIANGLES, 0, 3)
 
+            # CImGui Stuff:
             # Menu Bar
             begin 
                 CImGui.BeginMainMenuBar()

@@ -5,14 +5,14 @@ const zfar = 100
 
 mutable struct Camera
     speed::Float32
-    position::Vector{Float32}
+    position::Vector{GLfloat}
     yaw::Float32
     yawSpeed::Float32
     aspectRatio::Float32
     fov::Int
 
     function Camera()
-        new(0.01, [0.0, 0.0, 1.0], 0.0, 10.0, 16/9, 60)
+        new(0.01, GLfloat[0.0, 0.0, 1.0], 0.0, 10.0, 16/9, 60)
     end
 end
 
@@ -39,10 +39,10 @@ end
 
 function checkCameraMovement()
     if isLeftMouseButtonDown
-        cam.position[3] += cam.speed 
+        cam.position[3] += GLfloat(cam.speed) 
     end
 
     if isRightMouseButtonDown
-        cam.position[3] -= cam.speed 
+        cam.position[3] -= GLfloat(cam.speed) 
     end 
 end

@@ -70,20 +70,26 @@ function openGlSetUp()
     # vertex data
     points = GLfloat[ 0.5,  0.5, 0.0,
                     0.5, -0.5, 0.0,
-                    -0.5, -0.5, 0.0]
-    # color 
-    colors = GLfloat[ 1.0, 0.0, 0.0,
-                    0.0, 1.0, 0.0,
-                    0.0, 0.0, 1.0]
+                    -0.5, -0.5, 0.0]    
+    # normals
+    normals = GLfloat[ 0.0, 0.0, -1.0,
+                       0.0, 0.0, -1.0,
+                       0.0, 0.0, -1.0]
+    # indices 
+    indices = GLfloat[ 0, 1, 2]
     # create buffers located in the memory of graphic card
     pos_vbo = GLuint(0)
     @c glGenBuffers(1, &pos_vbo)
     glBindBuffer(GL_ARRAY_BUFFER, pos_vbo)
     glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW)
-    color_vbo = GLuint(0)
-    @c glGenBuffers(1, &color_vbo)
-    glBindBuffer(GL_ARRAY_BUFFER, color_vbo)
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW)
+    normals_vbo = GLuint(0)
+    @c glGenBuffers(1, &normals_vbo)
+    glBindBuffer(GL_ARRAY_BUFFER, normals_vbo)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW)
+    indices_vbo = GLuint(0)
+    @c glGenBuffers(1, &indices_vbo)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_vbo)
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW)
 
     # create VAO
     vao = GLuint(0)
@@ -91,7 +97,7 @@ function openGlSetUp()
     glBindVertexArray(vao)
     glBindBuffer(GL_ARRAY_BUFFER, pos_vbo)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, C_NULL)
-    glBindBuffer(GL_ARRAY_BUFFER, color_vbo)
+    glBindBuffer(GL_ARRAY_BUFFER, normals_vbo)
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, C_NULL)
     glEnableVertexAttribArray(0)
     glEnableVertexAttribArray(1)
