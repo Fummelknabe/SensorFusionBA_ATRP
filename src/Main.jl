@@ -18,6 +18,13 @@ showHelperWindow = false
 showConnectWindow = false
 showDataPlots = false
 
+isLeftMouseButtonDown = false
+isRightMouseButtonDown = false
+
+include("Camera.jl")
+# Camera to render
+cam = Camera()
+
 include("View.jl")
 
 # Raw Data
@@ -34,7 +41,14 @@ function mainLoop(window::GLFW.Window, ctx, vao, program)
             ImGui_ImplGlfw_NewFrame()            
             CImGui.NewFrame()
 
+            # Before calculatin camera matrices check Inputs
+            checkCameraMovement()
+
+            viewMatrixLoc = glGetUniformLocation(program, "viewMatrix")
+            projMatrixLoc = glGetUniformLocation(program, "projMatrix")
             glUseProgram(program)
+            glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, getViewMatrix(cam))
+            glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, getProjectionMatrix(cam))
             glBindVertexArray(vao)
             glDrawArrays(GL_TRIANGLES, 0, 3)
 
@@ -97,6 +111,7 @@ This is the starting point of the program.
 function main()
     # Create window and start main loop
     window, ctx, vao, program = setUpWindow((1400, 1000), "AT-RP Controller")
+    cam.aspectRatio = 1400/1000
     mainLoop(window, ctx, vao, program)
 end
 

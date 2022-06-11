@@ -70,7 +70,17 @@ function commandLoop()
 end
 
 function onMouseButton(button, action)
-    #println("Mouse Button: " * string(button))
+    if button == GLFW.MOUSE_BUTTON_LEFT && action == GLFW.PRESS
+        global isLeftMouseButtonDown = true       
+    elseif  button == GLFW.MOUSE_BUTTON_LEFT && action == GLFW.RELEASE
+        global isLeftMouseButtonDown = false
+    end
+    
+    if button == GLFW.MOUSE_BUTTON_RIGHT && action == GLFW.PRESS
+        global isRightMouseButtonDown = true       
+    elseif  button == GLFW.MOUSE_BUTTON_RIGHT && action == GLFW.RELEASE
+        global isRightMouseButtonDown = false
+    end
 end
 
 function connectButtonPress(ipData::String, portData::String)
