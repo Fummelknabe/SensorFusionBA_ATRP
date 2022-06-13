@@ -12,7 +12,7 @@ mutable struct Camera
     fov::Int
 
     function Camera()
-        new(0.01, GLfloat[0.0, 0.0, 1.0], 0.0, 10.0, 16/9, 60)
+        new(0.01, GLfloat[0.0, 0.0, 2.0], 0.0, 10.0, 16/9, 30)
     end
 end
 
@@ -45,4 +45,10 @@ function checkCameraMovement()
     if isRightMouseButtonDown
         cam.position[3] -= GLfloat(cam.speed) 
     end 
+    # Left and right
+    if CImGui.IsKeyPressed(65) 
+        cam.position[1] -= GLfloat(cam.speed) 
+    elseif CImGui.IsKeyPressed(68)
+        cam.position[1] += GLfloat(cam.speed) 
+    end
 end

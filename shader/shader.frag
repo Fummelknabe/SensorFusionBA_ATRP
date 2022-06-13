@@ -1,7 +1,8 @@
-# version 330
+# version 410
 
 in vec3 normal;
-in vec3 worldPosition;
+in vec4 worldPosition;
+in vec2 st;
 
 struct PointLight {
     vec3 position;
@@ -54,7 +55,7 @@ void main()
    		myColor += ComputeLambertian(dir_to_light, pointLight[i].color, norm, diffuse_color);
 
         vec3 dir_to_camera = normalize(cameraPosition - vec3(worldPosition));
-        myColor += ComputeSpecular(dir_to_light, dir_to_camera, pointLight[i].color, norm, specular_color, material.shininess);
+        myColor += ComputeSpecular(dir_to_light, dir_to_camera, pointLight[i].color, norm, specular_color, shininess);
     }     
 
     fragmentColor = vec4(myColor, 1.0);

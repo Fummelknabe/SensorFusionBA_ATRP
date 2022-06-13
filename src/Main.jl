@@ -11,6 +11,9 @@ using CImGui.CSyntax.CStatic
 using StructArrays
 using LinearAlgebra
 
+# Used for model loading
+using GLTF
+
 # How many positional data points to save
 const rawDataLength = 100
 
@@ -31,7 +34,7 @@ include("View.jl")
 # Raw Data
 rawPositionalData = StructArray(PositionalData[])
 
-function mainLoop(window::GLFW.Window, ctx, vao, program) 
+function mainLoop(window::GLFW.Window, ctx, vao, program, idxBufferView, EBO, indices) 
     try
         while !GLFW.WindowShouldClose(window)
             #glClear()
@@ -49,14 +52,15 @@ function mainLoop(window::GLFW.Window, ctx, vao, program)
             camPositionLoc = glGetUniformLocation(program, "cameraPosition")
             ambientLightCoLoc = glGetUniformLocation(program, "ambientLightColor")
             glUseProgram(program)
-            glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, Matrix{GLfloat}(I, 4, 4))
+            glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, GLfloat[-1.0 0.0 0.0 0.0; 0.0 -1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0])
             glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, getViewMatrix(cam))
             glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, getProjectionMatrix(cam))
             glUniform3fv(camPositionLoc, 1, cam.position)
             glUniform3fv(ambientLightCoLoc, 1, GLfloat[1.0, 1.0, 1.0])
 
             glBindVertexArray(vao)
-            glDrawArrays(GL_TRIANGLES, 0, 3)
+            glBindBuffer(idxBufferView.target, EBO)
+            glDrawElements(GL_TRIANGLES, indices.count, indices.componentType, Ptr{Cvoid}(0))
 
             # CImGui Stuff:
             # Menu Bar
@@ -117,9 +121,9 @@ This is the starting point of the program.
 """
 function main()
     # Create window and start main loop
-    window, ctx, vao, program = setUpWindow((1400, 1000), "AT-RP Controller")
+    window, ctx, vao, program, idxBufferView, EBO, indices = setUpWindow((1400, 1000), "AT-RP Controller")
     cam.aspectRatio = 1400/1000
-    mainLoop(window, ctx, vao, program)
+    mainLoop(window, ctx, vao, program, idxBufferView, EBO, indices)
 end
 
 main()
