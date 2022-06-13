@@ -3,19 +3,21 @@ using CImGui
 using ImPlot
 using ModernGL
 using CSyntax
+# Used for model loading
+using GLTF
 
 # Status Text for connection Window
 connectStatus = ""
 
 include("Client.jl")
 include("InputHandler.jl")
-
-const vertShaderScript = read("shader/shader.vert", String)
-const fragShaderScript = read("shader/shader.frag", String)
+include("Model.jl")
 
 const robotModel = GLTF.load("assets/monkey2.gltf")
 const robotModelData = [read("assets/"*b.uri) for b in robotModel.buffers]
 
+const vertShaderScript = read("shader/shader.vert", String)
+const fragShaderScript = read("shader/shader.frag", String)
 
 export setUpWindow
 """
@@ -47,14 +49,14 @@ function setUpWindow(size::Tuple{Integer, Integer}, title::String)
     glEnable(GL_DEPTH_TEST)
     glDepthFunc(GL_LESS)
 
-    vao, program, idxBufferView, EBO, indices = openGlSetUp()
+    program = createShaders()
 
     GC.gc()
 
-    return window, ctx, vao, program, idxBufferView, EBO, indices
+    return window, ctx, program
 end
 
-function openGlSetUp()
+function createShaders()
     # compile shaders
     vertShader = glCreateShader(GL_VERTEX_SHADER)
     glShaderSource(vertShader, 1, Ptr{GLchar}[pointer(vertShaderScript)], C_NULL)
@@ -69,61 +71,6 @@ function openGlSetUp()
     glAttachShader(program, fragShader)
     glLinkProgram(program)
 
-    # Extract data from Model:
-    searchName(x, keyword) = x[findfirst(x->occursin(keyword, x.name), x)]
-    pos = searchName(robotModel.accessors, "position")
-    posBufferView = robotModel.bufferViews[pos.bufferView]
-    indices = searchName(robotModel.accessors, "indices")
-    idxBufferView = robotModel.bufferViews[indices.bufferView]
-    texcoords = searchName(robotModel.accessors, "texcoords")
-    texBufferView = robotModel.bufferViews[texcoords.bufferView]
-    normals = searchName(robotModel.accessors, "normals")
-    normalBufferView = robotModel.bufferViews[normals.bufferView]
-
-    # create buffers located in the memory of graphic card
-    # position
-    posVBO = GLuint(0)
-    @c glGenBuffers(1, &posVBO)
-    glBindBuffer(posBufferView.target, posVBO)
-    glBufferData(posBufferView.target, posBufferView.byteLength, C_NULL, GL_STATIC_DRAW)
-    posData = robotModelData[posBufferView.buffer]
-    @c glBufferSubData(posBufferView.target, 0, posBufferView.byteLength, &posData[posBufferView.byteOffset])
-    # normals
-    normalsVBO = GLuint(0)
-    @c glGenBuffers(1, &normalsVBO)
-    glBindBuffer(normalBufferView.target, normalsVBO)
-    glBufferData(normalBufferView.target, normalBufferView.byteLength, C_NULL, GL_STATIC_DRAW)
-    normalData = robotModelData[normalBufferView.buffer]
-    @c glBufferSubData(normalBufferView.target, 0, normalBufferView.byteLength, &normalData[normalBufferView.byteOffset])
-    # texure coordinates
-    texVBO = GLuint(0)
-    @c glGenBuffers(1, &texVBO)
-    glBindBuffer(texBufferView.target, texVBO)
-    glBufferData(texBufferView.target, texBufferView.byteLength, C_NULL, GL_STATIC_DRAW)
-    texData = robotModelData[texBufferView.buffer]
-    @c glBufferSubData(texBufferView.target, 0, texBufferView.byteLength, &texData[texBufferView.byteOffset])
-    # indices
-    idxEBO = GLuint(0)
-    @c glGenBuffers(1, &idxEBO)
-    glBindBuffer(idxBufferView.target, idxEBO)
-    glBufferData(idxBufferView.target, idxBufferView.byteLength, C_NULL, GL_STATIC_DRAW)
-    idxData = robotModelData[idxBufferView.buffer]
-    @c glBufferSubData(idxBufferView.target, 0, idxBufferView.byteLength, &idxData[idxBufferView.byteOffset])
-
-    # create VAO
-    vao = GLuint(0)
-    @c glGenVertexArrays(1, &vao)
-    glBindVertexArray(vao)
-    glBindBuffer(posBufferView.target, posVBO)
-    glVertexAttribPointer(0, 3, pos.componentType, pos.normalized, posBufferView.byteStride, Ptr{Cvoid}(pos.byteOffset))
-    glBindBuffer(normalBufferView.target, normalsVBO)
-    glVertexAttribPointer(1, 3, normals.componentType, normals.normalized, normalBufferView.byteStride, Ptr{Cvoid}(normals.byteOffset))
-    glBindBuffer(idxBufferView.target, texVBO)
-    glVertexAttribPointer(2, 2, texcoords.componentType, texcoords.normalized, texBufferView.byteStride, Ptr{Cvoid}(texcoords.byteOffset))
-    glEnableVertexAttribArray(0)
-    glEnableVertexAttribArray(1)
-    glEnableVertexAttribArray(2)
-
     # enable face culling
     #glEnable(GL_CULL_FACE)
     #glCullFace(GL_FRONT)
@@ -132,7 +79,7 @@ function openGlSetUp()
     # set background color to gray
     glClearColor(0.2, 0.2, 0.2, 1.0)    
 
-    return vao, program, idxBufferView, idxEBO, indices
+    return program
 end
 
 function handleHelperWidow()

@@ -11,9 +11,6 @@ using CImGui.CSyntax.CStatic
 using StructArrays
 using LinearAlgebra
 
-# Used for model loading
-using GLTF
-
 # How many positional data points to save
 const rawDataLength = 100
 
@@ -29,12 +26,17 @@ include("Camera.jl")
 # Camera to render
 cam = Camera()
 
+
 include("View.jl")
+robotModelTransform = Transform()
+robotModelTransform.eulerRotation = [0.0, 0.0, pi]
 
 # Raw Data
 rawPositionalData = StructArray(PositionalData[])
 
-function mainLoop(window::GLFW.Window, ctx, vao, program, idxBufferView, EBO, indices) 
+function mainLoop(window::GLFW.Window, ctx, program) 
+    vao, idxBufferView, EBO, indices = loadGLTFModelInBuffers(robotModel, robotModelData)
+
     try
         while !GLFW.WindowShouldClose(window)
             #glClear()
@@ -46,17 +48,7 @@ function mainLoop(window::GLFW.Window, ctx, vao, program, idxBufferView, EBO, in
             # Before calculatin camera matrices check Inputs
             checkCameraMovement()
 
-            modelMatrixLoc = glGetUniformLocation(program, "modelMatrix")
-            viewMatrixLoc = glGetUniformLocation(program, "viewMatrix")
-            projMatrixLoc = glGetUniformLocation(program, "projMatrix")
-            camPositionLoc = glGetUniformLocation(program, "cameraPosition")
-            ambientLightCoLoc = glGetUniformLocation(program, "ambientLightColor")
-            glUseProgram(program)
-            glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, GLfloat[-1.0 0.0 0.0 0.0; 0.0 -1.0 0.0 0.0; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0])
-            glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, getViewMatrix(cam))
-            glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, getProjectionMatrix(cam))
-            glUniform3fv(camPositionLoc, 1, cam.position)
-            glUniform3fv(ambientLightCoLoc, 1, GLfloat[1.0, 1.0, 1.0])
+            writeToUniforms(program, robotModelTransform, cam, GLfloat[1.0, 1.0, 1.0])
 
             glBindVertexArray(vao)
             glBindBuffer(idxBufferView.target, EBO)
@@ -121,9 +113,9 @@ This is the starting point of the program.
 """
 function main()
     # Create window and start main loop
-    window, ctx, vao, program, idxBufferView, EBO, indices = setUpWindow((1400, 1000), "AT-RP Controller")
+    window, ctx, program = setUpWindow((1400, 1000), "AT-RP Controller")
     cam.aspectRatio = 1400/1000
-    mainLoop(window, ctx, vao, program, idxBufferView, EBO, indices)
+    mainLoop(window, ctx, program)
 end
 
 main()
