@@ -9,6 +9,7 @@ using CImGui.CSyntax
 using CImGui.CSyntax.CStatic
 
 using StructArrays
+using LinearAlgebra
 
 # How many positional data points to save
 const rawDataLength = 100
@@ -18,20 +19,45 @@ showHelperWindow = false
 showConnectWindow = false
 showDataPlots = false
 
+isLeftMouseButtonDown = false
+isRightMouseButtonDown = false
+oldMousePosition = [0.0, 0.0]
+windowSize = (1400, 1000)
+
+include("Camera.jl")
+# Camera to render
+cam = Camera()
+cam.position = GLfloat[4.0, 2.0, 1.0]
+
+include("Model.jl")
 include("View.jl")
+robotModelTransform = Transform()
+robotModelTransform.eulerRotation = [0.0, 0.0, pi]
 
 # Raw Data
 rawPositionalData = StructArray(PositionalData[])
 
-function mainLoop(window::GLFW.Window, ctx)
-    glClear() = ccall(@eval(GLFW.GetProcAddress("glClear")), Cvoid, (Cuint,), 0x00004000)
-    
+function mainLoop(window::GLFW.Window, ctx, program) 
+    vao, idxBufferView, EBO, indices = loadGLTFModelInBuffers(robotModel, robotModelData)
+
     try
         while !GLFW.WindowShouldClose(window)
+            #glClear()
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             ImGui_ImplOpenGL3_NewFrame()
             ImGui_ImplGlfw_NewFrame()            
             CImGui.NewFrame()
 
+            # Before calculatin camera matrices check Inputs
+            checkCameraMovement([CImGui.GetMousePos().x - windowSize[1] / 2, CImGui.GetMousePos().y - windowSize[2] / 2], cam)
+
+            writeToUniforms(program, robotModelTransform, cam, GLfloat[1.0, 1.0, 1.0])
+
+            glBindVertexArray(vao)
+            glBindBuffer(idxBufferView.target, EBO)
+            glDrawElements(GL_TRIANGLES, indices.count, indices.componentType, Ptr{Cvoid}(0))
+
+            # CImGui Stuff:
             # Menu Bar
             begin 
                 CImGui.BeginMainMenuBar()
@@ -69,8 +95,8 @@ function mainLoop(window::GLFW.Window, ctx)
             end
 
             CImGui.Render()
-            glClear()
             ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())
+                 
 
             GLFW.SwapBuffers(window)
             GLFW.WaitEvents(0.01)
@@ -90,8 +116,9 @@ This is the starting point of the program.
 """
 function main()
     # Create window and start main loop
-    window, ctx = setUpWindow((1400, 1000), "AT-RP Controller")
-    mainLoop(window, ctx)
+    window, ctx, program = setUpWindow(windowSize, "AT-RP Controller")
+    cam.aspectRatio = windowSize[1]/windowSize[2]
+    mainLoop(window, ctx, program)
 end
 
 main()

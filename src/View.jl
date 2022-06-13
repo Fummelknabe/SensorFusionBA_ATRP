@@ -1,12 +1,20 @@
 using GLFW
 using CImGui
 using ImPlot
+using ModernGL
+using CSyntax
 
 # Status Text for connection Window
 connectStatus = ""
 
 include("Client.jl")
 include("InputHandler.jl")
+
+const robotModel = GLTF.load("assets/monkey2.gltf")
+const robotModelData = [read("assets/"*b.uri) for b in robotModel.buffers]
+
+const vertShaderScript = read("shader/shader.vert", String)
+const fragShaderScript = read("shader/shader.frag", String)
 
 export setUpWindow
 """
@@ -29,14 +37,46 @@ function setUpWindow(size::Tuple{Integer, Integer}, title::String)
     CImGui.StyleColorsDark()
 
     CImGui.ImGui_ImplGlfw_InitForOpenGL(window, true)
-    CImGui.ImGui_ImplOpenGL3_Init(330) # GLSL Version
+    CImGui.ImGui_ImplOpenGL3_Init(410) # GLSL Version
 
     GLFW.SetWindowCloseCallback(window, (_) -> onWindowClose())
     GLFW.SetMouseButtonCallback(window, (_, button, action, mods) -> onMouseButton(button, action))
 
+    #enable depth test 
+    glEnable(GL_DEPTH_TEST)
+    glDepthFunc(GL_LESS)
+
+    program = createShaders()
+
     GC.gc()
 
-    return window, ctx
+    return window, ctx, program
+end
+
+function createShaders()
+    # compile shaders
+    vertShader = glCreateShader(GL_VERTEX_SHADER)
+    glShaderSource(vertShader, 1, Ptr{GLchar}[pointer(vertShaderScript)], C_NULL)
+    glCompileShader(vertShader)
+    fragShader = glCreateShader(GL_FRAGMENT_SHADER)
+    glShaderSource(fragShader, 1, Ptr{GLchar}[pointer(fragShaderScript)], C_NULL)
+    glCompileShader(fragShader)
+
+    # create and link shader program
+    program = glCreateProgram()
+    glAttachShader(program, vertShader)
+    glAttachShader(program, fragShader)
+    glLinkProgram(program)
+
+    # enable face culling
+    #glEnable(GL_CULL_FACE)
+    #glCullFace(GL_FRONT)
+    #glFrontFace(GL_CW)
+
+    # set background color to gray
+    glClearColor(0.2, 0.2, 0.2, 1.0)    
+
+    return program
 end
 
 function handleHelperWidow()
