@@ -1,3 +1,6 @@
+# Used for model loading
+using GLTF
+
 mutable struct Transform
     position::Vector{Float32}
     eulerRotation::Vector{Float32}

@@ -3,15 +3,12 @@ using CImGui
 using ImPlot
 using ModernGL
 using CSyntax
-# Used for model loading
-using GLTF
 
 # Status Text for connection Window
 connectStatus = ""
 
 include("Client.jl")
 include("InputHandler.jl")
-include("Model.jl")
 
 const robotModel = GLTF.load("assets/monkey2.gltf")
 const robotModelData = [read("assets/"*b.uri) for b in robotModel.buffers]

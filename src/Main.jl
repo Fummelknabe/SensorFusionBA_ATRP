@@ -21,12 +21,15 @@ showDataPlots = false
 
 isLeftMouseButtonDown = false
 isRightMouseButtonDown = false
+oldMousePosition = [0.0, 0.0]
+windowSize = (1400, 1000)
 
 include("Camera.jl")
 # Camera to render
 cam = Camera()
+cam.position = GLfloat[4.0, 2.0, 1.0]
 
-
+include("Model.jl")
 include("View.jl")
 robotModelTransform = Transform()
 robotModelTransform.eulerRotation = [0.0, 0.0, pi]
@@ -46,7 +49,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
             CImGui.NewFrame()
 
             # Before calculatin camera matrices check Inputs
-            checkCameraMovement()
+            checkCameraMovement([CImGui.GetMousePos().x - windowSize[1] / 2, CImGui.GetMousePos().y - windowSize[2] / 2], cam)
 
             writeToUniforms(program, robotModelTransform, cam, GLfloat[1.0, 1.0, 1.0])
 
@@ -113,8 +116,8 @@ This is the starting point of the program.
 """
 function main()
     # Create window and start main loop
-    window, ctx, program = setUpWindow((1400, 1000), "AT-RP Controller")
-    cam.aspectRatio = 1400/1000
+    window, ctx, program = setUpWindow(windowSize, "AT-RP Controller")
+    cam.aspectRatio = windowSize[1]/windowSize[2]
     mainLoop(window, ctx, program)
 end
 
