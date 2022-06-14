@@ -10,8 +10,8 @@ connectStatus = ""
 include("Client.jl")
 include("InputHandler.jl")
 
-const robotModel = GLTF.load("assets/monkey2.gltf")
-const robotModelData = [read("assets/"*b.uri) for b in robotModel.buffers]
+const robotModelSource = GLTF.load("assets/monkey2.gltf")
+const robotModelData = [read("assets/"*b.uri) for b in robotModelSource.buffers]
 
 const vertShaderScript = read("shader/shader.vert", String)
 const fragShaderScript = read("shader/shader.frag", String)

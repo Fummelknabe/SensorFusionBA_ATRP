@@ -11,6 +11,34 @@ mutable struct Transform
     end
 end
 
+mutable struct Model
+    vao::UInt32
+    ebo::UInt32
+    sizeOfIndices::Int64
+    transform::Transform
+end
+
+function createPlane()
+    vertices = GLfloat[-0.5, 0.0, -0.5,
+                        0.5, 0.0, -0.5,
+                        0.5, 0.0, 0.5,
+                       -0.5, 0.0, 0.5]
+    normals = GLfloat[ 0.0, 1.0, 0.0,
+                       0.0, 1.0, 0.0,
+                       0.0, 1.0, 0.0,
+                       0.0, 1.0, 0.0]
+
+    texcoords = GLfloat[ 5.0, 5.0,
+                         0.0, 5.0,
+                         0.0, 0.0,
+                         5.0, 0.0]
+
+    indices = GLfloat[ 0, 1, 2, 
+                       2, 3, 0 ]
+
+    return initBuffers(vertices, normals, texcoords, indices)
+end
+
 function transformToMatrix(t::Transform)
     xRotation = GLfloat[1.0 0.0 0.0 0.0;
                         0.0 cos(t.eulerRotation[1]) -sin(t.eulerRotation[1]) 0.0;
@@ -89,7 +117,58 @@ function loadGLTFModelInBuffers(model::GLTF.Object, modelData::GLTF.ZVector)
     glEnableVertexAttribArray(1)
     glEnableVertexAttribArray(2)
 
-    return vao, idxBufferView, idxEBO, indices
+    # unbind
+    glBindBuffer(GL_ARRAY_BUFFER, 0)
+	glBindVertexArray(0)
+    robotModelTransform = Transform()
+    robotModelTransform.eulerRotation = [0.0, 0.0, pi]
+    return Model(vao, idxEBO, indices.count, robotModelTransform)
+end
+
+function initBuffers(vertices::Vector{GLfloat}, normals::Vector{GLfloat}, indices::Vector{GLfloat}, texcoords::Vector{GLfloat})
+    # vertices
+    vertVBO = GLuint(0)
+    @c glGenBuffers(1, &vertVBO)
+    glBindBuffer(GL_ARRAY_BUFFER, vertVBO)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW)
+
+    # normals
+    normalsVBO = GLuint(0)
+    @c glGenBuffers(1, &normalsVBO)
+    glBindBuffer(GL_ARRAY_BUFFER, normalsVBO)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW)
+   
+    # texure coordinates
+    texVBO = GLuint(0)
+    @c glGenBuffers(1, &texVBO)
+    glBindBuffer(GL_ARRAY_BUFFER, texVBO)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(texcoords), texcoords, GL_STATIC_DRAW)
+    
+    # indices
+    ebo = GLuint(0)
+    @c glGenBuffers(1, &ebo)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW)
+
+    # create VAO
+    vao = GLuint(0)
+    @c glGenVertexArrays(1, &vao)
+    glBindVertexArray(vao)
+    glBindBuffer(GL_ARRAY_BUFFER, vertVBO)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, C_NULL)
+    glBindBuffer(GL_ARRAY_BUFFER, normalsVBO)
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, C_NULL)
+    glBindBuffer(GL_ARRAY_BUFFER, texVBO)
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, C_NULL)
+    glEnableVertexAttribArray(0)
+    glEnableVertexAttribArray(1)
+    glEnableVertexAttribArray(2)
+
+    # unbind
+    glBindBuffer(GL_ARRAY_BUFFER, 0)
+	glBindVertexArray(0)
+
+    return Model(vao, ebo, sizeof(indices), Transform())
 end
 
 function writeToUniforms(program, transform::Transform, cam::Camera, ambientLightColor::Vector{GLfloat})

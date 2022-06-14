@@ -18,6 +18,7 @@ const rawDataLength = 100
 showHelperWindow = false
 showConnectWindow = false
 showDataPlots = false
+renderRobot = false
 
 isLeftMouseButtonDown = false
 isRightMouseButtonDown = false
@@ -27,35 +28,39 @@ windowSize = (1400, 1000)
 include("Camera.jl")
 # Camera to render
 cam = Camera()
-cam.position = GLfloat[4.0, 2.0, 1.0]
+cam.position = GLfloat[-2.0, -2.0, 3.0]
 
 include("Model.jl")
 include("View.jl")
-robotModelTransform = Transform()
-robotModelTransform.eulerRotation = [0.0, 0.0, pi]
 
 # Raw Data
 rawPositionalData = StructArray(PositionalData[])
 
 function mainLoop(window::GLFW.Window, ctx, program) 
-    vao, idxBufferView, EBO, indices = loadGLTFModelInBuffers(robotModel, robotModelData)
+    models = [loadGLTFModelInBuffers(robotModelSource, robotModelData)]
+    push!(models, createPlane())
 
     try
         while !GLFW.WindowShouldClose(window)
-            #glClear()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             ImGui_ImplOpenGL3_NewFrame()
             ImGui_ImplGlfw_NewFrame()            
             CImGui.NewFrame()
 
-            # Before calculatin camera matrices check Inputs
-            checkCameraMovement([CImGui.GetMousePos().x - windowSize[1] / 2, CImGui.GetMousePos().y - windowSize[2] / 2], cam)
+            if renderRobot
+                for model in models
+                    # Before calculatin camera matrices check Inputs
+                    checkCameraMovement([CImGui.GetMousePos().x - windowSize[1] / 2, CImGui.GetMousePos().y - windowSize[2] / 2], cam)
 
-            writeToUniforms(program, robotModelTransform, cam, GLfloat[1.0, 1.0, 1.0])
+                    writeToUniforms(program, model.transform, cam, GLfloat[1.0, 1.0, 1.0])
 
-            glBindVertexArray(vao)
-            glBindBuffer(idxBufferView.target, EBO)
-            glDrawElements(GL_TRIANGLES, indices.count, indices.componentType, Ptr{Cvoid}(0))
+                    glBindVertexArray(model.vao)
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.ebo)
+                    glDrawElements(GL_TRIANGLES, model.sizeOfIndices, GL_UNSIGNED_INT - 2, Ptr{Cvoid}(0))
+                    # unbind
+                    glBindVertexArray(0)
+                end
+            end
 
             # CImGui Stuff:
             # Menu Bar
@@ -64,6 +69,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 CImGui.MenuItem("Help") && global showHelperWindow = !showHelperWindow
                 CImGui.MenuItem("Connect Window") && global showConnectWindow = !showConnectWindow
                 CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots
+                CImGui.MenuItem("Render Robot") && global renderRobot = !renderRobot
                 CImGui.EndMainMenuBar()
             end
 
