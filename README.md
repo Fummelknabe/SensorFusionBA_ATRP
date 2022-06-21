@@ -9,6 +9,5 @@ ISSUES:
 TODO:
 - Attach IMU
 - Maybe seperate code in different modules
-- FPS/Timing display
 - Create mathematical model of robot
     -> Implement Kalman Filter, propably extended

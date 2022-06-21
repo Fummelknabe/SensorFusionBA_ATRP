@@ -240,6 +240,23 @@ function plotRawData(posData::StructVector{PositionalData})
     CImGui.End()
 end
 
+let previousTime = time()
+    frame = 0
+    global function updateFPS(window::GLFW.Window)
+        currentTime = time()
+        elapsed = currentTime - previousTime
+
+        # update display every 0.25sec
+        if elapsed > 0.25
+            previousTime = currentTime
+            fps = frame / elapsed
+            GLFW.SetWindowTitle(window, "AT-RP Controller | FPS: $fps")
+            frame = 0
+        end
+        frame += 1
+    end
+end
+
 function onWindowClose()
     println("window closed")
 end
