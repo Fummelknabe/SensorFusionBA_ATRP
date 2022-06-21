@@ -87,13 +87,7 @@ end
 
 function connectButtonPress(ipData::String, portData::String)
     if connected
-        println("Disconnecting...")
-        answer = sendAndRecvData("escape")
-        if answer == "closing" 
-            global connected = false
-            global connectStatus = ""
-            pysocket.close()
-        end
+        disconnect()
         return
     end
 

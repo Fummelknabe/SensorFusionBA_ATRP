@@ -3,7 +3,7 @@ using PyCall
 pysockets = pyimport("socket")
 
 export HOST, PORT
-const HOST = "192.168.0.103"; #"10.42.0.1"
+const HOST = "10.42.0.1";
       PORT = 2222
 
 export connected
@@ -87,5 +87,16 @@ function checkConnection(ip::String, port::String)
         end
 
         return "Connection failed, try again!"
+    end
+end
+
+function disconnect()
+    @info "Disconnecting..."
+    answer = sendAndRecvData("escape")
+    if answer == "closing" 
+        global connected = false
+        global connectStatus = ""
+        pysocket.close()
+        GC.gc()
     end
 end
