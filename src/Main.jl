@@ -109,7 +109,11 @@ function mainLoop(window::GLFW.Window, ctx, program)
 
                 if recordData
                     push!(rawSavePosData, posData)
-                    size(rawSavePosData, 1) > saveDataLength && toggleRecordData("")
+                    if size(rawSavePosData, 1) > saveDataLength
+                        toggleRecordData("")
+                        global rawSavePosData = StructArray(PositionalData[])
+                        saveDataLength = 0
+                    end
                 end
             end
 

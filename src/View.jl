@@ -119,8 +119,8 @@ function handleRecordDataWindow(amountDataPoints)
     CImGui.Text(" Specify the amount of datapoints to save. \n Click 'Record' to save the next 'x' datapoints.")
     CImGui.Text("Enter Amount:")
     CImGui.SameLine()
-    CImGui.InputText("", amountDataPoints, length(amountDataPoints), CImGui.ImGuiInputTextFlags_None)
     dataLength = 0
+    CImGui.InputText("", amountDataPoints, length(amountDataPoints), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && (dataLength = toggleRecordData(amountDataPoints))
     CImGui.Button(recordData ? "Recording" : "Record") && (dataLength = toggleRecordData(amountDataPoints))
     CImGui.End()
     return dataLength
