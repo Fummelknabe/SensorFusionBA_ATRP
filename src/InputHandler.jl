@@ -119,6 +119,15 @@ end
 function toggleRecordData(amountDataPoints::String)
     if recordData 
         global recordData = false 
+
+        if size(rawSavePosData, 1) > 0
+            open("data/pos_data.json", "a") do file
+                for posDataPoint in rawSavePosData
+                    JSON.print(file, Dict("pos"=>convertPosToDict(posDataPoint)))
+                end
+            end   
+            close("data/pos_data.json")         
+        end 
         return 0
     end
 

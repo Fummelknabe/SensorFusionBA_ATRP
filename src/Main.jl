@@ -36,6 +36,8 @@ include("View.jl")
 
 # Raw Data
 rawPositionalData = StructArray(PositionalData[])
+# Raw Data to save
+rawSavePosData = StructArray(PositionalData[])
 
 function mainLoop(window::GLFW.Window, ctx, program) 
     models = [loadGLTFModelInBuffers(robotModelSource, robotModelData)]
@@ -106,8 +108,8 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 end
 
                 if recordData
-                    # open file and save datapoints
-                    println(saveDataLength)
+                    push!(rawSavePosData, posData)
+                    size(rawSavePosData, 1) > saveDataLength && toggleRecordData("")
                 end
             end
 

@@ -49,3 +49,26 @@ function extractData(data::String)
 
     return posData
 end
+
+export convertPosToDict
+"""
+This method converts PositionalData type into a julia dict.
+
+# Arguments
+- `posData::PositionalData`: the Positional Data to convert.
+
+# Returns
+- `Dict`: The dict.
+"""
+function convertPosToDict(posData::PositionalData)
+    return Dict(
+        "maxSpeed" => posData.maxSpeed,
+        "steerAngle" => posData.steerAngle,
+        "sensorSpeed" => posData.sensorSpeed,
+        "cameraPos" => posData.cameraPos[1:end-1],
+        "cameraPosDif" => posData.cameraPos[end],
+        "imuAcc" => posData.imuAcc,
+        "imuGyro" => posData.imuGyro,
+        "imuMag" => posData.imuMag
+    )
+end
