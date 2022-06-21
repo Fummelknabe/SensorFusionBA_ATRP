@@ -1,11 +1,13 @@
 include("DataExtractor.jl")
 
+recordData = false
+
 function commandLoop()
     # Key Inputs:
     #a = 65, d=68, w=87, s=83, shift =340,ctrl = 341, space=32, esc = 256
     if !connected
         """TESTING
-        
+        SHOULD BE REMOVED LATER!
         """
         posData = PositionalData()
         posData.steerAngle = Int(round(rand()*16+117))
@@ -15,7 +17,7 @@ function commandLoop()
         posData.cameraPos = [-0.5, 1, 2*rand(), rand() * 0.1 * (rand() > 0.5 ? -1 : 1)]
         posData.imuAcc = [rand(), rand(), rand()]
         posData.imuGyro = [rand(), rand(), rand()]
-        return posData
+        return posData #return 0
     end
     
     command = ""
@@ -112,4 +114,32 @@ function connectButtonPress(ipData::String, portData::String)
 
     global connectStatus = "Trying to connect to: " * string(ip) * " on " * string(port)
     global connectStatus = checkConnection(ip, port)
+end
+
+function toggleRecordData(amountDataPoints::String)
+    if recordData 
+        global recordData = false 
+        return 0
+    end
+
+    amount = ""
+    for char in amountDataPoints
+        if isdigit(char)
+            amount = amount * char
+        end
+    end
+
+    if length(amount) < 1
+        @warn "Amount to Record is not valid."
+        return 0
+    end
+
+    dataLength = parse(Int64, amount)
+    if dataLength == 0
+        @warn "Amount to Record is not valid."
+        return 0
+    end
+
+    global recordData = true
+    return dataLength
 end

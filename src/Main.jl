@@ -14,11 +14,12 @@ using LinearAlgebra
 # How many positional data points to save
 const rawDataLength = 100
 
-#running = true
+# Booleans for the open windows
 showHelperWindow = false
 showConnectWindow = false
 showDataPlots = false
 renderRobot = false
+recordDataWindow = false
 
 isLeftMouseButtonDown = false
 isRightMouseButtonDown = false
@@ -38,6 +39,7 @@ rawPositionalData = StructArray(PositionalData[])
 
 function mainLoop(window::GLFW.Window, ctx, program) 
     models = [loadGLTFModelInBuffers(robotModelSource, robotModelData)]
+    saveDataLength = 0
     push!(models, createPlane())
 
     try
@@ -70,20 +72,28 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 CImGui.MenuItem("Connect Window") && global showConnectWindow = !showConnectWindow
                 CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots
                 CImGui.MenuItem("Render Robot") && global renderRobot = !renderRobot
+                CImGui.MenuItem("Record Data") && global recordDataWindow = !recordDataWindow
                 CImGui.EndMainMenuBar()
             end
 
             # Helper Window             
-            if showHelperWindow
-                handleHelperWidow()
-            end
+            showHelperWindow && handleHelperWidow()
+
 
             # Connection Window  
             if showConnectWindow          
             @cstatic portData = ""*"\0"^115 i0=Cint(123) @cstatic ipData = ""*"\0"^115 i0=Cint(123) begin
-                    handleConnectWindow(portData, ipData)
+                    handleConnectWindow(ipData, portData)
                 end  
-            end      
+            end   
+            
+            # Record Data Window
+            if recordDataWindow
+            @cstatic amountDataPoints = ""*"\0"^115 i0=Cint(123) begin
+                    !recordData && (saveDataLength = handleRecordDataWindow(amountDataPoints))
+                    recordData && handleRecordDataWindow(amountDataPoints)
+                end
+            end
  
             # if connected this call interupts for 0.05sec
             posData = commandLoop()
@@ -94,9 +104,14 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 if size(rawPositionalData, 1) > rawDataLength
                     popfirst!(rawPositionalData)
                 end
+
+                if recordData
+                    # open file and save datapoints
+                    println(saveDataLength)
+                end
             end
 
-            if showDataPlots
+            if showDataPlots && size(rawPositionalData, 1) > 0
                 plotRawData(rawPositionalData)
             end
 
@@ -111,10 +126,6 @@ function mainLoop(window::GLFW.Window, ctx, program)
         CImGui.DestroyContext(ctx)
         GLFW.DestroyWindow(window)
     end
-end
-
-function inputTextCallback()
-    println("Im here")
 end
 
 """

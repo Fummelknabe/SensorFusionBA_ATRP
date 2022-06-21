@@ -104,14 +104,26 @@ function handleConnectWindow(ipData, portData)
 
     CImGui.Text("Enter IP:")
     CImGui.SameLine()
-    CImGui.InputText("", ipData, length(ipData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                   
+    CImGui.InputText("", ipData, length(ipData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && connectButtonPress(ipData, portData)         
     CImGui.Text("Enter Port:")
     CImGui.SameLine()
-    CImGui.InputText(" ", portData, length(portData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && inputTextCallback()                             
+    CImGui.InputText(" ", portData, length(portData), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && connectButtonPress(ipData, portData)                        
     CImGui.Button(connected == false ? "Connect" : "Disconnect") && connectButtonPress(ipData, portData)
     CImGui.Text(connectStatus)
 
     CImGui.End()
+end
+
+function handleRecordDataWindow(amountDataPoints)
+    CImGui.Begin("Record Positional Data", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+    CImGui.Text(" Specify the amount of datapoints to save. \n Click 'Record' to save the next 'x' datapoints.")
+    CImGui.Text("Enter Amount:")
+    CImGui.SameLine()
+    CImGui.InputText("", amountDataPoints, length(amountDataPoints), CImGui.ImGuiInputTextFlags_None)
+    dataLength = 0
+    CImGui.Button(recordData ? "Recording" : "Record") && (dataLength = toggleRecordData(amountDataPoints))
+    CImGui.End()
+    return dataLength
 end
 
 """
@@ -122,7 +134,8 @@ Has to be called inside the render loop.
 - `posData::StructVector{PositionalData}`: The positional data from the atrp to plot.
 """
 function plotRawData(posData::StructVector{PositionalData})      
-    CImGui.SetNextWindowSize((600, 900))         
+    #CImGui.SetNextWindowSize((600, 900))      
+    #=This in not ideal, cause plots might not be visible with a constraint window size=#   
     CImGui.Begin("Plots", C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
 
     if size(posData, 1) == 0
@@ -133,7 +146,7 @@ function plotRawData(posData::StructVector{PositionalData})
     end
 
     if CImGui.CollapsingHeader("Steering Angle")
-        ImPlot.SetNextPlotLimits(0, rawDataLength, 117, 133)
+        ImPlot.SetNextPlotLimits(0, rawDataLength, 107, 133)
         if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
             yValues = Int64.(posData.steerAngle)  
             ImPlot.PlotLine("", yValues, size(yValues, 1))
@@ -169,7 +182,7 @@ function plotRawData(posData::StructVector{PositionalData})
     end
 
     if CImGui.CollapsingHeader("Camera Position Change")
-        ImPlot.SetNextPlotLimits(0, rawDataLength, -0.1, 0.1)
+        ImPlot.SetNextPlotLimits(0, rawDataLength, -0.2, 0.2)
         if ImPlot.BeginPlot("Positional Change", "Data Point", "Absolute Change")
             # Convert vector of vectors to matrix:
             cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
