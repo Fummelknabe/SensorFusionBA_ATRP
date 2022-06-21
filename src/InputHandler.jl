@@ -15,12 +15,12 @@ function commandLoop()
         posData.cameraPos = [-0.5, 1, 2*rand(), rand() * 0.1 * (rand() > 0.5 ? -1 : 1)]
         posData.imuAcc = [rand(), rand(), rand()]
         posData.imuGyro = [rand(), rand(), rand()]
-        return posData#return 0
+        return posData
     end
     
     command = ""
 
-    sleep(0.05)
+    sleep(0.025)
 
     # Escape
     if CImGui.IsKeyPressed(256) 
