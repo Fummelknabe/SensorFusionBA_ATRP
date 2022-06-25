@@ -3,8 +3,9 @@ Sensor Fusion Design and Evaluation for Robot Motion Estimation in Uneven Terrai
 
 ISSUES:
 - Plot window should be scalable
-- Recentering of Plots
+- Recentering of Plots (give same view as restart)
 - After Disconnecting, no reconnecting possible
+    -> Restart required 
 
 TODO:
 - Attach IMU
