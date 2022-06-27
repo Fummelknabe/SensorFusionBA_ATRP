@@ -9,7 +9,9 @@ ISSUES:
 
 TODO:
 - Attach IMU
-- Plot Position in positional graph
+- Display recorded data:
+    - > Plot Position in positional graph
+    - > Display raw data
 - Maybe seperate code in different modules
 - Create mathematical model of robot
-    -> Implement Kalman Filter, propably extended
+    - > Implement Kalman Filter, propably extended
