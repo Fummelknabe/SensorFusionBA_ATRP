@@ -3,6 +3,7 @@ using CImGui
 using ImPlot
 using ModernGL
 using CSyntax
+using CImGui: ImVec2
 
 # Status Text for connection Window
 connectStatus = ""
@@ -122,8 +123,120 @@ function handleRecordDataWindow(amountDataPoints)
     dataLength = 0
     CImGui.InputText("", amountDataPoints, length(amountDataPoints), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && (dataLength = toggleRecordData(amountDataPoints))
     CImGui.Button(recordData ? "Recording" : "Record") && (dataLength = toggleRecordData(amountDataPoints))
+    CImGui.SameLine()
+    CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(loadFromJSon()))
     CImGui.End()
     return dataLength
+end
+
+function toggleRecordedDataPlots(posData::StructArray)
+    global showRecoredDataPlots = !showRecoredDataPlots
+    if showRecoredDataPlots
+        global rawSavePosData = posData
+    else 
+        global rawSavePosData = StructArray(PositionalData[])
+    end
+end
+
+function plotRecordedData(rectSize::Tuple{Integer, Integer})
+    CImGui.SetNextWindowSizeConstraints(rectSize, (rectSize[1], windowSize[2]))
+    CImGui.Begin("Plots of Recorded Data", C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
+
+    # Plot camera pos
+    drawList = CImGui.GetWindowDrawList()    
+    rectPos = CImGui.GetWindowPos()
+
+    CImGui.AddRectFilled(drawList, rectPos, (rectPos.x + rectSize[1], rectPos.y + rectSize[2] - CImGui.GetScrollY()), CImGui.IM_COL32(100, 100, 100, 255))
+    cameraPosMatrix = reduce(vcat, transpose.(rawSavePosData.cameraPos))
+    (minX, minY) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 2])))
+    xDif = abs(minX) + abs(maximum(float(cameraPosMatrix[:, 1])))
+    yDif = abs(minY) + abs(maximum(float(cameraPosMatrix[:, 2])))
+    factor = round(minimum((rectSize[1] / xDif, rectSize[2] / yDif)))
+
+    for camPos in rawSavePosData.cameraPos
+        pointPos = (rectPos.x + (camPos[1] * factor), rectPos.y + (camPos[2] * factor) - CImGui.GetScrollY())
+        CImGui.AddCircleFilled(drawList, pointPos, 1, CImGui.IM_COL32(255, 0, 0, 255))
+    end
+
+    # Spacing to accomodate for rect
+    CImGui.Dummy(0.0, rectSize[2])
+
+    # plot camera pos Change    
+    if CImGui.CollapsingHeader("Camera Position Change")
+        camPosChange = float.(cameraPosMatrix[:, 4])
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(camPosChange), maximum(camPosChange))
+        if ImPlot.BeginPlot("Positional Change", "Data Point", "Absolute Change")
+            ImPlot.PlotLine("", camPosChange, size(camPosChange, 1))
+            ImPlot.EndPlot()
+        end
+    end
+    if CImGui.CollapsingHeader("Steering Angle")
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), 107, 133)
+        if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
+            values = Int64.(rawSavePosData.steerAngle)  
+            ImPlot.PlotLine("", values, size(values, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Max Speed")
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), 19, 40)
+        if ImPlot.BeginPlot("Max Speed", "Data Point", "Max Speed [PWM - Duty Cycle]")
+            values = float.(rawSavePosData.maxSpeed)  
+            ImPlot.PlotLine("", values, size(values, 1))
+            ImPlot.EndPlot()
+        end
+    end
+    
+    if CImGui.CollapsingHeader("Speed")
+        values = float.(rawSavePosData.sensorSpeed)
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(values), maximum(values))
+        if ImPlot.BeginPlot("Speed", "Data Point", "Speed [m/s]")             
+            ImPlot.PlotLine("", values, size(values, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Compass Course")
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), 0, 360)
+        if ImPlot.BeginPlot("Angle to Magnetic North", "Data Point", "Degrees [°]")
+            values = float.(rawSavePosData.imuMag) 
+            ImPlot.PlotLine("", values, size(values, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Angular Velocity")
+        # Convert vector of vectors to matrix:
+        imuGyroMatrix = reduce(vcat, transpose.(rawSavePosData.imuGyro))
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(imuGyroMatrix), maximum(imuGyroMatrix))
+        if ImPlot.BeginPlot("Angular Velocity", "Data Point", "Distance [°/s]")            
+            yValues = float.(imuGyroMatrix[:, 1]) 
+            ImPlot.PlotLine("x", yValues, size(yValues, 1))
+            yValues = float.(imuGyroMatrix[:, 2]) 
+            ImPlot.PlotLine("y", yValues, size(yValues, 1))
+            yValues = float.(imuGyroMatrix[:, 3]) 
+            ImPlot.PlotLine("z", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end 
+    end
+
+    if CImGui.CollapsingHeader("Acceleration")
+        # Convert vector of vectors to matrix:
+        imuAccMatrix = reduce(vcat, transpose.(rawSavePosData.imuAcc))
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(imuAccMatrix), maximum(imuAccMatrix))
+        if ImPlot.BeginPlot("Acceleration", "Data Point", "Distance [m/s^2]")            
+            yValues = float.(imuAccMatrix[:, 1]) 
+            ImPlot.PlotLine("x", yValues, size(yValues, 1))
+            yValues = float.(imuAccMatrix[:, 2]) 
+            ImPlot.PlotLine("y", yValues, size(yValues, 1))
+            yValues = float.(imuAccMatrix[:, 3]) 
+            ImPlot.PlotLine("z", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    CImGui.End()
 end
 
 """

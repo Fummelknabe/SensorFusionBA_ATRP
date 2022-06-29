@@ -50,25 +50,27 @@ function extractData(data::String)
     return posData
 end
 
-export convertPosToDict
-"""
-This method converts PositionalData type into a julia dict.
+function convertDictToPosData(dict::Dict)
+    posData = PositionalData()
+        
+    posData.steerAngle = dict["steerAngle"]
+    posData.maxSpeed = dict["maxSpeed"]
+    posData.sensorSpeed = dict["sensorSpeed"]
+    posData.cameraPos = dict["cameraPos"]
+    posData.imuGyro = dict["imuGyro"]
+    posData.imuAcc = dict["imuAcc"]
+    posData.imuMag = dict["imuMag"]
 
-# Arguments
-- `posData::PositionalData`: the Positional Data to convert.
+    return posData
+end
 
-# Returns
-- `Dict`: The dict.
-"""
-function convertPosToDict(posData::PositionalData)
-    return Dict(
-        ("maxSpeed" => posData.maxSpeed),
-        ("steerAngle" => posData.steerAngle),
-        ("sensorSpeed" => posData.sensorSpeed),
-        ("cameraPos" => posData.cameraPos[1:end-1]),
-        ("cameraPosDif" => posData.cameraPos[end]),
-        ("imuAcc" => posData.imuAcc),
-        ("imuGyro" => posData.imuGyro),
-        ("imuMag" => posData.imuMag)
-    )
+function loadFromJSon()
+    posData = StructArray(PositionalData[])
+    posDataDicts = JSON.parsefile("data/pos_data.json", dicttype=Dict, inttype=Int64)
+
+    for dict in posDataDicts        
+        push!(posData, convertDictToPosData(dict))
+    end
+
+    return posData
 end

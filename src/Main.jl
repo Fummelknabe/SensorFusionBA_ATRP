@@ -20,6 +20,7 @@ showConnectWindow = false
 showDataPlots = false
 renderRobot = false
 recordDataWindow = false
+showRecoredDataPlots = false
 
 isLeftMouseButtonDown = false
 isRightMouseButtonDown = false
@@ -116,6 +117,10 @@ function mainLoop(window::GLFW.Window, ctx, program)
                         saveDataLength = 0
                     end
                 end
+            end
+
+            if showRecoredDataPlots
+                plotRecordedData((1000, 700))
             end
 
             if showDataPlots && size(rawPositionalData, 1) > 0
