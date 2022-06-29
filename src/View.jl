@@ -148,20 +148,28 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer})
 
     CImGui.AddRectFilled(drawList, rectPos, (rectPos.x + rectSize[1], rectPos.y + rectSize[2] - CImGui.GetScrollY()), CImGui.IM_COL32(100, 100, 100, 255))
     cameraPosMatrix = reduce(vcat, transpose.(rawSavePosData.cameraPos))
-    (minX, minY) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 2])))
+    (minX, minZ) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 3])))
     xDif = abs(minX) + abs(maximum(float(cameraPosMatrix[:, 1])))
-    yDif = abs(minY) + abs(maximum(float(cameraPosMatrix[:, 2])))
-    factor = round(minimum((rectSize[1] / xDif, rectSize[2] / yDif)))
+    zDif = abs(minZ) + abs(maximum(float(cameraPosMatrix[:, 3])))
+    factor = round(minimum((rectSize[1] / xDif, rectSize[2] / zDif)))
 
     for camPos in rawSavePosData.cameraPos
-        pointPos = (rectPos.x + (camPos[1] * factor), rectPos.y + (camPos[2] * factor) - CImGui.GetScrollY())
+        pointPos = (rectPos.x + (camPos[1] * factor), rectPos.y + (camPos[3] * factor) - CImGui.GetScrollY())
         CImGui.AddCircleFilled(drawList, pointPos, 1, CImGui.IM_COL32(255, 0, 0, 255))
     end
 
     # Spacing to accomodate for rect
     CImGui.Dummy(0.0, rectSize[2])
 
-    # plot camera pos Change    
+    if CImGui.CollapsingHeader("Camera y Position")
+        camPosY = float.(cameraPosMatrix[:, 2])
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(camPosY), maximum(camPosY))
+        if ImPlot.BeginPlot("Y Axis Position", "Data Point", "Y Position")
+            ImPlot.PlotLine("", camPosY, size(camPosY, 1))
+            ImPlot.EndPlot()
+        end
+    end  
+
     if CImGui.CollapsingHeader("Camera Position Change")
         camPosChange = float.(cameraPosMatrix[:, 4])
         ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(camPosChange), maximum(camPosChange))
