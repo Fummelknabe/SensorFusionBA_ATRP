@@ -10,16 +10,13 @@ VEHICLE STATS:
 - IMU Offset: 10cm
 
 ISSUES:
+- No Speed data was recorded last time
 - Plot window should be scalable
 - Recentering of Plots (give same view as restart)
 - After Disconnecting, no reconnecting possible
-    -> Restart required 
+    - Restart required 
 
 TODO:
-- Attach IMU
-- Display recorded data:
-    - > Plot Position in positional graph
-    - > Display raw data
 - Maybe seperate code in different modules
 - Create mathematical model of robot
-    - > Implement Kalman Filter, propably extended
+    - Implement Kalman Filter, propably extended
