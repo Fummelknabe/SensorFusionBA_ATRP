@@ -44,6 +44,8 @@ function rotateAroundAxis(degrees::Float64, axis::Vector{Float32})
     sin = sind(degrees)
     cos = cosd(degrees)
     
+    println(axis, " degrees: ", degrees)
+
     return [axis[1]^2*ncos+cos axis[1]*axis[2]*ncos-axis[3]*sin axis[1]*axis[3]*ncos+axis[2]*sin 0.0;
             axis[2]*axis[1]*ncos+axis[3]*sin axis[2]^2*ncos+cos axis[2]*axis[3]*ncos-axis[1]*sin 0.0;
             axis[1]*axis[3]*ncos-axis[2]*sin axis[2]*axis[3]*ncos+axis[1]*sin axis[3]^2*ncos+cos 0.0;
@@ -52,11 +54,11 @@ end
 
 function checkCameraMovement(mousePos::Vector{Float64}, cam::Camera)
     if isRightMouseButtonDown
-        offset = mousePos - oldMousePosition
+        difVector = mousePos - oldMousePosition
 
-        camX = cam.speed * offset[1]
-        camY = cam.speed * offset[2]
-        
+        camX = cam.speed * difVector[1]
+        camY = cam.speed * difVector[2]
+
         rotateLeft(camX, cam)
         rotateUp(camY, cam)
     end 

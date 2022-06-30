@@ -84,6 +84,7 @@ function handleHelperWidow()
     CImGui.SetNextWindowPos((0, 20))
     CImGui.Begin("Help", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     CImGui.ShowUserGuide()
+    CImGui.Text("Tip: Double Click on Plots to recenter")
     CImGui.Text("Robot Control:")
     CImGui.Text("
     \"W\" - Accelerate Forward \n

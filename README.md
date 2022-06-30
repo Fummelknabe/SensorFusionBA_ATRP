@@ -11,12 +11,11 @@ VEHICLE STATS:
 
 ISSUES:
 - No Speed data was recorded last time
-- Plot window should be scalable
-- Recentering of Plots (give same view as restart)
 - After Disconnecting, no reconnecting possible
     - Restart required 
 
 TODO:
+- Redo Camera Movement
 - Maybe seperate code in different modules
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended
