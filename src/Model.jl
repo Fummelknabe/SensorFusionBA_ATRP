@@ -11,11 +11,21 @@ mutable struct Transform
     end
 end
 
+mutable struct Material
+    diffuseColor::Vector{Float32}
+    specularColor::Vector{Float32}
+    ka::Float32
+    kd::Float32
+    ks::Float32
+    shininess::Float32
+end
+
 mutable struct Mesh
     vao::UInt32
     ebo::UInt32
     sizeOfIndices::Int64
     transform::Transform
+    material::Material
 end
 
 mutable struct Model
@@ -53,16 +63,17 @@ function loadGLTFModelInBuffers(model::GLTF.Object, modelData::GLTF.ZVector)
         pos = accessors[mesh.primitives[0].attributes["POSITION"]]        
         texcoords = accessors[mesh.primitives[0].attributes["TEXCOORD_0"]]        
         normals = accessors[mesh.primitives[0].attributes["NORMAL"]]        
-        indices = accessors[mesh.primitives[0].indices]        
+        indices = accessors[mesh.primitives[0].indices]   
+        material = model.materials[mesh.primitives[0].material]   
 
-        mesh = loadGLTFMeshInBuffers(pos, texcoords, normals, indices, model, modelData)
+        mesh = loadGLTFMeshInBuffers(pos, texcoords, normals, indices, material, model, modelData)
         push!(newModel.meshes, mesh)
     end
 
     return newModel
 end
 
-function loadGLTFMeshInBuffers(pos::GLTF.Accessor, texcoords::GLTF.Accessor, normals::GLTF.Accessor, indices::GLTF.Accessor, model::GLTF.Object, modelData::GLTF.ZVector)
+function loadGLTFMeshInBuffers(pos::GLTF.Accessor, texcoords::GLTF.Accessor, normals::GLTF.Accessor, indices::GLTF.Accessor, material, model::GLTF.Object, modelData::GLTF.ZVector)
     # Create Buffer views
     posBufferView = model.bufferViews[pos.bufferView]
     texBufferView = model.bufferViews[texcoords.bufferView]
@@ -116,10 +127,21 @@ function loadGLTFMeshInBuffers(pos::GLTF.Accessor, texcoords::GLTF.Accessor, nor
     # unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0)
 	glBindVertexArray(0)
-    return Mesh(vao, idxEBO, indices.count, Transform())
+
+    # Extract material values
+    newMaterial = Material(
+        material.pbrMetallicRoughness.baseColorFactor[1:3],
+        material.pbrMetallicRoughness.baseColorFactor[1:3],
+        material.emissiveFactor[1],
+        material.emissiveFactor[2],
+        material.emissiveFactor[3],
+        material.pbrMetallicRoughness.metallicFactor
+    )
+
+    return Mesh(vao, idxEBO, indices.count, Transform(), newMaterial)
 end
 
-function writeToUniforms(program, transformMatrix::Matrix, cam::Camera, ambientLightColor::Vector{GLfloat})
+function writeToUniforms(program, transformMatrix::Matrix, cam::Camera, ambientLightColor::Vector{GLfloat}, material::Material)
     modelMatrixLoc = glGetUniformLocation(program, "modelMatrix")
     viewMatrixLoc = glGetUniformLocation(program, "viewMatrix")
     projMatrixLoc = glGetUniformLocation(program, "projMatrix")
@@ -131,4 +153,10 @@ function writeToUniforms(program, transformMatrix::Matrix, cam::Camera, ambientL
     glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, getProjectionMatrix(cam))
     glUniform3fv(camPositionLoc, 1, cam.position)
     glUniform3fv(ambientLightCoLoc, 1, ambientLightColor)
+    glUniform3fv(glGetUniformLocation(program, "material.diffuseColor"), 1, material.diffuseColor)
+    glUniform3fv(glGetUniformLocation(program, "material.specularColor"), 1, material.specularColor)
+    glUniform1f(glGetUniformLocation(program, "material.ka"), material.ka)
+    glUniform1f(glGetUniformLocation(program, "material.kd"), material.kd)
+    glUniform1f(glGetUniformLocation(program, "material.ks"), material.ks)
+    glUniform1f(glGetUniformLocation(program, "material.shininess"), material.shininess + 30.0)
 end

@@ -61,7 +61,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 for model in models
                     modelTransform = transformToMatrix(model.transform)
                     for mesh in model.meshes                    
-                        writeToUniforms(program, modelTransform * transformToMatrix(mesh.transform), cam, GLfloat[1.0, 1.0, 1.0])
+                        writeToUniforms(program, modelTransform * transformToMatrix(mesh.transform), cam, GLfloat[1.0, 1.0, 1.0], mesh.material)
 
                         glBindVertexArray(mesh.vao)
                         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo)
@@ -131,11 +131,9 @@ function mainLoop(window::GLFW.Window, ctx, program)
             end
 
             CImGui.Render()
-            ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())
-                 
+            ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())                 
 
             GLFW.SwapBuffers(window)
-            #GLFW.WaitEvents(0.01)
             GLFW.PollEvents()
         end
     finally

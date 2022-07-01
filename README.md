@@ -10,13 +10,13 @@ VEHICLE STATS:
 - IMU Offset: 10cm
 
 ISSUES:
+- Some issues with model, unclear what cause
 - No Speed data was recorded last time (check cables and arduino connection)
 - Check delta again
     - With Interrupt data is send only 12times/sec
     - Without between 18 and 23 times
 
 TODO:
-- Load material from gltf file and to shaders
 - Maybe seperate code in different modules
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended

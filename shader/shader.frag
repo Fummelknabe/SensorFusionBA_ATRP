@@ -9,15 +9,27 @@ struct PointLight {
     vec3 color;
 };
 
+struct Material{
+    vec3 diffuseColor;
+    vec3 specularColor;
+    float ka;
+    float kd;
+    float ks;
+    float shininess;
+};
+
 uniform vec3 ambientLightColor; 
 uniform vec3 cameraPosition;   
+uniform Material material;
 
 // FIXED LIGHT: Maybe add more lights
-int numLights = 1;
-PointLight pointLight[1] = PointLight[1](PointLight(vec3(0.25, 0.5, 1.5), vec3(1.0, 1.0, 1.0)));
+int numLights = 3;
+PointLight pointLight[3] = PointLight[3](PointLight(vec3(3.25, 1.5, 2.5), vec3(1.0, 1.0, 1.0)),
+                                         PointLight(vec3(0.75, 2.5, -2.5), vec3(1.0, 1.0, 1.0)),
+                                         PointLight(vec3(-3.0, -5, 0.5), vec3(1.0, 1.0, 1.0)));
 
 // FIXED MATERIAL:
-vec3 color = vec3(1.0, 0.0, 0.0);
+vec3 color = vec3(1.0, 1.0, 1.0);
 vec3 specularColor = vec3(1.0, 0.85, 0.85);
 float ka = 0.3;
 float kd = 0.5;
@@ -43,9 +55,9 @@ vec3 ComputeSpecular(const in vec3 dir_to_light, const in vec3 dir_to_camera, co
 
 void main()                                                              
 {
-    vec3 ambient_color = ka*color;
-    vec3 diffuse_color = kd*color;
-    vec3 specular_color = ks*specularColor;
+    vec3 ambient_color = material.ka*material.diffuseColor;
+    vec3 diffuse_color = material.kd*material.diffuseColor;
+    vec3 specular_color = material.ks*material.specularColor;
 
     vec3 myColor = ambientLightColor*ambient_color; 
     vec3 norm = normalize(normal);
@@ -55,7 +67,7 @@ void main()
    		myColor += ComputeLambertian(dir_to_light, pointLight[i].color, norm, diffuse_color);
 
         vec3 dir_to_camera = normalize(cameraPosition - vec3(worldPosition));
-        myColor += ComputeSpecular(dir_to_light, dir_to_camera, pointLight[i].color, norm, specular_color, shininess);
+        myColor += ComputeSpecular(dir_to_light, dir_to_camera, pointLight[i].color, norm, specular_color, material.shininess);
     }     
 
     fragmentColor = vec4(myColor, 1.0);
