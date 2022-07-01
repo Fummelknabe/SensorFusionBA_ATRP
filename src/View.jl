@@ -17,6 +17,8 @@ const robotModelData = [read("assets/"*b.uri) for b in robotModelSource.buffers]
 const vertShaderScript = read("shader/shader.vert", String)
 const fragShaderScript = read("shader/shader.frag", String)
 
+deltaTime = 0.0
+
 export setUpWindow
 """
 Set up a GLFW window, callbacks and render context.
@@ -362,19 +364,21 @@ function plotRawData(posData::StructVector{PositionalData})
     CImGui.End()
 end
 
-let previousTime = time()
+let (previousTime, previousTimeCounting) = (time(), time())
     frame = 0
     global function updateFPS(window::GLFW.Window)
         currentTime = time()
-        elapsed = currentTime - previousTime
+        countingTime = currentTime - previousTimeCounting
+        global deltaTime = currentTime - previousTime
 
         # update display every 0.25sec
-        if elapsed > 0.25
-            previousTime = currentTime
-            fps = frame / elapsed
-            GLFW.SetWindowTitle(window, "AT-RP Controller | FPS: $fps")
+        if countingTime > 0.25
+            previousTimeCounting = currentTime
+            fps = frame / countingTime
+            GLFW.SetWindowTitle(window, "AT-RP Controller | FPS: $fps | dt: $deltaTime")
             frame = 0
         end
+        previousTime = currentTime
         frame += 1
     end
 end
