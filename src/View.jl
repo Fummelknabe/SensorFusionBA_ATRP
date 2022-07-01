@@ -384,7 +384,7 @@ let (previousTime, previousTimeCounting) = (time(), time())
 end
 
 function onWindowClose()
-    println("window closed")
+    @info "Window Closed"
 end
 
 

@@ -2,7 +2,7 @@ include("DataExtractor.jl")
 
 recordData = false
 
-function commandLoop()
+function commandLoop(window::GLFW.Window)
     # Key Inputs:
     #a = 65, d=68, w=87, s=83, shift =340,ctrl = 341, space=32, esc = 256
     if !connected
@@ -21,8 +21,6 @@ function commandLoop()
     
     command = ""
 
-    sleep(0.025)
-
     # Escape
     if CImGui.IsKeyPressed(256) 
         @info "Sending Escape Command and Disconnect."
@@ -37,25 +35,25 @@ function commandLoop()
     end
 
     # Left and right
-    if CImGui.IsKeyPressed(65) 
+    if GLFW.GetKey(window, GLFW.KEY_LEFT)
         command *= "_left"
-    elseif CImGui.IsKeyPressed(68)
+    elseif GLFW.GetKey(window, GLFW.KEY_RIGHT)
         command *= "_right"
     end
 
     # Accelerate and Deccelerate
-    if CImGui.IsKeyPressed(340) 
+    if GLFW.GetKey(window, GLFW.KEY_LEFT_SHIFT)
         command *= "_accelerate"
-    elseif CImGui.IsKeyPressed(341) 
+    elseif GLFW.GetKey(window, GLFW.KEY_LEFT_CONTROL)
         command *= "_deccelerate"
     end
 
     # Forward, Backwards and Stop
-    if CImGui.IsKeyPressed(87) 
+    if GLFW.GetKey(window, GLFW.KEY_W)
         command *= "_forward"
-    elseif CImGui.IsKeyPressed(83) 
+    elseif GLFW.GetKey(window, GLFW.KEY_S)
         command *= "_backward"
-    elseif CImGui.IsKeyPressed(32)
+    elseif GLFW.GetKey(window, GLFW.KEY_SPACE)
         command *= "_stop"
     else
         command *= "_nothing"

@@ -103,7 +103,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
             end
  
             # if connected this call interupts for 0.025sec
-            posData = commandLoop()
+            posData = commandLoop(window)
 
             # Add Positional Data to storage
             if posData != 0 && !isnothing(posData)
@@ -135,7 +135,8 @@ function mainLoop(window::GLFW.Window, ctx, program)
                  
 
             GLFW.SwapBuffers(window)
-            GLFW.WaitEvents(0.01)
+            #GLFW.WaitEvents(0.01)
+            GLFW.PollEvents()
         end
     finally
         CImGui.DestroyContext(ctx)

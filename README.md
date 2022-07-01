@@ -10,10 +10,10 @@ VEHICLE STATS:
 - IMU Offset: 10cm
 
 ISSUES:
-- No Speed data was recorded last time
-- With no interrupt random "nothing" commands are sent, which shouldn't be
+- No Speed data was recorded last time (check cables and arduino connection)
+- Check delta again
     - With Interrupt data is send only 12times/sec
-    - Without between 18 and 23 times -> delta time should be tracked regardless
+    - Without between 18 and 23 times
 
 TODO:
 - Load material from gltf file and to shaders
