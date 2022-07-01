@@ -43,8 +43,6 @@ function rotateAroundAxis(degrees::Float64, axis::Vector{Float32})
     ncos = 1 - cosd(degrees)
     sin = sind(degrees)
     cos = cosd(degrees)
-    
-    println(axis, " degrees: ", degrees)
 
     return [axis[1]^2*ncos+cos axis[1]*axis[2]*ncos-axis[3]*sin axis[1]*axis[3]*ncos+axis[2]*sin 0.0;
             axis[2]*axis[1]*ncos+axis[3]*sin axis[2]^2*ncos+cos axis[2]*axis[3]*ncos-axis[1]*sin 0.0;

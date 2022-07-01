@@ -30,7 +30,7 @@ windowSize = (1400, 1000)
 include("Camera.jl")
 # Camera to render
 cam = Camera()
-cam.position = GLfloat[-2.0, -2.0, 3.0]
+cam.position = GLfloat[-4.0, -4.0, 3.0]
 
 include("Model.jl")
 include("View.jl")
@@ -42,8 +42,8 @@ rawSavePosData = StructArray(PositionalData[])
 
 function mainLoop(window::GLFW.Window, ctx, program) 
     models = [loadGLTFModelInBuffers(robotModelSource, robotModelData)]
+    models[1].transform.scale = [0.5, 0.5, 0.5]
     saveDataLength = 0
-    push!(models, createPlane())
 
     try
         while !GLFW.WindowShouldClose(window)
@@ -54,17 +54,20 @@ function mainLoop(window::GLFW.Window, ctx, program)
             CImGui.NewFrame()
 
             if renderRobot
+                # Before calculatin camera matrices check Inputs
+                checkCameraMovement([CImGui.GetMousePos().x - windowSize[1] / 2, CImGui.GetMousePos().y - windowSize[2] / 2], cam)
+
                 for model in models
-                    # Before calculatin camera matrices check Inputs
-                    checkCameraMovement([CImGui.GetMousePos().x - windowSize[1] / 2, CImGui.GetMousePos().y - windowSize[2] / 2], cam)
+                    modelTransform = transformToMatrix(model.transform)
+                    for mesh in model.meshes                    
+                        writeToUniforms(program, modelTransform * transformToMatrix(mesh.transform), cam, GLfloat[1.0, 1.0, 1.0])
 
-                    writeToUniforms(program, model.transform, cam, GLfloat[1.0, 1.0, 1.0])
-
-                    glBindVertexArray(model.vao)
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.ebo)
-                    glDrawElements(GL_TRIANGLES, model.sizeOfIndices, GL_UNSIGNED_INT - 2, Ptr{Cvoid}(0))
-                    # unbind
-                    glBindVertexArray(0)
+                        glBindVertexArray(mesh.vao)
+                        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo)
+                        glDrawElements(GL_TRIANGLES, mesh.sizeOfIndices, GL_UNSIGNED_INT - 2, Ptr{Cvoid}(0))
+                        # unbind
+                        glBindVertexArray(0)
+                    end
                 end
             end
 
@@ -82,7 +85,6 @@ function mainLoop(window::GLFW.Window, ctx, program)
 
             # Helper Window             
             showHelperWindow && handleHelperWidow()
-
 
             # Connection Window  
             if showConnectWindow          

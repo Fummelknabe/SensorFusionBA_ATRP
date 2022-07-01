@@ -15,7 +15,7 @@ ISSUES:
     - Restart required 
 
 TODO:
-- Redo Camera Movement
+- Load material from gltf file and to shaders
 - Maybe seperate code in different modules
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended

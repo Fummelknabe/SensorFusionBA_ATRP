@@ -11,32 +11,16 @@ mutable struct Transform
     end
 end
 
-mutable struct Model
+mutable struct Mesh
     vao::UInt32
     ebo::UInt32
     sizeOfIndices::Int64
     transform::Transform
 end
 
-function createPlane()
-    vertices = GLfloat[-10.0, 0.0, -10.0,
-                        10.0, 0.0, -10.0,
-                        10.0, 0.0, 10.0,
-                       -10.0, 0.0, 10.0]
-    normals = GLfloat[ 0.0, 1.0, 0.0,
-                       0.0, 1.0, 0.0,
-                       0.0, 1.0, 0.0,
-                       0.0, 1.0, 0.0]
-
-    texcoords = GLfloat[ 5.0, 5.0,
-                         0.0, 5.0,
-                         0.0, 0.0,
-                         5.0, 0.0]
-
-    indices = GLfloat[ 0, 1, 2, 
-                       2, 3, 0 ]
-
-    return initBuffers(vertices, normals, texcoords, indices)
+mutable struct Model
+    meshes::Vector{Mesh}
+    transform::Transform
 end
 
 function transformToMatrix(t::Transform)
@@ -62,16 +46,28 @@ function transformToMatrix(t::Transform)
 end
 
 function loadGLTFModelInBuffers(model::GLTF.Object, modelData::GLTF.ZVector)
-    # Extract data from Model:
-    searchName(x, keyword) = x[findfirst(x->occursin(keyword, x.name), x)]
-    pos = searchName(model.accessors, "position")
+    newModel = Model(Vector{Mesh}(undef, 0), Transform())
+    accessors = model.accessors
+
+    for mesh in model.meshes
+        pos = accessors[mesh.primitives[0].attributes["POSITION"]]        
+        texcoords = accessors[mesh.primitives[0].attributes["TEXCOORD_0"]]        
+        normals = accessors[mesh.primitives[0].attributes["NORMAL"]]        
+        indices = accessors[mesh.primitives[0].indices]        
+
+        mesh = loadGLTFMeshInBuffers(pos, texcoords, normals, indices, model, modelData)
+        push!(newModel.meshes, mesh)
+    end
+
+    return newModel
+end
+
+function loadGLTFMeshInBuffers(pos::GLTF.Accessor, texcoords::GLTF.Accessor, normals::GLTF.Accessor, indices::GLTF.Accessor, model::GLTF.Object, modelData::GLTF.ZVector)
+    # Create Buffer views
     posBufferView = model.bufferViews[pos.bufferView]
-    indices = searchName(model.accessors, "indices")
-    idxBufferView = model.bufferViews[indices.bufferView]
-    texcoords = searchName(model.accessors, "texcoords")
     texBufferView = model.bufferViews[texcoords.bufferView]
-    normals = searchName(model.accessors, "normals")
     normalBufferView = model.bufferViews[normals.bufferView]
+    idxBufferView = model.bufferViews[indices.bufferView]
 
     # create buffers located in the memory of graphic card
     # position
@@ -120,65 +116,17 @@ function loadGLTFModelInBuffers(model::GLTF.Object, modelData::GLTF.ZVector)
     # unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0)
 	glBindVertexArray(0)
-    robotModelTransform = Transform()
-    robotModelTransform.eulerRotation = [0.0, 0.0, pi]
-    return Model(vao, idxEBO, indices.count, robotModelTransform)
+    return Mesh(vao, idxEBO, indices.count, Transform())
 end
 
-function initBuffers(vertices::Vector{GLfloat}, normals::Vector{GLfloat}, indices::Vector{GLfloat}, texcoords::Vector{GLfloat})
-    # vertices
-    vertVBO = GLuint(0)
-    @c glGenBuffers(1, &vertVBO)
-    glBindBuffer(GL_ARRAY_BUFFER, vertVBO)
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW)
-
-    # normals
-    normalsVBO = GLuint(0)
-    @c glGenBuffers(1, &normalsVBO)
-    glBindBuffer(GL_ARRAY_BUFFER, normalsVBO)
-    glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW)
-   
-    # texure coordinates
-    texVBO = GLuint(0)
-    @c glGenBuffers(1, &texVBO)
-    glBindBuffer(GL_ARRAY_BUFFER, texVBO)
-    glBufferData(GL_ARRAY_BUFFER, sizeof(texcoords), texcoords, GL_STATIC_DRAW)
-    
-    # indices
-    ebo = GLuint(0)
-    @c glGenBuffers(1, &ebo)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW)
-
-    # create VAO
-    vao = GLuint(0)
-    @c glGenVertexArrays(1, &vao)
-    glBindVertexArray(vao)
-    glBindBuffer(GL_ARRAY_BUFFER, vertVBO)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, C_NULL)
-    glBindBuffer(GL_ARRAY_BUFFER, normalsVBO)
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, C_NULL)
-    glBindBuffer(GL_ARRAY_BUFFER, texVBO)
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, C_NULL)
-    glEnableVertexAttribArray(0)
-    glEnableVertexAttribArray(1)
-    glEnableVertexAttribArray(2)
-
-    # unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0)
-	glBindVertexArray(0)
-
-    return Model(vao, ebo, sizeof(indices), Transform())
-end
-
-function writeToUniforms(program, transform::Transform, cam::Camera, ambientLightColor::Vector{GLfloat})
+function writeToUniforms(program, transformMatrix::Matrix, cam::Camera, ambientLightColor::Vector{GLfloat})
     modelMatrixLoc = glGetUniformLocation(program, "modelMatrix")
     viewMatrixLoc = glGetUniformLocation(program, "viewMatrix")
     projMatrixLoc = glGetUniformLocation(program, "projMatrix")
     camPositionLoc = glGetUniformLocation(program, "cameraPosition")
     ambientLightCoLoc = glGetUniformLocation(program, "ambientLightColor")
     glUseProgram(program)
-    glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, transformToMatrix(transform))
+    glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, transformMatrix)
     glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, getViewMatrix(cam))
     glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, getProjectionMatrix(cam))
     glUniform3fv(camPositionLoc, 1, cam.position)

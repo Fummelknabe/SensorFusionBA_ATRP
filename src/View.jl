@@ -11,7 +11,7 @@ connectStatus = ""
 include("Client.jl")
 include("InputHandler.jl")
 
-const robotModelSource = GLTF.load("assets/monkey2.gltf")
+const robotModelSource = GLTF.load("assets/simpleTank.gltf")
 const robotModelData = [read("assets/"*b.uri) for b in robotModelSource.buffers]
 
 const vertShaderScript = read("shader/shader.vert", String)
@@ -70,9 +70,9 @@ function createShaders()
     glLinkProgram(program)
 
     # enable face culling
-    #glEnable(GL_CULL_FACE)
-    #glCullFace(GL_FRONT)
-    #glFrontFace(GL_CW)
+    glEnable(GL_CULL_FACE)
+    glCullFace(GL_FRONT)
+    glFrontFace(GL_CW)
 
     # set background color to gray
     glClearColor(0.2, 0.2, 0.2, 1.0)    
