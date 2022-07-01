@@ -180,7 +180,7 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer})
         end
     end
     if CImGui.CollapsingHeader("Steering Angle")
-        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), 107, 133)
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), -20, 20)
         if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
             values = Int64.(rawSavePosData.steerAngle)  
             ImPlot.PlotLine("", values, size(values, 1))
@@ -268,7 +268,7 @@ function plotRawData(posData::StructVector{PositionalData})
     end
 
     if CImGui.CollapsingHeader("Steering Angle")
-        ImPlot.SetNextPlotLimits(0, rawDataLength, 107, 133)
+        ImPlot.SetNextPlotLimits(0, rawDataLength, -20, 20)
         if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
             yValues = Int64.(posData.steerAngle)  
             ImPlot.PlotLine("", yValues, size(yValues, 1))

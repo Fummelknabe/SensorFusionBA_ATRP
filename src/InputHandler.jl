@@ -59,7 +59,7 @@ function commandLoop()
         command *= "_stop"
     else
         command *= "_nothing"
-    end
+    end    
 
     try
         answer = sendAndRecvData(command)

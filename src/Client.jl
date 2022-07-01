@@ -27,6 +27,7 @@ Connects to the Jetson
 """
 function connectToJetson(ip::String=HOST, port::Integer=PORT)    
     global connectStatus = "Trying to connect to: " * string(ip) * " on " * string(port)
+    global pysocket = pysockets.socket(pysockets.AF_INET, pysockets.SOCK_STREAM)
 
     try
         pysocket.settimeout(20)
@@ -92,11 +93,14 @@ end
 
 function disconnect()
     @info "Disconnecting..."
-    answer = sendAndRecvData("escape")
-    if answer == "closing" 
+
+    try
+        sendAndRecvData("escape")
+    finally
         global connected = false
         global connectStatus = ""
         pysocket.close()
         GC.gc()
+        return
     end
 end

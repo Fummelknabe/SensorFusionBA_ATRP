@@ -11,8 +11,9 @@ VEHICLE STATS:
 
 ISSUES:
 - No Speed data was recorded last time
-- After Disconnecting, no reconnecting possible
-    - Restart required 
+- With no interrupt random "nothing" commands are sent, which shouldn't be
+    - With Interrupt data is send only 12times/sec
+    - Without between 18 and 23 times -> delta time should be tracked regardless
 
 TODO:
 - Load material from gltf file and to shaders

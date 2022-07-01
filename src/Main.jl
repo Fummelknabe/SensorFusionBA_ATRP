@@ -43,6 +43,7 @@ rawSavePosData = StructArray(PositionalData[])
 function mainLoop(window::GLFW.Window, ctx, program) 
     models = [loadGLTFModelInBuffers(robotModelSource, robotModelData)]
     models[1].transform.scale = [0.5, 0.5, 0.5]
+    models[1].transform.eulerRotation = [0.0, 1/2*π, π]
     saveDataLength = 0
 
     try
@@ -101,11 +102,11 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 end
             end
  
-            # if connected this call interupts for 0.05sec
+            # if connected this call interupts for 0.025sec
             posData = commandLoop()
 
             # Add Positional Data to storage
-            if posData != 0
+            if posData != 0 && !isnothing(posData)
                 push!(rawPositionalData, posData)
                 if size(rawPositionalData, 1) > rawDataLength
                     popfirst!(rawPositionalData)
