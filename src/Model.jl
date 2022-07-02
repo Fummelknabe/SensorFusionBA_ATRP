@@ -158,5 +158,5 @@ function writeToUniforms(program, transformMatrix::Matrix, cam::Camera, ambientL
     glUniform1f(glGetUniformLocation(program, "material.ka"), material.ka)
     glUniform1f(glGetUniformLocation(program, "material.kd"), material.kd)
     glUniform1f(glGetUniformLocation(program, "material.ks"), material.ks)
-    glUniform1f(glGetUniformLocation(program, "material.shininess"), material.shininess + 30.0)
+    glUniform1f(glGetUniformLocation(program, "material.shininess"), material.shininess)
 end
