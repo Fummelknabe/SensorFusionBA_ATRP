@@ -35,9 +35,9 @@ function commandLoop(window::GLFW.Window)
     end
 
     # Left and right
-    if GLFW.GetKey(window, GLFW.KEY_D)
+    if GLFW.GetKey(window, GLFW.KEY_A)
         command *= "_left"
-    elseif GLFW.GetKey(window, GLFW.KEY_A)
+    elseif GLFW.GetKey(window, GLFW.KEY_D)
         command *= "_right"
     end
 
