@@ -22,7 +22,7 @@ function commandLoop(window::GLFW.Window)
     command = ""
 
     # Escape
-    if CImGui.IsKeyPressed(256) 
+    if GLFW.GetKey(window, GLFW.KEY_ESCAPE)
         @info "Sending Escape Command and Disconnect."
         answer = sendAndRecvData("escape")
 
@@ -35,9 +35,9 @@ function commandLoop(window::GLFW.Window)
     end
 
     # Left and right
-    if GLFW.GetKey(window, GLFW.KEY_LEFT)
+    if GLFW.GetKey(window, GLFW.KEY_D)
         command *= "_left"
-    elseif GLFW.GetKey(window, GLFW.KEY_RIGHT)
+    elseif GLFW.GetKey(window, GLFW.KEY_A)
         command *= "_right"
     end
 
