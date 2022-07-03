@@ -152,26 +152,35 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer})
     CImGui.AddRectFilled(drawList, rectPos, (rectPos.x + rectSize[1], rectPos.y + rectSize[2] - CImGui.GetScrollY()), CImGui.IM_COL32(100, 100, 100, 255))
     cameraPosMatrix = reduce(vcat, transpose.(rawSavePosData.cameraPos))
     (minX, minZ) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 3])))
-    xDif = abs(minX) + abs(maximum(float(cameraPosMatrix[:, 1])))
-    zDif = abs(minZ) + abs(maximum(float(cameraPosMatrix[:, 3])))
-    factor = round(minimum((rectSize[1] / xDif, rectSize[2] / zDif)))
+    (maxX, maxZ) = (maximum(float.(cameraPosMatrix[:, 1])), maximum(float.(cameraPosMatrix[:, 3])))
+
+    xDif = abs(minX) + abs(maxX)
+    zDif = abs(minZ) + abs(maxZ)
+    factor = round(minimum((rectSize[1] / xDif, rectSize[2] / zDif)))    
+
+    meanX = round((minX + maxX) / 2)
+    meanZ = round((minZ + maxZ) / 2)
 
     for camPos in rawSavePosData.cameraPos
-        pointPos = (rectPos.x + (camPos[1] * factor), rectPos.y + (camPos[3] * factor) - CImGui.GetScrollY())
+        pointPos = (rectPos.x + floor(rectSize[1]/2) + (camPos[1] - meanX)*10*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (camPos[3] - meanZ)*10*factor)
         CImGui.AddCircleFilled(drawList, pointPos, 1, CImGui.IM_COL32(255, 0, 0, 255))
     end
 
     # Spacing to accomodate for rect
     CImGui.Dummy(0.0, rectSize[2])
 
-    if CImGui.CollapsingHeader("Camera y Position")
-        camPosY = float.(cameraPosMatrix[:, 2])
-        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(camPosY), maximum(camPosY))
-        if ImPlot.BeginPlot("Y Axis Position", "Data Point", "Y Position")
-            ImPlot.PlotLine("", camPosY, size(camPosY, 1))
+    if CImGui.CollapsingHeader("Camera Position")
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(cameraPosMatrix), maximum(cameraPosMatrix))
+        if ImPlot.BeginPlot("Relative Camera Position", "Data Point", "Distance [m]")            
+            yValues = float.(cameraPosMatrix[:, 1]) 
+            ImPlot.PlotLine("x", yValues, size(yValues, 1))
+            yValues = float.(cameraPosMatrix[:, 2]) 
+            ImPlot.PlotLine("y", yValues, size(yValues, 1))
+            yValues = float.(cameraPosMatrix[:, 3]) 
+            ImPlot.PlotLine("z", yValues, size(yValues, 1))
             ImPlot.EndPlot()
         end
-    end  
+    end
 
     if CImGui.CollapsingHeader("Camera Position Change")
         camPosChange = float.(cameraPosMatrix[:, 4])

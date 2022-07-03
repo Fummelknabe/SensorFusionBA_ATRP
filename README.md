@@ -11,10 +11,8 @@ VEHICLE STATS:
 
 ISSUES:
 - Some issues with model, unclear what cause
-- No Speed data was recorded last time (check cables and arduino connection)
-- Check delta again
-    - With Interrupt data is send only 12times/sec
-    - Without between 18 and 23 times
+- Transform cam pos x-z value to 2d plane with imu accelerometer
+- Record delta time in positional data
 
 TODO:
 - Maybe seperate code in different modules
