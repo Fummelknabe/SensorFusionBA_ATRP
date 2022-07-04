@@ -8,6 +8,9 @@ using CImGui: ImVec2
 # Status Text for connection Window
 connectStatus = ""
 
+# time since last frame / data
+deltaTime = 0.0
+
 include("Client.jl")
 include("InputHandler.jl")
 
@@ -16,8 +19,6 @@ const robotModelData = [read("assets/"*b.uri) for b in robotModelSource.buffers]
 
 const vertShaderScript = read("shader/shader.vert", String)
 const fragShaderScript = read("shader/shader.frag", String)
-
-deltaTime = 0.0
 
 export setUpWindow
 """

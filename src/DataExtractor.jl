@@ -12,8 +12,9 @@ mutable struct PositionalData
     imuGyro::Vector{Float32}
     imuAcc::Vector{Float32}
     imuMag::Float32
+    deltaTime::Float32
 
-    PositionalData() = new(0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0)
+    PositionalData() = new(0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, 0.0)
 end
 
 export extractData
@@ -46,6 +47,7 @@ function extractData(data::String)
     posData.imuAcc = parse.(Float32, split(chop(splitted[6]; head=1, tail=1), ','))
     posData.imuGyro = parse.(Float32, split(chop(splitted[7]; head=1, tail=1), ','))
     posData.imuMag = parse(Float32, splitted[8])
+    posData.deltaTime = deltaTime
 
     return posData
 end
@@ -60,6 +62,7 @@ function convertDictToPosData(dict::Dict)
     posData.imuGyro = dict["imuGyro"]
     posData.imuAcc = dict["imuAcc"]
     posData.imuMag = dict["imuMag"]
+    #posData.deltaTime = dict["deltaTime"]
 
     return posData
 end
