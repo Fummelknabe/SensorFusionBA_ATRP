@@ -13,6 +13,7 @@ using LinearAlgebra
 
 # How many positional data points to save
 const rawDataLength = 100
+rawSaveDataLength = 1
 
 # Booleans for the open windows
 showHelperWindow = false
@@ -93,7 +94,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
                     handleConnectWindow(ipData, portData)
                 end  
             end   
-            
+
             # Record Data Window
             if recordDataWindow
             @cstatic amountDataPoints = ""*"\0"^115 i0=Cint(123) begin
@@ -123,7 +124,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
             end
 
             if showRecoredDataPlots
-                plotRecordedData((1000, 700))
+                plotRecordedData((1000, 700), rawSavePosData[1:rawSaveDataLength])
             end
 
             if showDataPlots && size(rawPositionalData, 1) > 0
