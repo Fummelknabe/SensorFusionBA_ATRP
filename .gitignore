@@ -3,3 +3,10 @@ imgui.ini
 
 # Ignore VSCODe file
 .vscode
+
+# Ignore weird latex files
+ba/bachelorthesis.aux
+ba/bachelorthesis.fdb_latexmk
+ba/bachelorthesis.fls
+ba/bachelorthesis.log
+ba/bachelorthesis.synctex.gz

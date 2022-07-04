@@ -1,18 +1,11 @@
-\documentclass[12pt,oneside,bibtotoc,liststotoc]{scrbook}
-\usepackage[utf8]{inputenc}
+\documentclass{article}
 \usepackage{graphicx}
-\usepackage[ngerman,german]{babel}
-\usepackage{a4wide}
-\usepackage{parskip}
 \usepackage[bookmarks]{hyperref}
 \usepackage{fancyhdr}
-\usepackage[right]{eurosym}
 \usepackage{amsmath}
-\usepackage[toc,page]{appendix}
+\usepackage{bookmark}
 
 \usepackage[numbers]{natbib}
-
-\usepackage{pdfpages}
 
 \usepackage{array}
 \usepackage{longtable}
@@ -65,5 +58,14 @@ von \par
 \newpage
 \setcounter{page}{1}
 \pagenumbering{arabic}
+
+\section*{What to mention}
+\begin{enumerate}
+  \item Design of software
+  \item Function of Sensorfusion
+  \item Kalman Filter
+  \item Hardware: How many degrees of freedom, Ackerman etc.
+  \item Analysis of results and data
+\end{enumerate}
 
 \end{document}
