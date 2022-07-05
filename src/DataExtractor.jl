@@ -62,6 +62,7 @@ function convertDictToPosData(dict::Dict)
     posData.imuGyro = dict["imuGyro"]
     posData.imuAcc = dict["imuAcc"]
     posData.imuMag = dict["imuMag"]
+    posData.deltaTime = 0.05
     #posData.deltaTime = dict["deltaTime"]
 
     return posData

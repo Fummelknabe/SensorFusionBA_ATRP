@@ -281,6 +281,15 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
         end
     end
 
+    if CImGui.CollapsingHeader("Delta Time")
+        values = float.(posData.deltaTime)
+        ImPlot.SetNextPlotLimits(0, length(posData), minimum(values), maximum(values))
+        if ImPlot.BeginPlot("Delta Time", "Data Point", "dt [s]")             
+            ImPlot.PlotLine("", values, size(values, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
     CImGui.End()
 end
 
