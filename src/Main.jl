@@ -118,7 +118,6 @@ function mainLoop(window::GLFW.Window, ctx, program)
                     if size(rawSavePosData, 1) > saveDataLength
                         toggleRecordData("")
                         global rawSavePosData = StructArray(PositionalData[])
-                        saveDataLength = 0
                     end
                 end
             end

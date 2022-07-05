@@ -83,6 +83,17 @@ function createShaders()
     return program
 end
 
+function ShowHelpMarker(description)
+    CImGui.TextDisabled("(?)")
+    if CImGui.IsItemHovered()
+        CImGui.BeginTooltip()
+        CImGui.PushTextWrapPos(CImGui.GetFontSize() * 35.0)
+        CImGui.TextUnformatted(description)
+        CImGui.PopTextWrapPos()
+        CImGui.EndTooltip()
+    end
+end
+
 function handleHelperWidow()
     CImGui.SetNextWindowPos((0, 20))
     CImGui.Begin("Help", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
@@ -133,8 +144,10 @@ function handleRecordDataWindow(amountDataPoints)
         @cstatic  dispDataPoints=Cint(1) begin
             CImGui.Text("Display Datapoint: ")
             CImGui.SameLine()
-            @c CImGui.SliderInt("", &dispDataPoints, 1, length(rawSavePosData), "%d", CImGui.ImGuiSliderFlags_None)
+            @c CImGui.SliderInt("", &dispDataPoints, 1, length(rawSavePosData), "%d")
             global rawSaveDataLength = dispDataPoints
+            CImGui.SameLine()
+            ShowHelpMarker("Use Slider to display set amount of data points.")
         end
     end
     CImGui.End()

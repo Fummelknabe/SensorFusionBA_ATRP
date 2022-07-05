@@ -74,6 +74,6 @@ function loadFromJSon()
     for dict in posDataDicts        
         push!(posData, convertDictToPosData(dict))
     end
-
+    
     return posData
 end
