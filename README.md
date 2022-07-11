@@ -13,6 +13,10 @@ ISSUES:
 - Some issues with model, unclear what cause
 - Transform cam pos x-z value to 2d plane with imu accelerometer
 - Record delta time in positional data
+- Acceleration data is not useful other to determine up direction
+    - Quad is accerlerating too fast and it is often not sensed by imu
+    - Only when v_k-1 != v_k != v_k+1 then acceleration can be used
+- IMU data too noisy -> maybe track more datapoints or install better suspensions
 
 TODO:
 - Maybe seperate code in different modules

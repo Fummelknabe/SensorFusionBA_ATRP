@@ -11,6 +11,7 @@ connectStatus = ""
 # time since last frame / data
 deltaTime = 0.0
 
+include("Sensorfusion.jl")
 include("Client.jl")
 include("InputHandler.jl")
 
@@ -157,6 +158,7 @@ end
 function toggleRecordedDataPlots(posData::StructArray)
     global showRecoredDataPlots = !showRecoredDataPlots
     if showRecoredDataPlots
+        # Transform camera position but this doenst work yet
         global rawSavePosData = posData
     else 
         global rawSavePosData = StructArray(PositionalData[])
@@ -172,7 +174,8 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     rectPos = CImGui.GetWindowPos()
 
     CImGui.AddRectFilled(drawList, rectPos, (rectPos.x + rectSize[1], rectPos.y + rectSize[2] - CImGui.GetScrollY()), CImGui.IM_COL32(100, 100, 100, 255))
-    cameraPosMatrix = reduce(vcat, transpose.(rawSavePosData.cameraPos))
+    cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))#rawSavePosData for keeping same size of rectangle
+
     (minX, minZ) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 3])))
     (maxX, maxZ) = (maximum(float.(cameraPosMatrix[:, 1])), maximum(float.(cameraPosMatrix[:, 3])))
 
@@ -192,7 +195,6 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
 
     # Spacing to accomodate for rect
     CImGui.Dummy(0.0, rectSize[2])
-    cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
 
     if CImGui.CollapsingHeader("Camera Position")
         ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(cameraPosMatrix), maximum(cameraPosMatrix))
