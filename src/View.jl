@@ -196,6 +196,12 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     # Spacing to accomodate for rect
     CImGui.Dummy(0.0, rectSize[2])
 
+    prediction = StructArray(PositionalState[])
+    if CImGui.Button("Update Prediction")
+        startPosState = PositionalState(cameraPosMatrix[1, 1:3], [posData.sensorSpeed[1], posData.sensorSpeed[1]], 0.0)
+        prediction = initializeSensorFusion(startPosState, posData)
+    end
+
     if CImGui.CollapsingHeader("Camera Position")
         ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(cameraPosMatrix), maximum(cameraPosMatrix))
         if ImPlot.BeginPlot("Relative Camera Position", "Data Point", "Distance [m]")            

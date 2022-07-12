@@ -2,12 +2,16 @@
 Sensor Fusion Design and Evaluation for Robot Motion Estimation in Uneven Terrain
 
 VEHICLE STATS:
-- Axis Difference: 71cm
+- Mass: 43.0kg
+- Axis Difference: 69cm
 - Wheel Distance: 45cm
 - Camera Offset: 5cm
 - Camera Height: 47cm
 - IMU Height: 39cm
 - IMU Offset: 10cm
+- IMU is vehilce reference point 
+    - l_f = 59cm
+    - l_r = 10cm
 
 ISSUES:
 - Some issues with model, unclear what cause

@@ -33,6 +33,9 @@ include("Camera.jl")
 cam = Camera()
 cam.position = GLfloat[-4.0, -4.0, 3.0]
 
+const l_f = 0.59
+const l_r = 0.10
+
 include("Model.jl")
 include("View.jl")
 
