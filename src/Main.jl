@@ -11,6 +11,8 @@ using CImGui.CSyntax.CStatic
 using StructArrays
 using LinearAlgebra
 
+include("Structs.jl")
+
 # How many positional data points to save
 const rawDataLength = 100
 rawSaveDataLength = 1

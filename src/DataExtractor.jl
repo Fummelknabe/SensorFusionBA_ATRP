@@ -1,22 +1,5 @@
 using JSON
 
-export PositionalData
-"""
-Struct to store the data acquired by the AT-RP
-"""
-mutable struct PositionalData
-    steerAngle::Integer
-    maxSpeed::Float32
-    sensorSpeed::Float32
-    cameraPos::Vector{Float32}
-    imuGyro::Vector{Float32}
-    imuAcc::Vector{Float32}
-    imuMag::Float32
-    deltaTime::Float32
-
-    PositionalData() = new(0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, 0.0)
-end
-
 export extractData
 """
 This method extracts the data send by the AT-RP and 

@@ -21,6 +21,8 @@ const robotModelData = [read("assets/"*b.uri) for b in robotModelSource.buffers]
 const vertShaderScript = read("shader/shader.vert", String)
 const fragShaderScript = read("shader/shader.frag", String)
 
+prediction = StructArray(PositionalState[])
+
 export setUpWindow
 """
 Set up a GLFW window, callbacks and render context.
@@ -168,16 +170,38 @@ end
 function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     CImGui.SetNextWindowSizeConstraints(rectSize, (rectSize[1], windowSize[2]))
     CImGui.Begin("Plots of Recorded Data", C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
-
+    
     # Plot camera pos
     drawList = CImGui.GetWindowDrawList()    
     rectPos = CImGui.GetWindowPos()
 
-    CImGui.AddRectFilled(drawList, rectPos, (rectPos.x + rectSize[1], rectPos.y + rectSize[2] - CImGui.GetScrollY()), CImGui.IM_COL32(100, 100, 100, 255))
     cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))#rawSavePosData for keeping same size of rectangle
 
+    CImGui.SetCursorPos(Float32.((0.0, rectSize[2])))
+
+    # Draw the prediction button under map
+    if CImGui.Button("Update Prediction")
+        startPosState = PositionalState(cameraPosMatrix[1, 1:3], [posData.sensorSpeed[1], posData.sensorSpeed[1]], 0.0)
+        global prediction = initializeSensorFusion(startPosState, posData)
+    end
+
+    CImGui.SetCursorPos((0, 20))
+    CImGui.AddRectFilled(drawList, rectPos, (rectPos.x + rectSize[1], rectPos.y + rectSize[2] - CImGui.GetScrollY()), CImGui.IM_COL32(100, 100, 100, 255))
+    
     (minX, minZ) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 3])))
     (maxX, maxZ) = (maximum(float.(cameraPosMatrix[:, 1])), maximum(float.(cameraPosMatrix[:, 3])))
+
+    if length(prediction) > 1
+        predictionMatrix = reduce(vcat, transpose.(prediction.position))   
+
+        (predMinX, predMinY) = (minimum(float.(predictionMatrix[:, 1])), minimum(float.(predictionMatrix[:, 2])))
+        (predMaxX, predMaxY) = (maximum(float.(predictionMatrix[:, 1])), maximum(float.(predictionMatrix[:, 2])))
+
+        (minX, minZ) = (minimum([predMinX, minX]), minimum([predMinY, minZ]))
+        (maxX, maxZ) = (minimum([predMaxX, maxX]), minimum([predMaxY, maxZ]))
+
+        #println(minX, " ", minZ, " ", maxX, " ", maxZ)
+    end
 
     xDif = abs(minX) + abs(maxX)
     zDif = abs(minZ) + abs(maxZ)
@@ -195,12 +219,6 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
 
     # Spacing to accomodate for rect
     CImGui.Dummy(0.0, rectSize[2])
-
-    prediction = StructArray(PositionalState[])
-    if CImGui.Button("Update Prediction")
-        startPosState = PositionalState(cameraPosMatrix[1, 1:3], [posData.sensorSpeed[1], posData.sensorSpeed[1]], 0.0)
-        prediction = initializeSensorFusion(startPosState, posData)
-    end
 
     if CImGui.CollapsingHeader("Camera Position")
         ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(cameraPosMatrix), maximum(cameraPosMatrix))

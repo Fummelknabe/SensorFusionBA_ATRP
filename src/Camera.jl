@@ -3,20 +3,6 @@
 const znear = 0.1
 const zfar = 100
 
-mutable struct Camera
-    speed::Float32
-    position::Vector{GLfloat}
-    target::Vector{Float32}
-    up::Vector{Float32}
-    scrollSpeed::Float32
-    aspectRatio::Float32
-    fov::Int
-
-    function Camera()
-        new(0.2, GLfloat[0.0, 0.0, 2.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0], 10.0, 16/9, 30)
-    end
-end
-
 function getProjectionMatrix(cam::Camera)
     range = tan(0.5*cam.fov) * znear
     return GLfloat[(2.0*znear / (range*cam.aspectRatio + range*cam.aspectRatio)) 0.0 0.0 0.0;

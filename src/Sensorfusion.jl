@@ -1,9 +1,3 @@
-mutable struct PositionalState
-      position::Vector{Float32}
-      velocity::Vector{Float32}
-      Ψ::Float32
-end
-
 """
 This function transforms a given position so that the z-vector points up in the intertial frame 
 
@@ -47,44 +41,44 @@ end
 """
 Angle between velocity vector and axis thought the wheels of the vehicle
 """
-β(δ) = atan(l_r / (l_r + l_f) * tan(δ))
+function β(δ) return atan(l_r / (l_r + l_f) * tan(δ)) end
 
 """
 The angle between the x axis and the axis through the wheels of the vehicle
 """
-Ψ(Ψ_, δt, δ, v) = Ψ_ + v / (l_r + l_f) * cos(β(δ)) * tan(δ) * δt
+function Ψ(Ψ_, δt, δ, v) return Ψ_ + v / (l_r + l_f) * cos(β(δ)) * tan(δ) * δt end
 
-v_x(v_x_, β, δt, Ψ, a_x) = (v_x_ + a_x*δt) * cos(Ψ + β)    
-v_y(v_y_, β, δt, Ψ, a_x) = (v_y_ + a_x*δt) * sin(Ψ + β)  
+function v_x(v_x_, β, δt, Ψ, a_x) return (v_x_ + a_x*δt) * cos(Ψ + β) end
+function v_y(v_y_, β, δt, Ψ, a_x) return (v_y_ + a_x*δt) * sin(Ψ + β) end
 
-p_x(p_x_, v_x, δt, Ψ, β, a_x) = p_x_ + v_x * δt + 1/2 * a_x * cos(Ψ + β) * δt^2
-p_y(p_y_, v_y, δt, Ψ, β, a_x) = p_y_ + v_y * δt + 1/2 * a_x * sin(Ψ + β) * δt^2
+function p_x(p_x_, v_x, δt, Ψ, β, a_x) return p_x_ + v_x * δt + 1/2 * a_x * cos(Ψ + β) * δt^2 end
+function p_y(p_y_, v_y, δt, Ψ, β, a_x) return p_y_ + v_y * δt + 1/2 * a_x * sin(Ψ + β) * δt^2 end
 # Z Position is not always the same, but we dont easy data to calculate it 
 # transform position p after calculating in x-y plane
-p_z(p_z_) = p_z_ 
+function p_z(p_z_) return p_z_ end 
 
 
-function predict(posState::PositionalState, δt::Float32, steeringAngle::Float32, acceleration::Vector{Float32})
+function predict(posState::PositionalState, δt::Float32, steeringAngle::Integer, acceleration::Vector{Float32})
       oldPos = posState.position
       oldVel = posState.velocity
       oldΨ = posState.Ψ
       a_x = acceleration[1] * 9.81
 
-      β = β(steeringAngle)
-      Ψ = Ψ(oldΨ, δt, steeringAngle, norm(oldVel))
-      velocity = [v_x(oldVel[1], β, δt, Ψ, a_x), v_y(oldVel[2], β, δt, Ψ, a_x)]
+      β_ = β(steeringAngle)
+      Ψ_ = Ψ(oldΨ, δt, steeringAngle, norm(oldVel))
+      velocity = [v_x(oldVel[1], β_, δt, Ψ_, a_x), v_y(oldVel[2], β_, δt, Ψ_, a_x)]
 
       return PositionalState(
-                  [p_x(oldPos[1], velocity[1], δt, Ψ, β, a_x), p_y(oldPos[2], velocity[2], δt, Ψ, β, a_x), p_z(oldPos[3])], 
+                  [p_x(oldPos[1], velocity[1], δt, Ψ_, β_, a_x), p_y(oldPos[2], velocity[2], δt, Ψ_, β_, a_x), p_z(oldPos[3])], 
                   velocity, 
-                  Ψ)      
+                  Ψ_)      
 end 
 
-function initializeSensorFusion(startPosState::PositinalState, posData::StructArray(PositionalData[]))
-      predictedStates = StructArray(PositinalState[])
+function initializeSensorFusion(startPosState::PositionalState, posData::StructArray)
+      predictedStates = StructArray(PositionalState[])
 
       for i in 1:length(posData)
-            push!(predictedStates, predict(i == 1 ? startPosState : predictedStates[i-1], posData.deltaTime[i], posData.steeringAngle[i], posData.imuAcc[i]))
+            push!(predictedStates, predict(i == 1 ? startPosState : predictedStates[i-1], posData.deltaTime[i], posData.steerAngle[i], posData.imuAcc[i]))
       end
 
       return predictedStates
