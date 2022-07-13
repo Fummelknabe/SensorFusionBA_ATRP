@@ -46,16 +46,16 @@ function β(δ) return atan(l_r / (l_r + l_f) * tan(δ)) end
 """
 The angle between the x axis and the axis through the wheels of the vehicle
 """
-function Ψ(Ψ_, δt, δ, v) return Ψ_ + v / (l_r + l_f) * cos(β(δ)) * tan(δ) * δt end
+Ψ(Ψ_, δt, δ, v) = Ψ_ + v / (l_r + l_f) * cos(β(δ)) * tan(δ) * δt 
 
-function v_x(v_x_, β, δt, Ψ, a_x) return (v_x_ + a_x*δt) * cos(Ψ + β) end
-function v_y(v_y_, β, δt, Ψ, a_x) return (v_y_ + a_x*δt) * sin(Ψ + β) end
+v_x(v_x_, β, δt, Ψ, a_x) = (v_x_ + a_x*δt) * cos(Ψ + β) 
+v_y(v_y_, β, δt, Ψ, a_x) = (v_y_ + a_x*δt) * sin(Ψ + β) 
 
-function p_x(p_x_, v_x, δt, Ψ, β, a_x) return p_x_ + v_x * δt + 1/2 * a_x * cos(Ψ + β) * δt^2 end
-function p_y(p_y_, v_y, δt, Ψ, β, a_x) return p_y_ + v_y * δt + 1/2 * a_x * sin(Ψ + β) * δt^2 end
+p_x(p_x_, v_x, δt, Ψ, β, a_x) = p_x_ + v_x * δt + 1/2 * a_x * cos(Ψ + β) * δt^2 
+p_y(p_y_, v_y, δt, Ψ, β, a_x) = p_y_ + v_y * δt + 1/2 * a_x * sin(Ψ + β) * δt^2 
 # Z Position is not always the same, but we dont easy data to calculate it 
 # transform position p after calculating in x-y plane
-function p_z(p_z_) return p_z_ end 
+p_z(p_z_) = p_z_ 
 
 
 function predict(posState::PositionalState, δt::Float32, steeringAngle::Integer, acceleration::Vector{Float32})

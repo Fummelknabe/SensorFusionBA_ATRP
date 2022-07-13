@@ -194,13 +194,11 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     if length(prediction) > 1
         predictionMatrix = reduce(vcat, transpose.(prediction.position))   
 
-        (predMinX, predMinY) = (minimum(float.(predictionMatrix[:, 1])), minimum(float.(predictionMatrix[:, 2])))
-        (predMaxX, predMaxY) = (maximum(float.(predictionMatrix[:, 1])), maximum(float.(predictionMatrix[:, 2])))
+        (predMinX, predMinY) = (minimum(float.(predictionMatrix[:, 1])), minimum(float.(predictionMatrix[:, 3])))
+        (predMaxX, predMaxY) = (maximum(float.(predictionMatrix[:, 1])), maximum(float.(predictionMatrix[:, 3])))
 
         (minX, minZ) = (minimum([predMinX, minX]), minimum([predMinY, minZ]))
         (maxX, maxZ) = (minimum([predMaxX, maxX]), minimum([predMaxY, maxZ]))
-
-        #println(minX, " ", minZ, " ", maxX, " ", maxZ)
     end
 
     xDif = abs(minX) + abs(maxX)
@@ -210,11 +208,19 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     meanX = round((minX + maxX) / 2)
     meanZ = round((minZ + maxZ) / 2)
 
-    for camPos in posData.cameraPos
-        lastPoint = camPos == posData.cameraPos[end]
-        pointPos = (rectPos.x + floor(rectSize[1]/2) + (camPos[1] - meanX)*10*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (camPos[3] - meanZ)*10*factor)
+    for i in 1:length(posData.cameraPos)
+        lastPoint = i == length(posData.cameraPos)
+        pointPos = (rectPos.x + floor(rectSize[1]/2) + (posData.cameraPos[i][1] - meanX)*10*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (posData.cameraPos[i][3] - meanZ)*10*factor)
+        #println("Cam: ", posData.cameraPos[i])
         CImGui.AddCircleFilled(drawList, pointPos, lastPoint ? 5 : 1, 
             lastPoint ? CImGui.IM_COL32(0, 255, 0, 255) : CImGui.IM_COL32(255, 0, 0, 255))
+
+        if length(prediction) > i
+            #println("Prediction: ", prediction.position[i])
+            predPointPos = (rectPos.x + floor(rectSize[1]/2) + (prediction.position[i][1] - meanX)*10*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (prediction.position[i][3] - meanZ)*10*factor)            
+            CImGui.AddCircleFilled(drawList, predPointPos, lastPoint ? 5 : 1, 
+                lastPoint ? CImGui.IM_COL32(0, 0, 255, 255) : CImGui.IM_COL32(20, 120, 20, 255))
+        end
     end
 
     # Spacing to accomodate for rect
