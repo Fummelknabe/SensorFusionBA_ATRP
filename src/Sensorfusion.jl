@@ -58,15 +58,15 @@ p_y(p_y_, v_y, δt, Ψ, β, a_x) = p_y_ + v_y * δt + 1/2 * a_x * sin(Ψ + β) *
 p_z(p_z_) = p_z_ 
 
 
-function predict(posState::PositionalState, δt::Float32, steeringAngle::Integer, acceleration::Vector{Float32})
+function predict(posState::PositionalState, δt::Float32, steeringAngle::Integer, acceleration::Vector{Float32}, velocityForward::Float32, Ψ_sensor::Float32)
       oldPos = posState.position
-      oldVel = posState.velocity
-      oldΨ = posState.Ψ
+      oldVel = velocityForward#posState.velocity
+      oldΨ = Ψ_sensor * π/180#posState.Ψ
       a_x = acceleration[1] * 9.81
 
-      β_ = β(steeringAngle)
+      β_ = β(steeringAngle * π/180)
       Ψ_ = Ψ(oldΨ, δt, steeringAngle, norm(oldVel))
-      velocity = [v_x(oldVel[1], β_, δt, Ψ_, a_x), v_y(oldVel[2], β_, δt, Ψ_, a_x)]
+      velocity = [v_x(oldVel, β_, δt, Ψ_, a_x), v_y(oldVel, β_, δt, Ψ_, a_x)]
 
       return PositionalState(
                   [p_x(oldPos[1], velocity[1], δt, Ψ_, β_, a_x), p_y(oldPos[2], velocity[2], δt, Ψ_, β_, a_x), p_z(oldPos[3])], 
@@ -78,7 +78,7 @@ function initializeSensorFusion(startPosState::PositionalState, posData::StructA
       predictedStates = StructArray(PositionalState[])
 
       for i in 1:length(posData)
-            push!(predictedStates, predict(i == 1 ? startPosState : predictedStates[i-1], posData.deltaTime[i], posData.steerAngle[i], posData.imuAcc[i]))
+            push!(predictedStates, predict(i == 1 ? startPosState : predictedStates[i-1], posData.deltaTime[i], posData.steerAngle[i], posData.imuAcc[i], posData.sensorSpeed[i], posData.imuMag[i]))
       end
 
       return predictedStates

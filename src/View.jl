@@ -21,6 +21,7 @@ const robotModelData = [read("assets/"*b.uri) for b in robotModelSource.buffers]
 const vertShaderScript = read("shader/shader.vert", String)
 const fragShaderScript = read("shader/shader.frag", String)
 
+predicting = false
 prediction = StructArray(PositionalState[])
 
 export setUpWindow
@@ -180,8 +181,10 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     CImGui.SetCursorPos(Float32.((0.0, rectSize[2])))
 
     # Draw the prediction button under map
-    if CImGui.Button("Update Prediction")
-        startPosState = PositionalState(cameraPosMatrix[1, 1:3], [posData.sensorSpeed[1], posData.sensorSpeed[1]], 0.0)
+    CImGui.Button(predicting ? "Predicting..." : "Update Prediction") && global predicting = !predicting
+
+    if predicting
+        startPosState = PositionalState([cameraPosMatrix[1, 1], cameraPosMatrix[1, 3], cameraPosMatrix[1, 2]], [posData.sensorSpeed[1], posData.sensorSpeed[1]], 0.0)
         global prediction = initializeSensorFusion(startPosState, posData)
     end
 
@@ -191,18 +194,19 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     (minX, minZ) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 3])))
     (maxX, maxZ) = (maximum(float.(cameraPosMatrix[:, 1])), maximum(float.(cameraPosMatrix[:, 3])))
 
-    if length(prediction) > 1
+    if predicting
         predictionMatrix = reduce(vcat, transpose.(prediction.position))   
 
-        (predMinX, predMinY) = (minimum(float.(predictionMatrix[:, 1])), minimum(float.(predictionMatrix[:, 3])))
-        (predMaxX, predMaxY) = (maximum(float.(predictionMatrix[:, 1])), maximum(float.(predictionMatrix[:, 3])))
+        (predMinX, predMinY) = (minimum(float.(predictionMatrix[:, 1])), minimum(float.(predictionMatrix[:, 2])))
+        (predMaxX, predMaxY) = (maximum(float.(predictionMatrix[:, 1])), maximum(float.(predictionMatrix[:, 2])))
 
         (minX, minZ) = (minimum([predMinX, minX]), minimum([predMinY, minZ]))
-        (maxX, maxZ) = (minimum([predMaxX, maxX]), minimum([predMaxY, maxZ]))
+        (maxX, maxZ) = (maximum([predMaxX, maxX]), maximum([predMaxY, maxZ]))
     end
 
     xDif = abs(minX) + abs(maxX)
     zDif = abs(minZ) + abs(maxZ)
+    println(xDif, ", ", zDif)
     factor = round(minimum((rectSize[1] / xDif, rectSize[2] / zDif)))    
 
     meanX = round((minX + maxX) / 2)
@@ -211,20 +215,41 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     for i in 1:length(posData.cameraPos)
         lastPoint = i == length(posData.cameraPos)
         pointPos = (rectPos.x + floor(rectSize[1]/2) + (posData.cameraPos[i][1] - meanX)*10*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (posData.cameraPos[i][3] - meanZ)*10*factor)
-        #println("Cam: ", posData.cameraPos[i])
         CImGui.AddCircleFilled(drawList, pointPos, lastPoint ? 5 : 1, 
             lastPoint ? CImGui.IM_COL32(0, 255, 0, 255) : CImGui.IM_COL32(255, 0, 0, 255))
 
-        if length(prediction) > i
-            #println("Prediction: ", prediction.position[i])
-            predPointPos = (rectPos.x + floor(rectSize[1]/2) + (prediction.position[i][1] - meanX)*10*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (prediction.position[i][3] - meanZ)*10*factor)            
+        if predicting
+            predPointPos = (rectPos.x + floor(rectSize[1]/2) + (prediction.position[i][1] - meanX)*10*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (prediction.position[i][2] - meanZ)*10*factor)                        
             CImGui.AddCircleFilled(drawList, predPointPos, lastPoint ? 5 : 1, 
-                lastPoint ? CImGui.IM_COL32(0, 0, 255, 255) : CImGui.IM_COL32(20, 120, 20, 255))
+                lastPoint ? CImGui.IM_COL32(0, 0, 255, 255) : CImGui.IM_COL32(60, 130, 60, 255))
         end
     end
 
     # Spacing to accomodate for rect
     CImGui.Dummy(0.0, rectSize[2])
+
+    if CImGui.CollapsingHeader("Prediction Position")
+        predictionMatrix = reduce(vcat, transpose.(prediction.position))  
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(predictionMatrix), maximum(predictionMatrix))
+        if ImPlot.BeginPlot("Predicted Position", "Data Point", "Distance [m]")
+            xValues = float.(predictionMatrix[:, 1]) 
+            ImPlot.PlotLine("x", xValues, size(xValues, 1))
+            yValues = float.(predictionMatrix[:, 2]) 
+            ImPlot.PlotLine("y", yValues, size(yValues, 1))
+            zValues = float.(predictionMatrix[:, 3]) 
+            ImPlot.PlotLine("z", zValues, size(zValues, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Prediction Ψ")
+        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(prediction.Ψ), maximum(prediction.Ψ))
+        if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
+            values = float.(prediction.Ψ) 
+            ImPlot.PlotLine("Ψ", values, size(values, 1))
+            ImPlot.EndPlot()
+        end
+    end
 
     if CImGui.CollapsingHeader("Camera Position")
         ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(cameraPosMatrix), maximum(cameraPosMatrix))

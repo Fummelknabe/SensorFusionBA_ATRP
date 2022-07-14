@@ -26,3 +26,5 @@ TODO:
 - Maybe seperate code in different modules
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended
+- Reduce update time of speed and steer angle sensor
+- Fix depiction of prediction + camera (maybe try and disable camera)
