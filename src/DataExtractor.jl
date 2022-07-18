@@ -29,7 +29,7 @@ function extractData(data::String)
     posData.cameraPos = parse.(Float32, split(chop(splitted[5]; head=1, tail=1), ','))
     posData.imuAcc = parse.(Float32, split(chop(splitted[6]; head=1, tail=1), ','))
     posData.imuGyro = parse.(Float32, split(chop(splitted[7]; head=1, tail=1), ','))
-    posData.imuMag = parse(Float32, splitted[8])
+    posData.imuMag = parse(Float32, split(chop(splitted[7]; head=1, tail=1), ','))
     posData.deltaTime = deltaTime
 
     return posData
@@ -45,8 +45,7 @@ function convertDictToPosData(dict::Dict)
     posData.imuGyro = dict["imuGyro"]
     posData.imuAcc = dict["imuAcc"]
     posData.imuMag = dict["imuMag"]
-    posData.deltaTime = 0.05
-    #posData.deltaTime = dict["deltaTime"]
+    posData.deltaTime = dict["deltaTime"]
 
     return posData
 end

@@ -206,7 +206,6 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
 
     xDif = abs(minX) + abs(maxX)
     zDif = abs(minZ) + abs(maxZ)
-    println(xDif, ", ", zDif)
     factor = round(minimum((rectSize[1] / xDif, rectSize[2] / zDif)))    
 
     meanX = round((minX + maxX) / 2)
@@ -396,6 +395,8 @@ function plotRawData(posData::StructVector{PositionalData})
         end
     end
 
+    #=
+    Disable plotting this as its subject to change
     if CImGui.CollapsingHeader("Compass Course")
         ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 360)
         if ImPlot.BeginPlot("Angle to Magnetic North", "Data Point", "Degrees [°]")
@@ -404,6 +405,7 @@ function plotRawData(posData::StructVector{PositionalData})
             ImPlot.EndPlot()
         end
     end
+    =#
 
     if CImGui.CollapsingHeader("Camera Position Change")
         ImPlot.SetNextPlotLimits(0, rawDataLength, -0.2, 0.2)
