@@ -30,7 +30,7 @@ function extractData(data::String)
     posData.cameraOri = parse.(Float32, split(chop(splitted[6]; head=1, tail=1), ','))
     posData.imuAcc = parse.(Float32, split(chop(splitted[8]; head=1, tail=1), ','))
     posData.imuGyro = parse.(Float32, split(chop(splitted[9]; head=1, tail=1), ','))
-    posData.imuMag = parse(Float32, split(chop(splitted[10]; head=1, tail=1), ','))
+    posData.imuMag = parse.(Float32, split(chop(splitted[10]; head=1, tail=1), ','))
     posData.deltaTime = deltaTime
     posData.cameraConfidence = parse(Float32, splitted[7])
 
