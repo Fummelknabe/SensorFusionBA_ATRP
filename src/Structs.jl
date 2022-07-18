@@ -15,12 +15,14 @@ mutable struct PositionalData
     maxSpeed::Float32
     sensorSpeed::Float32
     cameraPos::Vector{Float32}
+    cameraOri::Vector{Float32}    
     imuGyro::Vector{Float32}
     imuAcc::Vector{Float32}
     imuMag::Vector{Float32}
     deltaTime::Float32
+    cameraConfidence::Float32
 
-    PositionalData() = new(0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0)
+    PositionalData() = new(0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, 0.0)
 end
 
 mutable struct Camera
