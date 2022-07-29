@@ -206,19 +206,20 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
 
     xDif = abs(minX) + abs(maxX)
     zDif = abs(minZ) + abs(maxZ)
-    factor = round(minimum((rectSize[1] / xDif, rectSize[2] / zDif)))    
+    factor = round(minimum((rectSize[1] / xDif, rectSize[2] / zDif)))    # Pixel pro meter
+    println("Factor: ", factor)
 
     meanX = round((minX + maxX) / 2)
     meanZ = round((minZ + maxZ) / 2)
 
     for i in 1:length(posData.cameraPos)
         lastPoint = i == length(posData.cameraPos)
-        pointPos = (rectPos.x + floor(rectSize[1]/2) + (posData.cameraPos[i][1] - meanX)*10*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (posData.cameraPos[i][3] - meanZ)*10*factor)
+        pointPos = (rectPos.x + floor(rectSize[1]/2) + (posData.cameraPos[i][1] - meanX)*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (posData.cameraPos[i][3] - meanZ)*factor) # factor * 10
         CImGui.AddCircleFilled(drawList, pointPos, lastPoint ? 5 : 1, 
             lastPoint ? CImGui.IM_COL32(0, 255, 0, 255) : CImGui.IM_COL32(255, 0, 0, 255))
 
         if predicting
-            predPointPos = (rectPos.x + floor(rectSize[1]/2) + (prediction.position[i][1] - meanX)*10*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (prediction.position[i][2] - meanZ)*10*factor)                        
+            predPointPos = (rectPos.x + floor(rectSize[1]/2) + (prediction.position[i][1] - meanX)*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (prediction.position[i][2] - meanZ)*factor) # factor * 10                       
             CImGui.AddCircleFilled(drawList, predPointPos, lastPoint ? 5 : 1, 
                 lastPoint ? CImGui.IM_COL32(0, 0, 255, 255) : CImGui.IM_COL32(60, 130, 60, 255))
         end
