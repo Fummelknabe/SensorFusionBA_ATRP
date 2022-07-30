@@ -61,7 +61,7 @@ p_z(p_z_) = p_z_
 function predict(posState::PositionalState, δt::Float32, steeringAngle::Integer, acceleration::Vector{Float32}, velocityForward::Float32, Ψ_sensor::Float32)
       oldPos = posState.position
       oldVel = velocityForward#posState.velocity
-      oldΨ = Ψ_sensor * π/180#posState.Ψ
+      oldΨ = Ψ_sensor #* π/180#posState.Ψ
       a_x = acceleration[1] * 9.81
 
       β_ = β(steeringAngle * π/180)
@@ -74,11 +74,32 @@ function predict(posState::PositionalState, δt::Float32, steeringAngle::Integer
                   Ψ_)      
 end 
 
+"""
+Coverts data from magnetometer to campass course.
+
+# Arguments 
+- `magnetometerVector::Vector{Float32}`: The magnetometer data from the IMU 
+- `accelerometerVector::Vector{Float32}`: The accelerometer data from the IMU
+# Returns
+- `Float32`: The compass course in radians
+"""
+function convertMagToCompass(magnetometerVector::Vector{Float32}, accelerometerVector::Vector{Float32})
+      downVector = [accelerometerVector[1], -accelerometerVector[2], accelerometerVector[3]]
+      northVector = magnetometerVector - (downVector * (dot(magnetometerVector, downVector) / dot(downVector, downVector)))
+
+      return atan(northVector[1], northVector[2])
+end
+
 function initializeSensorFusion(startPosState::PositionalState, posData::StructArray)
       predictedStates = StructArray(PositionalState[])
 
       for i in 1:length(posData)
-            push!(predictedStates, predict(i == 1 ? startPosState : predictedStates[i-1], posData.deltaTime[i], posData.steerAngle[i], posData.imuAcc[i], posData.sensorSpeed[i], posData.imuMag[i]))
+            push!(predictedStates, predict(i == 1 ? startPosState : predictedStates[i-1], 
+                                                                    posData.deltaTime[i], 
+                                                                    posData.steerAngle[i], 
+                                                                    posData.imuAcc[i], 
+                                                                    posData.sensorSpeed[i], 
+                                                                    convertMagToCompass(posData.imuMag[i], posData.imuAcc[i])))
       end
 
       return predictedStates

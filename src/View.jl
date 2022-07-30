@@ -207,7 +207,6 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     xDif = abs(minX) + abs(maxX)
     zDif = abs(minZ) + abs(maxZ)
     factor = round(minimum((rectSize[1] / xDif, rectSize[2] / zDif)))    # Pixel pro meter
-    println("Factor: ", factor)
 
     meanX = round((minX + maxX) / 2)
     meanZ = round((minZ + maxZ) / 2)
