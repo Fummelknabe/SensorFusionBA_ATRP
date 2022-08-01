@@ -128,11 +128,11 @@ function mainLoop(window::GLFW.Window, ctx, program)
             end
 
             if showRecoredDataPlots
-                plotRecordedData((1000, 700), rawSavePosData[1:rawSaveDataLength])
+                plotData((1000, 700), rawSavePosData[1:rawSaveDataLength], "Recorded data Plot")
             end
 
             if showDataPlots && size(rawPositionalData, 1) > 0
-                plotRawData(rawPositionalData)
+                plotData((1000, 700), rawPositionalData, "On time positional data")
             end
 
             CImGui.Render()

@@ -168,9 +168,18 @@ function toggleRecordedDataPlots(posData::StructArray)
     end
 end
 
-function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
+"""
+Plot the positional data received from the AT-RP.
+Has to be called inside the render loop.
+
+# Arguments 
+- `rectSize::Tuple{Integer, Integer}`: The size of the rectangle to draw position on.
+- `posData::StructVector{PositionalData}`: The positional data from the atrp to plot.
+- `windowName::String`: The name of the window.
+"""
+function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{PositionalData}, windowName::String)
     CImGui.SetNextWindowSizeConstraints(rectSize, (rectSize[1], windowSize[2]))
-    CImGui.Begin("Plots of Recorded Data", C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
+    CImGui.Begin(windowName, C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
     
     # Plot camera pos
     drawList = CImGui.GetWindowDrawList()    
@@ -227,7 +236,7 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     # Spacing to accomodate for rect
     CImGui.Dummy(0.0, rectSize[2])
 
-    if CImGui.CollapsingHeader("Prediction Position")
+    if CImGui.CollapsingHeader("Prediction Position") && predicting
         predictionMatrix = reduce(vcat, transpose.(prediction.position))  
         ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(predictionMatrix), maximum(predictionMatrix))
         if ImPlot.BeginPlot("Predicted Position", "Data Point", "Distance [m]")
@@ -241,7 +250,7 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
         end
     end
 
-    if CImGui.CollapsingHeader("Prediction Ψ")
+    if CImGui.CollapsingHeader("Prediction Ψ") && predicting
         ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(prediction.Ψ), maximum(prediction.Ψ))
         if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
             values = float.(prediction.Ψ) 
@@ -259,6 +268,15 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
             ImPlot.PlotLine("y", yValues, size(yValues, 1))
             yValues = float.(cameraPosMatrix[:, 3]) 
             ImPlot.PlotLine("z", yValues, size(yValues, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Camera Confidence")
+        ImPlot.SetNextPlotLimits(0, length(posData), 0, 100)
+        if ImPlot.BeginPlot("Confidence Value for Camera", "Data Point", "Percent [%]")
+            values = float.(posData.cameraConfidence) 
+            ImPlot.PlotLine("", values, size(values, 1))
             ImPlot.EndPlot()
         end
     end
@@ -298,11 +316,17 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
         end
     end
 
-    if CImGui.CollapsingHeader("Compass Course")
-        ImPlot.SetNextPlotLimits(0, length(posData), 0, 360)
-        if ImPlot.BeginPlot("Angle to Magnetic North", "Data Point", "Degrees [°]")
-            values = float.(posData.imuMag) 
-            ImPlot.PlotLine("", values, size(values, 1))
+    if CImGui.CollapsingHeader("Magnetometer")
+        # Convert vector of vectors to matrix:
+        imuMagMatrix = reduce(vcat, transpose.(posData.imuMag))
+        ImPlot.SetNextPlotLimits(0, length(posData), -1, 1)
+        if ImPlot.BeginPlot("Magnetic Field", "Data Point", "Field Strength [G]")
+            yValues = float.(imuMagMatrix[:, 1]) 
+            ImPlot.PlotLine("x", yValues, size(yValues, 1))
+            yValues = float.(imuMagMatrix[:, 2]) 
+            ImPlot.PlotLine("y", yValues, size(yValues, 1))
+            yValues = float.(imuMagMatrix[:, 3]) 
+            ImPlot.PlotLine("z", yValues, size(yValues, 1))
             ImPlot.EndPlot()
         end
     end
@@ -349,13 +373,7 @@ function plotRecordedData(rectSize::Tuple{Integer, Integer}, posData)
     CImGui.End()
 end
 
-"""
-Plot the positional data received from the AT-RP.
-Has to be called inside the render loop.
-
-# Arguments 
-- `posData::StructVector{PositionalData}`: The positional data from the atrp to plot.
-"""
+#=
 function plotRawData(posData::StructVector{PositionalData})      
     #CImGui.SetNextWindowSize((600, 900))      
     #=This in not ideal, cause plots might not be visible with a constraint window size=#   
@@ -465,6 +483,7 @@ function plotRawData(posData::StructVector{PositionalData})
 
     CImGui.End()
 end
+=#
 
 let (previousTime, previousTimeCounting) = (time(), time())
     frame = 0
