@@ -72,6 +72,25 @@ for i=1:l
     camConf(i) = val(i).cameraConfidence / 100;
 end
 
+%% Camera Orientation
+rotMatrix = zeros(l, 4, 4);
+eulerAngles = zeros(l, 3);
+for i=1:l
+    % Rotation Matrix from Quaternion
+    x = val(i).cameraOri(1);
+    y = val(i).cameraOri(2);
+    z = val(i).cameraOri(3);
+    w = val(i).cameraOri(4);
+    rotMatrix(i, :, :) = [1-2*y^2-2*z^2, 2*x*y-2*w*z, 2*x*z + 2*w*y, 0;
+                          2*x*y+2*w*z, 1-2*x^2-2*z^2, 2*y*z-2*w*x, 0;
+                          2*x*z-2*w*y, 2*y*z+2*x*w, 1-2*x^2-2*y^2, 0;
+                          0, 0, 0, 1];
+                      
+    % Euler Angles from Quaternion
+    eulerAngles(i, :) = [atan2(2*(w*x+y*z), 1-2*(x^2+y^2)); asin(2*(w*y-z*x)); atan2(2*(w*z+x*y), 1-2*(y^2+z^2))];
+end
+clear x y z w
+
 %% Odometry
 odometryPos = zeros(l, 3);
 odometryPos(1, :) = camPos(1, :); % inital position
@@ -79,6 +98,7 @@ oldPhi = phi(1);
 oldPhiDot = angVel(1);
 
 for i=2:l
+    % With Angular Velocity:
     % This should be used to correct prediction:
     if dt(i) < 0.5
         phi_dot = angVel(i);
@@ -87,10 +107,20 @@ for i=2:l
         phi_dot = oldPhiDot;
     end
     
-    % Get change in position
-    x_dot = v(i) * cos((oldPhi + dt(i)*phi_dot)/2); % phi(i)
-    y_dot = v(i) * sin((oldPhi + dt(i)*phi_dot)/2); % phi(i)   
-    oldPhi = (oldPhi + dt(i)*phi_dot)/2;
+    % Get change in position 
+    x_dot = v(i) * cos(oldPhi + dt(i)*phi_dot); 
+    y_dot = v(i) * sin(oldPhi + dt(i)*phi_dot);  
+    oldPhi = (oldPhi + dt(i)*phi_dot);
+    
+    % With Compass Course:
+    x_dot = v(i) * cos(phi(i));
+    y_dot = v(i) * sin(phi(i));   
+    
+    % With Camera Orientation:
+    x_dot = v(i) * cos(eulerAngles(i, 3));
+    y_dot = v(i) * sin(eulerAngles(i, 3)); 
+    
+    % With Steering Angle: [MISSING]
     
     % predict
     odometryPos(i, 1) = odometryPos(i-1, 1) + x_dot * dt(i);% x-Pos
