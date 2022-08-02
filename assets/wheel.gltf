@@ -1,0 +1,115 @@
+{
+  "accessors": [
+    {
+      "name": "Part1_1_0_positions",
+      "componentType": 5126,
+      "count": 66,
+      "min": [
+        -250,
+        -250,
+        0
+      ],
+      "max": [
+        250,
+        250,
+        150
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Part1_1_0_indices",
+      "componentType": 5123,
+      "count": 384,
+      "min": [
+        0
+      ],
+      "max": [
+        65
+      ],
+      "type": "SCALAR",
+      "bufferView": 1,
+      "byteOffset": 0
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "wheel",
+      "byteLength": 1560,
+      "uri": "wheel.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 792,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 768,
+      "byteOffset": 792,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "Part1Material0",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.506983,
+          0.531564,
+          0.55,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.98
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": false
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Part1_1",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0
+          },
+          "indices": 1,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Part1",
+      "mesh": 0
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}
