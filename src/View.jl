@@ -15,8 +15,14 @@ include("Sensorfusion.jl")
 include("Client.jl")
 include("InputHandler.jl")
 
-const robotModelSource = GLTF.load("assets/simpleTank.gltf")
-const robotModelData = [read("assets/"*b.uri) for b in robotModelSource.buffers]
+#const robotModelSource = GLTF.load("assets/simpleTank.gltf")
+#const robotModelData = [read("assets/"*b.uri) for b in robotModelSource.buffers]
+
+const robotSource = GLTF.load("assets/robot.gltf")
+const robotData = [read("assets/"*b.uri) for b in robotSource.buffers]
+
+const plateSource = GLTF.load("assets/plate.gltf")
+const plateData = [read("assets/"*b.uri) for b in plateSource.buffers]
 
 const vertShaderScript = read("shader/shader.vert", String)
 const fragShaderScript = read("shader/shader.frag", String)

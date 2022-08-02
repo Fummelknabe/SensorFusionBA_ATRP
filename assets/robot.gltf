@@ -1,0 +1,369 @@
+{
+  "accessors": [
+    {
+      "name": "robot_base-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 302,
+      "min": [
+        -2.5,
+        1.399999976158142,
+        -4
+      ],
+      "max": [
+        2.5,
+        6.5,
+        4
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "robot_base-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 302,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "robot_base-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 636,
+      "min": [
+        0
+      ],
+      "max": [
+        301
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "wheel-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 194,
+      "min": [
+        -3.0999999046325684,
+        0,
+        0.75
+      ],
+      "max": [
+        -1.899999976158142,
+        4,
+        4.75
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 3624
+    },
+    {
+      "name": "wheel-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 194,
+      "min": [
+        -1,
+        -0.9951865673065186,
+        -0.9951865673065186
+      ],
+      "max": [
+        1,
+        0.9951865673065186,
+        0.9951865673065186
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 3624
+    },
+    {
+      "name": "wheel-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 384,
+      "min": [
+        0
+      ],
+      "max": [
+        193
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 1272
+    },
+    {
+      "name": "wheel.001-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 194,
+      "min": [
+        1.899999976158142,
+        0,
+        0.75
+      ],
+      "max": [
+        3.0999999046325684,
+        4,
+        4.75
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 5952
+    },
+    {
+      "name": "wheel.001-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 194,
+      "min": [
+        -1,
+        -0.9951865673065186,
+        -0.9951865673065186
+      ],
+      "max": [
+        1,
+        0.9951865673065186,
+        0.9951865673065186
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 5952
+    },
+    {
+      "name": "wheel.001-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 384,
+      "min": [
+        0
+      ],
+      "max": [
+        193
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 2040
+    },
+    {
+      "name": "rear_axis-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 544,
+      "min": [
+        -3.0000009536743164,
+        0,
+        -5
+      ],
+      "max": [
+        3,
+        4.000000953674316,
+        -1
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 8280
+    },
+    {
+      "name": "rear_axis-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 544,
+      "min": [
+        -1,
+        -0.9981743693351746,
+        -0.9981743693351746
+      ],
+      "max": [
+        1,
+        0.9981743693351746,
+        0.9981743693351746
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 8280
+    },
+    {
+      "name": "rear_axis-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 1080,
+      "min": [
+        0
+      ],
+      "max": [
+        543
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 2808
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "robot",
+      "byteLength": 34584,
+      "uri": "robot.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 14808,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 14808,
+      "byteOffset": 14808,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 4968,
+      "byteOffset": 29616,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "Part2Material0",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.584867,
+          0,
+          0.285531,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.979999995
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": false
+    },
+    {
+      "name": "wheel_material",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.979999995
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": false
+    }
+  ],
+  "meshes": [
+    {
+      "name": "robot_base-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "wheel-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 3,
+            "NORMAL": 4
+          },
+          "indices": 5,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "wheel.001-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 6,
+            "NORMAL": 7
+          },
+          "indices": 8,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "rear_axis-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10
+          },
+          "indices": 11,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "robot_base",
+      "mesh": 0
+    },
+    {
+      "name": "wheel",
+      "mesh": 1
+    },
+    {
+      "name": "wheel.001",
+      "mesh": 2
+    },
+    {
+      "name": "rear_axis",
+      "mesh": 3
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  ]
+}
