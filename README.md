@@ -16,14 +16,15 @@ VEHICLE STATS:
 ISSUES:
 - Some issues with model, unclear what cause
 - Acceleration data is not useful other to determine up direction
-    - Quad is accerlerating too fast and it is often not sensed by imu
+    - Maybe Quad is accerlerating too fast and it is often not sensed by imu
     - Only when v_k-1 != v_k != v_k+1 then acceleration can be used
-- IMU data too noisy -> maybe track more datapoints or install better suspensions
 - Spikes in delta time for max 1.4 seconds
+    - At Peaks, Peaks also in angular Velocity around z Axis
+- Magnetic Field values of imu not working correctly
+- No steering angle was recorded the last data samples
 
 TODO:
 - Maybe seperate code in different modules
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended
-- Reduce update time of speed and steer angle sensor
 - Fix depiction of prediction + camera 
