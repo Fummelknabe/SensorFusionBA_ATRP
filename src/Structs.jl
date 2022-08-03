@@ -12,6 +12,7 @@ Struct to store the data acquired by the AT-RP
 """
 mutable struct PositionalData
     steerAngle::Integer
+    sensorAngle::Integer
     maxSpeed::Float32
     sensorSpeed::Float32
     cameraPos::Vector{Float32}
@@ -22,7 +23,7 @@ mutable struct PositionalData
     deltaTime::Float32
     cameraConfidence::Float32
 
-    PositionalData() = new(0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, 0.0)
+    PositionalData() = new(0, 0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, 0.0)
 end
 
 mutable struct Camera

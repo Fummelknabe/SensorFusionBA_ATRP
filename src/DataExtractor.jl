@@ -16,7 +16,7 @@ function extractData(data::String)
     splitted = split(data, "|")
 
     # if data is corrupted
-    if !(length(splitted) == 10)
+    if !(length(splitted) == 11)
         println(splitted)
         println("Length was not correct: " * string(length(splitted)))
         return
@@ -25,15 +25,16 @@ function extractData(data::String)
     posData = PositionalData()
     posData.maxSpeed = parse(Float32, splitted[2])
     posData.steerAngle = parse(Int, splitted[3])
+    posData.sensorAngle = parse(Int, splitted[4])
     # speed value is in m/0.25s converting speed:
-    posData.sensorSpeed = 4 * parse(Float32, splitted[4])
-    posData.cameraPos = parse.(Float32, split(chop(splitted[5]; head=1, tail=1), ','))
-    posData.cameraOri = parse.(Float32, split(chop(splitted[6]; head=1, tail=1), ','))
-    posData.imuAcc = parse.(Float32, split(chop(splitted[8]; head=1, tail=1), ','))
-    posData.imuGyro = parse.(Float32, split(chop(splitted[9]; head=1, tail=1), ','))
-    posData.imuMag = parse.(Float32, split(chop(splitted[10]; head=1, tail=1), ','))
+    posData.sensorSpeed = 4 * parse(Float32, splitted[5])
+    posData.cameraPos = parse.(Float32, split(chop(splitted[6]; head=1, tail=1), ','))
+    posData.cameraOri = parse.(Float32, split(chop(splitted[7]; head=1, tail=1), ','))
+    posData.imuAcc = parse.(Float32, split(chop(splitted[9]; head=1, tail=1), ','))
+    posData.imuGyro = parse.(Float32, split(chop(splitted[10]; head=1, tail=1), ','))
+    posData.imuMag = parse.(Float32, split(chop(splitted[11]; head=1, tail=1), ','))
     posData.deltaTime = deltaTime
-    posData.cameraConfidence = parse(Float32, splitted[7])
+    posData.cameraConfidence = parse(Float32, splitted[8])
 
     return posData
 end
@@ -42,6 +43,7 @@ function convertDictToPosData(dict::Dict)
     posData = PositionalData()
         
     posData.steerAngle = dict["steerAngle"]
+    posData.sensorAngle = dict["sensorAngle"]
     posData.maxSpeed = dict["maxSpeed"]
     posData.sensorSpeed = dict["sensorSpeed"]
     posData.cameraPos = dict["cameraPos"]

@@ -259,6 +259,12 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     if CImGui.CollapsingHeader("Prediction Ψ") && predicting
         ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(prediction.Ψ), maximum(prediction.Ψ))
         if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
+            # Converting Ψ to compass course in degrees             
+            for i in 1:length(prediction.Ψ)
+                prediction.Ψ[i] = prediction.Ψ[i] * 180/π
+                prediction.Ψ[i] = (prediction.Ψ[i] < 0) ? prediction.Ψ[i] + 360 : prediction.Ψ[i]
+            end
+            
             values = float.(prediction.Ψ) 
             ImPlot.PlotLine("Ψ", values, size(values, 1))
             ImPlot.EndPlot()
@@ -296,9 +302,18 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         end
     end
     if CImGui.CollapsingHeader("Steering Angle")
-        ImPlot.SetNextPlotLimits(0, length(posData), -20, 20)
+        ImPlot.SetNextPlotLimits(0, length(posData), 107, 133)
         if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
             values = Int64.(posData.steerAngle)  
+            ImPlot.PlotLine("", values, size(values, 1))
+            ImPlot.EndPlot()
+        end
+    end
+
+    if CImGui.CollapsingHeader("Steering Angle (Sensor)")
+        ImPlot.SetNextPlotLimits(0, length(posData), -100, 100)
+        if ImPlot.BeginPlot("Steering Angle (Sensor)", "Data Point", "Steering [%]")
+            values = Int64.(posData.sensorAngle)  
             ImPlot.PlotLine("", values, size(values, 1))
             ImPlot.EndPlot()
         end
