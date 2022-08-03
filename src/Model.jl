@@ -61,22 +61,22 @@ function loadGLTFModelInBuffers(model::GLTF.Object, modelData::GLTF.ZVector)
 
     for mesh in model.meshes
         pos = accessors[mesh.primitives[0].attributes["POSITION"]]        
-        texcoords = accessors[mesh.primitives[0].attributes["TEXCOORD_0"]]        
+        #texcoords = accessors[mesh.primitives[0].attributes["TEXCOORD_0"]]        
         normals = accessors[mesh.primitives[0].attributes["NORMAL"]]        
         indices = accessors[mesh.primitives[0].indices]   
         material = model.materials[mesh.primitives[0].material]   
 
-        mesh = loadGLTFMeshInBuffers(pos, texcoords, normals, indices, material, model, modelData)
+        mesh = loadGLTFMeshInBuffers(pos#=, texcoords=#, normals, indices, material, model, modelData)
         push!(newModel.meshes, mesh)
     end
 
     return newModel
 end
 
-function loadGLTFMeshInBuffers(pos::GLTF.Accessor, texcoords::GLTF.Accessor, normals::GLTF.Accessor, indices::GLTF.Accessor, material, model::GLTF.Object, modelData::GLTF.ZVector)
+function loadGLTFMeshInBuffers(pos::GLTF.Accessor#=, texcoords::GLTF.Accessor=#, normals::GLTF.Accessor, indices::GLTF.Accessor, material, model::GLTF.Object, modelData::GLTF.ZVector)
     # Create Buffer views
     posBufferView = model.bufferViews[pos.bufferView]
-    texBufferView = model.bufferViews[texcoords.bufferView]
+    #texBufferView = model.bufferViews[texcoords.bufferView]
     normalBufferView = model.bufferViews[normals.bufferView]
     idxBufferView = model.bufferViews[indices.bufferView]
 
@@ -96,12 +96,14 @@ function loadGLTFMeshInBuffers(pos::GLTF.Accessor, texcoords::GLTF.Accessor, nor
     normalData = modelData[normalBufferView.buffer]
     @c glBufferSubData(normalBufferView.target, 0, normalBufferView.byteLength, &normalData[normalBufferView.byteOffset])
     # texure coordinates
+    #=
     texVBO = GLuint(0)
     @c glGenBuffers(1, &texVBO)
     glBindBuffer(texBufferView.target, texVBO)
     glBufferData(texBufferView.target, texBufferView.byteLength, C_NULL, GL_STATIC_DRAW)
     texData = modelData[texBufferView.buffer]
     @c glBufferSubData(texBufferView.target, 0, texBufferView.byteLength, &texData[texBufferView.byteOffset])
+    =#
     # indices
     idxEBO = GLuint(0)
     @c glGenBuffers(1, &idxEBO)
@@ -118,11 +120,11 @@ function loadGLTFMeshInBuffers(pos::GLTF.Accessor, texcoords::GLTF.Accessor, nor
     glVertexAttribPointer(0, 3, pos.componentType, pos.normalized, posBufferView.byteStride, Ptr{Cvoid}(pos.byteOffset))
     glBindBuffer(normalBufferView.target, normalsVBO)
     glVertexAttribPointer(1, 3, normals.componentType, normals.normalized, normalBufferView.byteStride, Ptr{Cvoid}(normals.byteOffset))
-    glBindBuffer(idxBufferView.target, texVBO)
-    glVertexAttribPointer(2, 2, texcoords.componentType, texcoords.normalized, texBufferView.byteStride, Ptr{Cvoid}(texcoords.byteOffset))
+    #glBindBuffer(idxBufferView.target, texVBO)
+    #glVertexAttribPointer(2, 2, texcoords.componentType, texcoords.normalized, texBufferView.byteStride, Ptr{Cvoid}(texcoords.byteOffset))
     glEnableVertexAttribArray(0)
     glEnableVertexAttribArray(1)
-    glEnableVertexAttribArray(2)
+    #glEnableVertexAttribArray(2)
 
     # unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0)
@@ -132,10 +134,10 @@ function loadGLTFMeshInBuffers(pos::GLTF.Accessor, texcoords::GLTF.Accessor, nor
     newMaterial = Material(
         material.pbrMetallicRoughness.baseColorFactor[1:3],
         material.pbrMetallicRoughness.baseColorFactor[1:3],
-        material.emissiveFactor[1],
-        material.emissiveFactor[2],
-        material.emissiveFactor[3],
-        material.pbrMetallicRoughness.metallicFactor
+        1.0,#material.emissiveFactor[1],
+        0.5,#material.emissiveFactor[2],
+        0.2,#material.emissiveFactor[3],
+        32#material.pbrMetallicRoughness.metallicFactor
     )
 
     return Mesh(vao, idxEBO, indices.count, Transform(), newMaterial)

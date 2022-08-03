@@ -48,7 +48,7 @@ rawSavePosData = StructArray(PositionalData[])
 
 function mainLoop(window::GLFW.Window, ctx, program) 
     models = [loadGLTFModelInBuffers(robotSource, robotData), loadGLTFModelInBuffers(plateSource, plateData)]
-    #models[1].transform.scale = [0.5, 0.5, 0.5]
+    models[1].transform.scale = [0.2, 0.2, 0.2]
     #models[1].transform.eulerRotation = [0.0, 1/2*π, π]
     saveDataLength = 0
 
