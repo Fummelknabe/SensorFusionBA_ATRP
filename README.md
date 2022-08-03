@@ -18,10 +18,8 @@ ISSUES:
 - Acceleration data is not useful other to determine up direction
     - Maybe Quad is accerlerating too fast and it is often not sensed by imu
     - Only when v_k-1 != v_k != v_k+1 then acceleration can be used
-- Spikes in delta time for max 1.4 seconds
-    - At Peaks, Peaks also in angular Velocity around z Axis
 - Magnetic Field values of imu not working correctly
-- No steering angle was recorded the last data samples
+- No sensed steering angle was recorded 
 
 TODO:
 - Maybe seperate code in different modules

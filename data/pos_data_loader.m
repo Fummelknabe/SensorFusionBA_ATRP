@@ -13,12 +13,12 @@ l = length(val);
 clear raw str
 
 %% Camera Position
-% Get Camera Position
+% Get Camera Position (note that position is being flipped)
 camPos = zeros(l, 3);
 for i=1:l
     camPos(i, 1) = val(i).cameraPos(1);
-    camPos(i, 2) = val(i).cameraPos(2);
-    camPos(i, 3) = val(i).cameraPos(3);
+    camPos(i, 2) = -val(i).cameraPos(3);
+    camPos(i, 3) = val(i).cameraPos(2);
 end
 
 %% Acceleration Data
@@ -36,13 +36,15 @@ end
 %% Compass Course
 phi = zeros(l, 1);
 for i=1:l
-    downVector = [0; -1; 0] .* acc(i);
-    northVector = val(i).imuMag - (downVector * (dot(val(i).imuMag, downVector) / dot(downVector, downVector)));
-    angle = atan2(northVector(1), northVector(3));
+    % Use acceleration data
+    %downVector = [0; -1; 0] .* acc(i);
+    %northVector = val(i).imuMag - (downVector * (dot(val(i).imuMag, downVector) / dot(downVector, downVector)));
+    %angle = atan2(northVector(1), northVector(3));
+    angle = atan2(val(i).imuMag(1), val(i).imuMag(2));
     if angle > 0
         phi(i) = angle;
     else
-        phi(i) = angle + pi/2;
+        phi(i) = angle + 2*pi;
     end
 end
 
@@ -63,6 +65,11 @@ angVel = zeros(l, 3);
 for i=1:l
     % Convert to rad/s as data is given in °/s
     angVel(i, :) = val(i).imuGyro .* pi/180;
+end
+
+steerAngle = zeros(l, 1);
+for i=1:l
+    steerAngle(i) = (val(i).steerAngle - 120) * 0.075; 
 end
 
 %% Camera Confidence
@@ -89,67 +96,109 @@ for i=1:l
     % Euler Angles from Quaternion
     eulerAngles(i, :) = [atan2(2*(w*x+y*z), 1-2*(x^2+y^2)); asin(2*(w*y-z*x)); atan2(2*(w*z+x*y), 1-2*(y^2+z^2))];
 end
-clear x y z w
+clear x y z w rotMatrix
 
-%% Odometry
-odometryPos = zeros(l, 3);
-odometryPos(1, :) = camPos(1, :); % inital position
+%% Odometry (Angular Velocity)
+odometryPosAngVel = zeros(l, 3);
+odometryPosAngVel(1, :) = camPos(1, :); % inital position
 oldPhi = phi(1);
-oldPhiDot = angVel(1);
 
 for i=2:l
     % With Angular Velocity:
-    % This should be used to correct prediction:
-    if dt(i) < 0.5
-        phi_dot = angVel(i);
-        oldPhiDot = angVel(i);
-    else
-        phi_dot = oldPhiDot;
-    end
+    phi_dot = angVel(i, 3);
     
     % Get change in position 
-    x_dot = v(i) * cos(oldPhi + dt(i)*phi_dot); 
-    y_dot = v(i) * sin(oldPhi + dt(i)*phi_dot);  
-    oldPhi = (oldPhi + dt(i)*phi_dot);
+    x_dot = v(i) * cos(oldPhi - dt(i)*phi_dot); 
+    y_dot = v(i) * sin(oldPhi - dt(i)*phi_dot);  
+    oldPhi = (oldPhi - dt(i)*phi_dot); 
+   
+    % predict 
+    odometryPosAngVel(i, 1) = odometryPosAngVel(i-1, 1) + x_dot * dt(i);% x-Pos
+    odometryPosAngVel(i, 2) = odometryPosAngVel(i-1, 2) + y_dot * dt(i);% y-Pos
+    odometryPosAngVel(i, 3) = odometryPosAngVel(i-1, 3); % z-Pos
+end
+
+%% Odometry (Steering Angle)
+odometryPosSteAng = zeros(l, 3);
+odometryPosSteAng(1, :) = camPos(1, :); % inital position
+oldPhi = phi(1);
+
+for i=2:l        
+    % With Steering Angle: 
+    x_dot = v(i) * cos(oldPhi + dt(i)*steerAngle(i)); 
+    y_dot = v(i) * sin(oldPhi + dt(i)*steerAngle(i));  
+    oldPhi = (oldPhi + dt(i)*steerAngle(i));
     
+    % predict 
+    odometryPosSteAng(i, 1) = odometryPosSteAng(i-1, 1) + x_dot * dt(i);% x-Pos
+    odometryPosSteAng(i, 2) = odometryPosSteAng(i-1, 2) + y_dot * dt(i);% y-Pos
+    odometryPosSteAng(i, 3) = odometryPosSteAng(i-1, 3); % z-Pos
+end
+
+%% Odometry (Compass Course)
+odometryPosCompass = zeros(l, 3);
+odometryPosCompass(1, :) = camPos(1, :); % inital position
+
+for i=2:l        
     % With Compass Course:
     x_dot = v(i) * cos(phi(i));
-    y_dot = v(i) * sin(phi(i));   
+    y_dot = v(i) * sin(phi(i));  
     
-    % With Camera Orientation:
-    x_dot = v(i) * cos(eulerAngles(i, 3));
-    y_dot = v(i) * sin(eulerAngles(i, 3)); 
+    % predict 
+    odometryPosCompass(i, 1) = odometryPosCompass(i-1, 1) + x_dot * dt(i);% x-Pos
+    odometryPosCompass(i, 2) = odometryPosCompass(i-1, 2) + y_dot * dt(i);% y-Pos
+    odometryPosCompass(i, 3) = odometryPosCompass(i-1, 3); % z-Pos
+end
+
+%% Odometry (Camera Orientation)
+odometryPosCamera = zeros(l, 3);
+odometryPosCamera(1, :) = camPos(1, :); % inital position
+
+for i=2:l        
+    % With Camera Orientation: 
+    y_dot = v(i) * cos(eulerAngles(i, 2));
+    x_dot = -v(i) * sin(eulerAngles(i, 2)); 
     
-    % With Steering Angle: [MISSING]
-    
-    % predict
-    odometryPos(i, 1) = odometryPos(i-1, 1) + x_dot * dt(i);% x-Pos
-    odometryPos(i, 2) = odometryPos(i-1, 2) + y_dot * dt(i);% y-Pos
-    odometryPos(i, 3) = odometryPos(i-1, 3); % z-Pos
+    % predict 
+    odometryPosCamera(i, 1) = odometryPosCamera(i-1, 1) + x_dot * dt(i);% x-Pos
+    odometryPosCamera(i, 2) = odometryPosCamera(i-1, 2) + y_dot * dt(i);% y-Pos
+    odometryPosCamera(i, 3) = odometryPosCamera(i-1, 3); % z-Pos
 end
 
 %% Predicted Position
 predictedPos = zeros(l, 3);
-predictedPos(1, :) = camPos(1, :); % inital position (the same as odometry position)
+predictedPos(1, :) = camPos(1, :); % inital position (the same as odometry position)%
+
+%for i=2:l
+%    deltaOdometry = odometryPos(i, :) - odometryPos(i - 1, :);
+%    deltaComPos = camPos(i, :) - camPos(i - 1, :);
+%    predictedPos(i, :) = predictedPos(i-1, :) + ((1 - camConf(i)) .* deltaOdometry + camConf(i) .* deltaComPos);
+%end
 
 for i=2:l
-    deltaOdometry = odometryPos(i, :) - odometryPos(i - 1, :);
-    deltaComPos = camPos(i, :) - camPos(i - 1, :);
-    predictedPos(i, :) = predictedPos(i-1, :) + ((1 - camConf(i)) .* deltaOdometry + camConf(i) .* deltaComPos);
+    deltaSteAng = odometryPosSteAng(i, :) - odometryPosSteAng(i - 1, :);
+    deltaAngVel = odometryPosAngVel(i, :) - odometryPosAngVel(i - 1, :);
+    predictedPos(i, :) = predictedPos(i-1, :) + (deltaAngVel + deltaSteAng)./2;
 end
 
 %% Plot Position 
 subplot(1, 2, 1)
 % Plot camera position in 3D
-scatter3(camPos(:, 1), camPos(:, 2), camPos(:, 3))
-axis([60 100 -10 30 -10 30 ])
-title('Camera Position in 3D')
+%scatter3(camPos(:, 1), camPos(:, 2), camPos(:, 3))
+plot(1:l, phi .* 180/pi)
+%title('Camera Position in 3D')
 
 % Plot camera position in 2D
 subplot(1, 2, 2)
 scatter(camPos(:, 1), camPos(:, 2), 'b')
 hold on
-scatter(odometryPos(:, 1), odometryPos(:, 2), 'g')
+scatter(odometryPosCamera(:, 1), odometryPosCamera(:, 2), 'm')
 hold on
-scatter(predictedPos(:, 1), predictedPos(:, 2), 'r')
-title('Cam vs Prediction vs Odometry in 2D')
+scatter(odometryPosCompass(:, 1), odometryPosCompass(:, 2), 'r')
+hold on
+scatter(odometryPosAngVel(:, 1), odometryPosAngVel(:, 2), 'c')
+hold on
+scatter(odometryPosSteAng(:, 1), odometryPosSteAng(:, 2), 'g')
+hold on
+scatter(predictedPos(:, 1), predictedPos(:, 2), 'y')
+title('Cam vs Odometry in 2D')
