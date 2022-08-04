@@ -1,3 +1,8 @@
+using DSP
+using LinearAlgebra
+
+rateCameraConfidence(cc) = cc^5
+
 """
 This function transforms a given position so that the z-vector points up in the intertial frame 
 
@@ -27,15 +32,37 @@ function transformCoords(pos::Vector{T}, up::Vector{T}, angularSpeed::Vector{T},
     return (Rx*Ry)*pos
 end
 
-"""
-Compute the steering angle from all information that is available
-"""
-function approximateDelta(steerAngle, compassCourse, angularVelZ, )
-      # if we where to compute δ with bicycle model we would get:
-      # δ = atan((-l_f*Ψ*sqrt(v^2 - Ψ^2 l_r^2) - Ψ*l_r*sqrt(v^2 - Ψ^2*l_r^2))/(Ψ^2*l_r^2 - v^2))
-      # this is not advisiable as we wont use more data to predict our position more accurately
+function computeSpeed(cameraChange::Vector{Float32}, δt::Vector{Float32}, v::Float32, camConfidence::Float32)
+      length(cameraChange) == length(δt) || throw("Computing Speed failed, as $(cameraChange) and $(δt) were not the same length.")
+      
+      # Filter speed from camera change
+      l = length(cameraChange)
+      kernel = gaussian(l, 1/3)
+      kernel = kernel ./ sum(kernel)
+      cameraSpeed = conv(cameraChange ./ δt, kernel)
+      
+      # Combine with wheel odometry speed value
+      cc = rateCameraConfidence(camConfidence)
+      return (1-cc) * v + cc * cameraSpeed[l]
+end
 
-      # ASK GEORG
+# Calculate angles using angular Velocity ω
+Ψ(oldΨ, δt, ω::Vector{Float32}) = oldΨ - δt*ω[3]
+θ_ang(oldθ, δt, ω::Vector{Float32}) = oldθ - δt*ω[2]
+
+# Calculate angles using steering angle δ and acceleration
+Ψ(oldΨ, δt, δ::Float32) = oldΨ + δt*δ
+θ_acc(oldθ, δt, a::Vector{Float32}) = oldθ + δt*acos(a[3]/norm(a))
+
+function changeInPosition(a::Vector{Float32}, v::Float32, Ψ::Float32, θ::Float32, δt::Float32)
+      # Get Change in Position
+      x_dot = v * cos(Ψ)
+      y_dot = v * sin(Ψ)
+
+      # Only when a significant deviation from z-Axis = 1g
+      z_dot = (abs(a[3] - 1) > 0.02) ? v * sin(θ) : 0
+
+      return [x_dot*δt, y_dot*δt, z_dot*δt]
 end
 
 """
@@ -83,11 +110,15 @@ Coverts data from magnetometer to campass course.
 # Returns
 - `Float32`: The compass course in radians
 """
-function convertMagToCompass(magnetometerVector::Vector{Float32}, accelerometerVector::Vector{Float32})
-      downVector = [accelerometerVector[1], -accelerometerVector[2], accelerometerVector[3]]
-      northVector = magnetometerVector - (downVector * (dot(magnetometerVector, downVector) / dot(downVector, downVector)))
+function convertMagToCompass(magnetometerVector::Vector{Float32}; accelerometerVector::Union{Vector{Float32}, Nothing}=nothing)
+      northVector = magnetometerVector
+      if !isnothing(accelerometerVector)
+            downVector = [accelerometerVector[1], -accelerometerVector[2], accelerometerVector[3]]
+            northVector = magnetometerVector - (downVector * (dot(magnetometerVector, downVector) / dot(downVector, downVector)))
+      end
+      angle = atan(northVector[1], northVector[2])
 
-      return atan(northVector[1], northVector[2])
+      return Float32((angle > 0) ? angle : angle + 2*π)
 end
 
 function initializeSensorFusion(startPosState::PositionalState, posData::StructArray)
@@ -99,7 +130,7 @@ function initializeSensorFusion(startPosState::PositionalState, posData::StructA
                                                                     posData.steerAngle[i], 
                                                                     posData.imuAcc[i], 
                                                                     posData.sensorSpeed[i], 
-                                                                    convertMagToCompass(posData.imuMag[i], posData.imuAcc[i])))
+                                                                    convertMagToCompass(posData.imuMag[i]#=, accelerometerVector=posData.imuAcc[i]=#)))
       end
 
       return predictedStates

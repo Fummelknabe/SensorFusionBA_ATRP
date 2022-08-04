@@ -25,3 +25,4 @@ TODO:
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended
 - Fix depiction of prediction + camera 
+- Try out camera with spatial_memory = True

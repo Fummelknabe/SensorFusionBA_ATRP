@@ -1,6 +1,7 @@
 [deps]
 CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
 CSyntax = "ea656a56-6ca6-5dda-bba5-7b6963a5f74c"
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
 GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
 GLTF = "aeeaf58c-ab4d-11e9-3a9f-9b6bf58b5bc3"
 ImPlot = "e8efc688-5342-4ad4-b4ba-9025a731b363"
