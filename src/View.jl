@@ -15,9 +15,6 @@ include("Sensorfusion.jl")
 include("Client.jl")
 include("InputHandler.jl")
 
-#const robotModelSource = GLTF.load("assets/simpleTank.gltf")
-#const robotModelData = [read("assets/"*b.uri) for b in robotModelSource.buffers]
-
 const robotSource = GLTF.load("assets/robot.gltf")
 const robotData = [read("assets/"*b.uri) for b in robotSource.buffers]
 
@@ -55,6 +52,8 @@ function setUpWindow(size::Tuple{Integer, Integer}, title::String)
 
     GLFW.SetWindowCloseCallback(window, (_) -> onWindowClose())
     GLFW.SetMouseButtonCallback(window, (_, button, action, mods) -> onMouseButton(button, action))
+    # adjust glViewport when resizing
+    GLFW.SetWindowSizeCallback(window, (window, width, height) -> onWindowResize(width, height))
 
     #enable depth test 
     glEnable(GL_DEPTH_TEST)
@@ -393,118 +392,6 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
 
     CImGui.End()
 end
-
-#=
-function plotRawData(posData::StructVector{PositionalData})      
-    #CImGui.SetNextWindowSize((600, 900))      
-    #=This in not ideal, cause plots might not be visible with a constraint window size=#   
-    CImGui.Begin("Plots", C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
-
-    if size(posData, 1) == 0
-        @info "No PositionalData to Plot"
-        global showDataPlots = false
-        CImGui.End()
-        return
-    end
-
-    if CImGui.CollapsingHeader("Steering Angle")
-        ImPlot.SetNextPlotLimits(0, rawDataLength, -20, 20)
-        if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
-            yValues = Int64.(posData.steerAngle)  
-            ImPlot.PlotLine("", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
-        end
-    end
-
-    if CImGui.CollapsingHeader("Max Speed")
-        ImPlot.SetNextPlotLimits(0, rawDataLength, 19, 40)
-        if ImPlot.BeginPlot("Max Speed", "Data Point", "Max Speed [PWM - Duty Cycle]")
-            yValues = float.(posData.maxSpeed)  
-            ImPlot.PlotLine("", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
-        end
-    end
-    
-    if CImGui.CollapsingHeader("Speed")
-        ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 15)
-        if ImPlot.BeginPlot("Speed", "Data Point", "Speed [m/s]")
-            yValues = float.(posData.sensorSpeed) 
-            ImPlot.PlotLine("", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
-        end
-    end
-
-    #=
-    Disable plotting this as its subject to change
-    if CImGui.CollapsingHeader("Compass Course")
-        ImPlot.SetNextPlotLimits(0, rawDataLength, 0, 360)
-        if ImPlot.BeginPlot("Angle to Magnetic North", "Data Point", "Degrees [°]")
-            yValues = float.(posData.imuMag) 
-            ImPlot.PlotLine("", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
-        end
-    end
-    =#
-
-    if CImGui.CollapsingHeader("Camera Position Change")
-        ImPlot.SetNextPlotLimits(0, rawDataLength, -0.2, 0.2)
-        if ImPlot.BeginPlot("Positional Change", "Data Point", "Absolute Change")
-            # Convert vector of vectors to matrix:
-            cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
-            yValues = float.(cameraPosMatrix[:, 4]) 
-            ImPlot.PlotLine("", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
-        end
-    end
-
-    if CImGui.CollapsingHeader("Camera Position")
-        # Convert vector of vectors to matrix:
-        cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
-        ImPlot.SetNextPlotLimits(0, rawDataLength, minimum(cameraPosMatrix), maximum(cameraPosMatrix))
-        if ImPlot.BeginPlot("Relative Camera Position", "Data Point", "Distance [m]")            
-            yValues = float.(cameraPosMatrix[:, 1]) 
-            ImPlot.PlotLine("x", yValues, size(yValues, 1))
-            yValues = float.(cameraPosMatrix[:, 2]) 
-            ImPlot.PlotLine("y", yValues, size(yValues, 1))
-            yValues = float.(cameraPosMatrix[:, 3]) 
-            ImPlot.PlotLine("z", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
-        end
-    end
-
-    if CImGui.CollapsingHeader("Angular Velocity")
-        # Convert vector of vectors to matrix:
-        imuGyroMatrix = reduce(vcat, transpose.(posData.imuGyro))
-        ImPlot.SetNextPlotLimits(0, rawDataLength, minimum(imuGyroMatrix), maximum(imuGyroMatrix))
-        if ImPlot.BeginPlot("Angular Velocity", "Data Point", "Distance [°/s]")            
-            yValues = float.(imuGyroMatrix[:, 1]) 
-            ImPlot.PlotLine("x", yValues, size(yValues, 1))
-            yValues = float.(imuGyroMatrix[:, 2]) 
-            ImPlot.PlotLine("y", yValues, size(yValues, 1))
-            yValues = float.(imuGyroMatrix[:, 3]) 
-            ImPlot.PlotLine("z", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
-        end 
-    end
-
-    if CImGui.CollapsingHeader("Acceleration")
-        # Convert vector of vectors to matrix:
-        imuAccMatrix = reduce(vcat, transpose.(posData.imuAcc))
-        ImPlot.SetNextPlotLimits(0, rawDataLength, minimum(imuAccMatrix), maximum(imuAccMatrix))
-        if ImPlot.BeginPlot("Acceleration", "Data Point", "Distance [g]")            
-            yValues = float.(imuAccMatrix[:, 1]) 
-            ImPlot.PlotLine("x", yValues, size(yValues, 1))
-            yValues = float.(imuAccMatrix[:, 2]) 
-            ImPlot.PlotLine("y", yValues, size(yValues, 1))
-            yValues = float.(imuAccMatrix[:, 3]) 
-            ImPlot.PlotLine("z", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
-        end
-    end
-
-    CImGui.End()
-end
-=#
 
 let (previousTime, previousTimeCounting) = (time(), time())
     frame = 0

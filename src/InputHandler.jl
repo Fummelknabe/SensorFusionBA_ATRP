@@ -72,6 +72,10 @@ function onMouseButton(button, action)
     end
 end
 
+function onWindowResize(width, height)
+    glViewport(0, 0, width, height)
+end
+
 function connectButtonPress(ipData::String, portData::String)
     if connected
         disconnect()

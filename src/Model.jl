@@ -55,6 +55,15 @@ function transformToMatrix(t::Transform)
     return xRotation * yRotation * zRotation * scaleAndPos
 end
 
+function convertQuaternionToEuler(q::Vector{Float32})
+    x = q[1]
+    y = q[2]
+    z = q[3]
+    w = q[4]
+
+    return [atan2(2*(w*x+y*z), 1-2*(x^2+y^2)); asin(2*(w*y-z*x)); atan2(2*(w*z+x*y), 1-2*(y^2+z^2))]
+end
+
 function loadGLTFModelInBuffers(model::GLTF.Object, modelData::GLTF.ZVector)
     newModel = Model(Vector{Mesh}(undef, 0), Transform())
     accessors = model.accessors
@@ -110,7 +119,7 @@ function loadGLTFMeshInBuffers(pos::GLTF.Accessor#=, texcoords::GLTF.Accessor=#,
     glBindBuffer(idxBufferView.target, idxEBO)
     glBufferData(idxBufferView.target, idxBufferView.byteLength, C_NULL, GL_STATIC_DRAW)
     idxData = modelData[idxBufferView.buffer]
-    @c glBufferSubData(idxBufferView.target, 0, idxBufferView.byteLength, &idxData[idxBufferView.byteOffset])
+    @c glBufferSubData(idxBufferView.target, 0, idxBufferView.byteLength, &idxData[idxBufferView.byteOffset + indices.byteOffset])
 
     # create VAO
     vao = GLuint(0)

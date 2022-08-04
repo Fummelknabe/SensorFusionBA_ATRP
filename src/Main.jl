@@ -28,7 +28,7 @@ showRecoredDataPlots = false
 isLeftMouseButtonDown = false
 isRightMouseButtonDown = false
 oldMousePosition = [0.0, 0.0]
-windowSize = (1400, 1000)
+windowSize = (1600, 900)
 
 include("Camera.jl")
 # Camera to render
@@ -48,8 +48,9 @@ rawSavePosData = StructArray(PositionalData[])
 
 function mainLoop(window::GLFW.Window, ctx, program) 
     models = [loadGLTFModelInBuffers(robotSource, robotData), loadGLTFModelInBuffers(plateSource, plateData)]
-    models[1].transform.scale = [0.2, 0.2, 0.2]
-    #models[1].transform.eulerRotation = [0.0, 1/2*π, π]
+    models[1].transform.scale = [0.15, 0.15, 0.15]
+    models[1].transform.position = [0.0, 2.5, 0.0]
+    models[1].transform.eulerRotation = [0.0, -π/8, π]
     saveDataLength = 0
 
     try
@@ -63,8 +64,14 @@ function mainLoop(window::GLFW.Window, ctx, program)
             if renderRobot
                 # Before calculatin camera matrices check Inputs
                 checkCameraMovement([CImGui.GetMousePos().x - windowSize[1] / 2, CImGui.GetMousePos().y - windowSize[2] / 2], cam)
+                if connected
+                    # if connected orientate robot according to camera orientation in x and z axis
+                    angles = convertQuaternionToEuler(rawPositionalData[length(rawPositionalData)].cameraOri) 
+                    models[1].transform.eulerRotation = [angles[1], -π/8, π + angles[3]]
+                end
 
-                for model in models
+                for model in models                
+                    
                     modelTransform = transformToMatrix(model.transform)
                     for mesh in model.meshes                    
                         writeToUniforms(program, modelTransform * transformToMatrix(mesh.transform), cam, GLfloat[1.0, 1.0, 1.0], mesh.material)

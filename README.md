@@ -14,7 +14,6 @@ VEHICLE STATS:
     - l_r = 10cm
 
 ISSUES:
-- Some issues with model, unclear what cause
 - Acceleration data is not useful other to determine up direction
     - Maybe Quad is accerlerating too fast and it is often not sensed by imu
     - Only when v_k-1 != v_k != v_k+1 then acceleration can be used
