@@ -198,8 +198,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     CImGui.Button(predicting ? "Predicting..." : "Update Prediction") && global predicting = !predicting
 
     if predicting
-        startPosState = PositionalState([cameraPosMatrix[1, 1], cameraPosMatrix[1, 3], cameraPosMatrix[1, 2]], [posData.sensorSpeed[1], posData.sensorSpeed[1]], 0.0)
-        global prediction = initializeSensorFusion(startPosState, posData)
+        global prediction = predictFromRecordedData(posData)
     end
 
     CImGui.SetCursorPos((0, 20))
@@ -241,155 +240,156 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     # Spacing to accomodate for rect
     CImGui.Dummy(0.0, rectSize[2])
 
-    if CImGui.CollapsingHeader("Prediction Position") && predicting
-        predictionMatrix = reduce(vcat, transpose.(prediction.position))  
-        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(predictionMatrix), maximum(predictionMatrix))
-        if ImPlot.BeginPlot("Predicted Position", "Data Point", "Distance [m]")
-            xValues = float.(predictionMatrix[:, 1]) 
-            ImPlot.PlotLine("x", xValues, size(xValues, 1))
-            yValues = float.(predictionMatrix[:, 2]) 
-            ImPlot.PlotLine("y", yValues, size(yValues, 1))
-            zValues = float.(predictionMatrix[:, 3]) 
-            ImPlot.PlotLine("z", zValues, size(zValues, 1))
-            ImPlot.EndPlot()
-        end
-    end
-
-    if CImGui.CollapsingHeader("Prediction Ψ") && predicting
-        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(prediction.Ψ), maximum(prediction.Ψ))
-        if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
-            # Converting Ψ to compass course in degrees             
-            for i in 1:length(prediction.Ψ)
-                prediction.Ψ[i] = prediction.Ψ[i] * 180/π
-                prediction.Ψ[i] = (prediction.Ψ[i] < 0) ? prediction.Ψ[i] + 360 : prediction.Ψ[i]
+    if CImGui.CollapsingHeader("Show Data Plots")
+        if CImGui.CollapsingHeader("Prediction Position") && predicting
+            predictionMatrix = reduce(vcat, transpose.(prediction.position))  
+            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(predictionMatrix), maximum(predictionMatrix))
+            if ImPlot.BeginPlot("Predicted Position", "Data Point", "Distance [m]")
+                xValues = float.(predictionMatrix[:, 1]) 
+                ImPlot.PlotLine("x", xValues, size(xValues, 1))
+                yValues = float.(predictionMatrix[:, 2]) 
+                ImPlot.PlotLine("y", yValues, size(yValues, 1))
+                zValues = float.(predictionMatrix[:, 3]) 
+                ImPlot.PlotLine("z", zValues, size(zValues, 1))
+                ImPlot.EndPlot()
             end
-            
-            values = float.(prediction.Ψ) 
-            ImPlot.PlotLine("Ψ", values, size(values, 1))
-            ImPlot.EndPlot()
         end
-    end
 
-    if CImGui.CollapsingHeader("Camera Position")
-        ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(cameraPosMatrix), maximum(cameraPosMatrix))
-        if ImPlot.BeginPlot("Relative Camera Position", "Data Point", "Distance [m]")            
-            yValues = float.(cameraPosMatrix[:, 1]) 
-            ImPlot.PlotLine("x", yValues, size(yValues, 1))
-            yValues = float.(cameraPosMatrix[:, 2]) 
-            ImPlot.PlotLine("y", yValues, size(yValues, 1))
-            yValues = float.(cameraPosMatrix[:, 3]) 
-            ImPlot.PlotLine("z", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
+        if CImGui.CollapsingHeader("Prediction Ψ") && predicting
+            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(prediction.Ψ), maximum(prediction.Ψ))
+            if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
+                # Converting Ψ to compass course in degrees             
+                for i in 1:length(prediction.Ψ)
+                    prediction.Ψ[i] = prediction.Ψ[i] * 180/π
+                    prediction.Ψ[i] = (prediction.Ψ[i] < 0) ? prediction.Ψ[i] + 360 : prediction.Ψ[i]
+                end
+                
+                values = float.(prediction.Ψ) 
+                ImPlot.PlotLine("Ψ", values, size(values, 1))
+                ImPlot.EndPlot()
+            end
         end
-    end
 
-    if CImGui.CollapsingHeader("Camera Confidence")
-        ImPlot.SetNextPlotLimits(0, length(posData), 0, 100)
-        if ImPlot.BeginPlot("Confidence Value for Camera", "Data Point", "Percent [%]")
-            values = float.(posData.cameraConfidence) 
-            ImPlot.PlotLine("", values, size(values, 1))
-            ImPlot.EndPlot()
+        if CImGui.CollapsingHeader("Camera Position")
+            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(cameraPosMatrix), maximum(cameraPosMatrix))
+            if ImPlot.BeginPlot("Relative Camera Position", "Data Point", "Distance [m]")            
+                yValues = float.(cameraPosMatrix[:, 1]) 
+                ImPlot.PlotLine("x", yValues, size(yValues, 1))
+                yValues = float.(cameraPosMatrix[:, 2]) 
+                ImPlot.PlotLine("y", yValues, size(yValues, 1))
+                yValues = float.(cameraPosMatrix[:, 3]) 
+                ImPlot.PlotLine("z", yValues, size(yValues, 1))
+                ImPlot.EndPlot()
+            end
         end
-    end
 
-    if CImGui.CollapsingHeader("Camera Position Change")
-        camPosChange = float.(cameraPosMatrix[:, 4])
-        ImPlot.SetNextPlotLimits(0, length(posData), minimum(camPosChange), maximum(camPosChange))
-        if ImPlot.BeginPlot("Positional Change", "Data Point", "Absolute Change")
-            ImPlot.PlotLine("", camPosChange, size(camPosChange, 1))
-            ImPlot.EndPlot()
+        if CImGui.CollapsingHeader("Camera Confidence")
+            ImPlot.SetNextPlotLimits(0, length(posData), 0, 100)
+            if ImPlot.BeginPlot("Confidence Value for Camera", "Data Point", "Percent [%]")
+                values = float.(posData.cameraConfidence) 
+                ImPlot.PlotLine("", values, size(values, 1))
+                ImPlot.EndPlot()
+            end
         end
-    end
-    if CImGui.CollapsingHeader("Steering Angle")
-        ImPlot.SetNextPlotLimits(0, length(posData), 107, 133)
-        if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
-            values = Int64.(posData.steerAngle)  
-            ImPlot.PlotLine("", values, size(values, 1))
-            ImPlot.EndPlot()
-        end
-    end
 
-    if CImGui.CollapsingHeader("Steering Angle (Sensor)")
-        ImPlot.SetNextPlotLimits(0, length(posData), -100, 100)
-        if ImPlot.BeginPlot("Steering Angle (Sensor)", "Data Point", "Steering [%]")
-            values = Int64.(posData.sensorAngle)  
-            ImPlot.PlotLine("", values, size(values, 1))
-            ImPlot.EndPlot()
+        if CImGui.CollapsingHeader("Camera Position Change")
+            camPosChange = float.(cameraPosMatrix[:, 4])
+            ImPlot.SetNextPlotLimits(0, length(posData), minimum(camPosChange), maximum(camPosChange))
+            if ImPlot.BeginPlot("Positional Change", "Data Point", "Absolute Change")
+                ImPlot.PlotLine("", camPosChange, size(camPosChange, 1))
+                ImPlot.EndPlot()
+            end
         end
-    end
-
-    if CImGui.CollapsingHeader("Max Speed")
-        ImPlot.SetNextPlotLimits(0, length(posData), 19, 40)
-        if ImPlot.BeginPlot("Max Speed", "Data Point", "Max Speed [PWM - Duty Cycle]")
-            values = float.(posData.maxSpeed)  
-            ImPlot.PlotLine("", values, size(values, 1))
-            ImPlot.EndPlot()
+        if CImGui.CollapsingHeader("Steering Angle")
+            ImPlot.SetNextPlotLimits(0, length(posData), 107, 133)
+            if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
+                values = Int64.(posData.steerAngle)  
+                ImPlot.PlotLine("", values, size(values, 1))
+                ImPlot.EndPlot()
+            end
         end
-    end
-    
-    if CImGui.CollapsingHeader("Speed")
-        values = float.(posData.sensorSpeed)
-        ImPlot.SetNextPlotLimits(0, length(posData), minimum(values), maximum(values))
-        if ImPlot.BeginPlot("Speed", "Data Point", "Speed [m/s]")             
-            ImPlot.PlotLine("", values, size(values, 1))
-            ImPlot.EndPlot()
+
+        if CImGui.CollapsingHeader("Steering Angle (Sensor)")
+            ImPlot.SetNextPlotLimits(0, length(posData), -100, 100)
+            if ImPlot.BeginPlot("Steering Angle (Sensor)", "Data Point", "Steering [%]")
+                values = Int64.(posData.sensorAngle)  
+                ImPlot.PlotLine("", values, size(values, 1))
+                ImPlot.EndPlot()
+            end
         end
-    end
 
-    if CImGui.CollapsingHeader("Magnetometer")
-        # Convert vector of vectors to matrix:
-        imuMagMatrix = reduce(vcat, transpose.(posData.imuMag))
-        ImPlot.SetNextPlotLimits(0, length(posData), -1, 1)
-        if ImPlot.BeginPlot("Magnetic Field", "Data Point", "Field Strength [G]")
-            yValues = float.(imuMagMatrix[:, 1]) 
-            ImPlot.PlotLine("x", yValues, size(yValues, 1))
-            yValues = float.(imuMagMatrix[:, 2]) 
-            ImPlot.PlotLine("y", yValues, size(yValues, 1))
-            yValues = float.(imuMagMatrix[:, 3]) 
-            ImPlot.PlotLine("z", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
+        if CImGui.CollapsingHeader("Max Speed")
+            ImPlot.SetNextPlotLimits(0, length(posData), 19, 40)
+            if ImPlot.BeginPlot("Max Speed", "Data Point", "Max Speed [PWM - Duty Cycle]")
+                values = float.(posData.maxSpeed)  
+                ImPlot.PlotLine("", values, size(values, 1))
+                ImPlot.EndPlot()
+            end
         end
-    end
-
-    if CImGui.CollapsingHeader("Angular Velocity")
-        # Convert vector of vectors to matrix:
-        imuGyroMatrix = reduce(vcat, transpose.(posData.imuGyro))
-        ImPlot.SetNextPlotLimits(0, length(posData), minimum(imuGyroMatrix), maximum(imuGyroMatrix))
-        if ImPlot.BeginPlot("Angular Velocity", "Data Point", "Distance [°/s]")            
-            yValues = float.(imuGyroMatrix[:, 1]) 
-            ImPlot.PlotLine("x", yValues, size(yValues, 1))
-            yValues = float.(imuGyroMatrix[:, 2]) 
-            ImPlot.PlotLine("y", yValues, size(yValues, 1))
-            yValues = float.(imuGyroMatrix[:, 3]) 
-            ImPlot.PlotLine("z", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
-        end 
-    end
-
-    if CImGui.CollapsingHeader("Acceleration")
-        # Convert vector of vectors to matrix:
-        imuAccMatrix = reduce(vcat, transpose.(posData.imuAcc))
-        ImPlot.SetNextPlotLimits(0, length(posData), minimum(imuAccMatrix), maximum(imuAccMatrix))
-        if ImPlot.BeginPlot("Acceleration", "Data Point", "Distance [g]")            
-            yValues = float.(imuAccMatrix[:, 1]) 
-            ImPlot.PlotLine("x", yValues, size(yValues, 1))
-            yValues = float.(imuAccMatrix[:, 2]) 
-            ImPlot.PlotLine("y", yValues, size(yValues, 1))
-            yValues = float.(imuAccMatrix[:, 3]) 
-            ImPlot.PlotLine("z", yValues, size(yValues, 1))
-            ImPlot.EndPlot()
+        
+        if CImGui.CollapsingHeader("Speed")
+            values = float.(posData.sensorSpeed)
+            ImPlot.SetNextPlotLimits(0, length(posData), minimum(values), maximum(values))
+            if ImPlot.BeginPlot("Speed", "Data Point", "Speed [m/s]")             
+                ImPlot.PlotLine("", values, size(values, 1))
+                ImPlot.EndPlot()
+            end
         end
-    end
 
-    if CImGui.CollapsingHeader("Delta Time")
-        values = float.(posData.deltaTime)
-        ImPlot.SetNextPlotLimits(0, length(posData), minimum(values), maximum(values))
-        if ImPlot.BeginPlot("Delta Time", "Data Point", "dt [s]")             
-            ImPlot.PlotLine("", values, size(values, 1))
-            ImPlot.EndPlot()
+        if CImGui.CollapsingHeader("Magnetometer")
+            # Convert vector of vectors to matrix:
+            imuMagMatrix = reduce(vcat, transpose.(posData.imuMag))
+            ImPlot.SetNextPlotLimits(0, length(posData), -1, 1)
+            if ImPlot.BeginPlot("Magnetic Field", "Data Point", "Field Strength [G]")
+                yValues = float.(imuMagMatrix[:, 1]) 
+                ImPlot.PlotLine("x", yValues, size(yValues, 1))
+                yValues = float.(imuMagMatrix[:, 2]) 
+                ImPlot.PlotLine("y", yValues, size(yValues, 1))
+                yValues = float.(imuMagMatrix[:, 3]) 
+                ImPlot.PlotLine("z", yValues, size(yValues, 1))
+                ImPlot.EndPlot()
+            end
         end
-    end
 
+        if CImGui.CollapsingHeader("Angular Velocity")
+            # Convert vector of vectors to matrix:
+            imuGyroMatrix = reduce(vcat, transpose.(posData.imuGyro))
+            ImPlot.SetNextPlotLimits(0, length(posData), minimum(imuGyroMatrix), maximum(imuGyroMatrix))
+            if ImPlot.BeginPlot("Angular Velocity", "Data Point", "Distance [°/s]")            
+                yValues = float.(imuGyroMatrix[:, 1]) 
+                ImPlot.PlotLine("x", yValues, size(yValues, 1))
+                yValues = float.(imuGyroMatrix[:, 2]) 
+                ImPlot.PlotLine("y", yValues, size(yValues, 1))
+                yValues = float.(imuGyroMatrix[:, 3]) 
+                ImPlot.PlotLine("z", yValues, size(yValues, 1))
+                ImPlot.EndPlot()
+            end 
+        end
+
+        if CImGui.CollapsingHeader("Acceleration")
+            # Convert vector of vectors to matrix:
+            imuAccMatrix = reduce(vcat, transpose.(posData.imuAcc))
+            ImPlot.SetNextPlotLimits(0, length(posData), minimum(imuAccMatrix), maximum(imuAccMatrix))
+            if ImPlot.BeginPlot("Acceleration", "Data Point", "Distance [g]")            
+                yValues = float.(imuAccMatrix[:, 1]) 
+                ImPlot.PlotLine("x", yValues, size(yValues, 1))
+                yValues = float.(imuAccMatrix[:, 2]) 
+                ImPlot.PlotLine("y", yValues, size(yValues, 1))
+                yValues = float.(imuAccMatrix[:, 3]) 
+                ImPlot.PlotLine("z", yValues, size(yValues, 1))
+                ImPlot.EndPlot()
+            end
+        end
+
+        if CImGui.CollapsingHeader("Delta Time")
+            values = float.(posData.deltaTime)
+            ImPlot.SetNextPlotLimits(0, length(posData), minimum(values), maximum(values))
+            if ImPlot.BeginPlot("Delta Time", "Data Point", "dt [s]")             
+                ImPlot.PlotLine("", values, size(values, 1))
+                ImPlot.EndPlot()
+            end
+        end
+    end # End CollapsingHeader
     CImGui.End()
 end
 

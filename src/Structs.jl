@@ -2,8 +2,8 @@ export PositionalState
 
 mutable struct PositionalState
     position::Vector{Float32}
-    velocity::Vector{Float32}
     Ψ::Float32
+    θ::Float32
 end
 
 export PositionalData

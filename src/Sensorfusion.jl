@@ -1,6 +1,9 @@
 using DSP
 using LinearAlgebra
 
+
+predictedStates = StructArray(PositionalState[])
+
 rateCameraConfidence(cc) = cc^5
 
 """
@@ -43,7 +46,7 @@ function computeSpeed(cameraChange::Vector{Float32}, δt::Vector{Float32}, v::Fl
       
       # Combine with wheel odometry speed value
       cc = rateCameraConfidence(camConfidence)
-      return (1-cc) * v + cc * cameraSpeed[l]
+      return Float32((1-cc) * v + cc * cameraSpeed[l])
 end
 
 # Calculate angles using angular Velocity ω
@@ -51,7 +54,7 @@ end
 θ_ang(oldθ, δt, ω::Vector{Float32}) = oldθ - δt*ω[2]
 
 # Calculate angles using steering angle δ and acceleration
-Ψ(oldΨ, δt, δ::Float32) = oldΨ + δt*δ
+Ψ(oldΨ, δt, δ::Int64) = oldΨ + δt*δ
 θ_acc(oldθ, δt, a::Vector{Float32}) = oldθ + δt*acos(a[3]/norm(a))
 
 function changeInPosition(a::Vector{Float32}, v::Float32, Ψ::Float32, θ::Float32, δt::Float32)
@@ -66,40 +69,43 @@ function changeInPosition(a::Vector{Float32}, v::Float32, Ψ::Float32, θ::Float
 end
 
 """
-Angle between velocity vector and axis thought the wheels of the vehicle
+This function predicts the next position from given datapoints and the last positinal state.
+
+# Arguments
+- `posState::PositionalState`: The last positional state. 
+- `dataPoints::StructVector{PositionalData}`: An array of datapoints. There should atleast 2 data points to more accurately predict position. 
+
+# Returns
+- `PositionalState`: The new positional state of the robot.
 """
-function β(δ) return atan(l_r / (l_r + l_f) * tan(δ)) end
+function predict(posState::PositionalState, dataPoints::StructVector{PositionalData})
+      # Get data from data point
+      amountDataPoints = length(dataPoints)
+      amountDataPoints > 1 || throw("More than $(amountDataPoints) Data Points need to be given to predict position.")
+      newData = dataPoints[amountDataPoints]
 
-"""
-The angle between the x axis and the axis through the wheels of the vehicle
-"""
-Ψ(Ψ_, δt, δ, v) = Ψ_ + v / (l_r + l_f) * cos(β(δ)) * tan(δ) * δt 
+      camPosMatrix = reduce(vcat, transpose.(dataPoints.cameraPos))   
+      v = computeSpeed(camPosMatrix[:, 4], dataPoints.deltaTime, newData.sensorSpeed, newData.cameraConfidence)
+      δOdoSteeringAngle = changeInPosition(newData.imuAcc, 
+                                           v, 
+                                           Ψ(posState.Ψ, newData.deltaTime, newData.steerAngle),
+                                           θ_acc(posState.θ, newData.deltaTime, newData.imuAcc),
+                                           newData.deltaTime)
 
-v_x(v_x_, β, δt, Ψ, a_x) = (v_x_ + a_x*δt) * cos(Ψ + β) 
-v_y(v_y_, β, δt, Ψ, a_x) = (v_y_ + a_x*δt) * sin(Ψ + β) 
+      δOdoAngularVelocity = changeInPosition(newData.imuAcc, 
+                                             v, 
+                                             Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro),
+                                             θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
+                                             newData.deltaTime)
 
-p_x(p_x_, v_x, δt, Ψ, β, a_x) = p_x_ + v_x * δt + 1/2 * a_x * cos(Ψ + β) * δt^2 
-p_y(p_y_, v_y, δt, Ψ, β, a_x) = p_y_ + v_y * δt + 1/2 * a_x * sin(Ψ + β) * δt^2 
-# Z Position is not always the same, but we dont easy data to calculate it 
-# transform position p after calculating in x-y plane
-p_z(p_z_) = p_z_ 
+      δCamPos = dataPoints[amountDataPoints].cameraPos[1:3] - dataPoints[amountDataPoints - 1].cameraPos[1:3]
 
-
-function predict(posState::PositionalState, δt::Float32, steeringAngle::Integer, acceleration::Vector{Float32}, velocityForward::Float32, Ψ_sensor::Float32)
-      oldPos = posState.position
-      oldVel = velocityForward#posState.velocity
-      oldΨ = Ψ_sensor #* π/180#posState.Ψ
-      a_x = acceleration[1] * 9.81
-
-      β_ = β(steeringAngle * π/180)
-      Ψ_ = Ψ(oldΨ, δt, steeringAngle, norm(oldVel))
-      velocity = [v_x(oldVel, β_, δt, Ψ_, a_x), v_y(oldVel, β_, δt, Ψ_, a_x)]
-
-      return PositionalState(
-                  [p_x(oldPos[1], velocity[1], δt, Ψ_, β_, a_x), p_y(oldPos[2], velocity[2], δt, Ψ_, β_, a_x), p_z(oldPos[3])], 
-                  velocity, 
-                  Ψ_)      
-end 
+      ratedCC = rateCameraConfidence(newData.cameraConfidence)
+      newPosition = posState.position + (1-ratedCC)*(2*δOdoAngularVelocity+δOdoSteeringAngle)./3 + ratedCC*δCamPos
+      return PositionalState(newPosition, 
+                             (2*Ψ(posState.Ψ, newData.deltaTime, newData.steerAngle)+Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))./3, 
+                             (2*θ_acc(posState.θ, newData.deltaTime, newData.imuAcc)+θ_ang(posState.θ, newData.deltaTime, newData.imuGyro))./3)
+end
 
 """
 Coverts data from magnetometer to campass course.
@@ -121,17 +127,41 @@ function convertMagToCompass(magnetometerVector::Vector{Float32}; accelerometerV
       return Float32((angle > 0) ? angle : angle + 2*π)
 end
 
-function initializeSensorFusion(startPosState::PositionalState, posData::StructArray)
-      predictedStates = StructArray(PositionalState[])
+"""
+This function predicts position from recorded data.
 
-      for i in 1:length(posData)
-            push!(predictedStates, predict(i == 1 ? startPosState : predictedStates[i-1], 
-                                                                    posData.deltaTime[i], 
-                                                                    posData.steerAngle[i], 
-                                                                    posData.imuAcc[i], 
-                                                                    posData.sensorSpeed[i], 
-                                                                    convertMagToCompass(posData.imuMag[i]#=, accelerometerVector=posData.imuAcc[i]=#)))
+# Arguments
+- `posData::StructVector{PositionalData}`: The recorded data points.
+"""
+function predictFromRecordedData(posData::StructVector{PositionalData})
+      # Set up predicted states and initialize first one
+      println(length(posData))
+      predictedStates = StructArray(PositionalState[])
+      push!(predictedStates, PositionalState(posData[1].cameraPos[1:3], convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc)))
+
+      # Predict for every coming positional value
+      for i in 2:length(posData)
+            push!(predictedStates, predict(
+                  predictedStates[1],
+                  # give mutiple positional data points if possible
+                  (i > 9) ? posData[(i-9):i] : posData[(i-1):i]
+            ))
       end
 
       return predictedStates
+end
+
+"""
+Start sensor fusion with a continuous flow of data.
+
+# Arguments
+- `posData::StructVector{PositionalData}`: The last recorded data points. Length should be more than 1.
+"""
+function initializeSensorFusion(posData::StructVector{PositionalData})
+      if length(predictedStates) == 0
+            # Set first state
+            global predictedStates[1] = PositionalState(posData[1].cameraPos[1:3], convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc))
+      end
+
+      push!(predictedStates, predict(predictedStates[length(predictedStates)  - 1], posData))
 end
