@@ -79,6 +79,8 @@ function loadGLTFModelInBuffers(model::GLTF.Object, modelData::GLTF.ZVector)
         push!(newModel.meshes, mesh)
     end
 
+    println(newModel.meshes)
+
     return newModel
 end
 

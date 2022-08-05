@@ -66,8 +66,19 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 checkCameraMovement([CImGui.GetMousePos().x - windowSize[1] / 2, CImGui.GetMousePos().y - windowSize[2] / 2], cam)
                 if connected
                     # if connected orientate robot according to camera orientation in x and z axis
-                    angles = convertQuaternionToEuler(rawPositionalData[length(rawPositionalData)].cameraOri) 
+                    positionalData = rawPositionalData[length(rawPositionalData)]
+                    angles = convertQuaternionToEuler(positionalData.cameraOri) 
                     models[1].transform.eulerRotation = [angles[1], -π/8, π + angles[3]]
+
+                    # Get the meshes of the robot model
+                    leftWheel = models[1].meshes[2]                    
+                    rightWheel = models[1].meshes[4]                    
+                    rearAxis = models[1].meshes[3]
+
+                    # change transform according to sensor values
+                    leftWheel.transform.eulerRotation = [0.0, 0.0, (positionalData.steerAngle - 120) * π/180]
+                    rightWheel.transform.eulerRotation = [0.0, 0.0, (positionalData.steerAngle - 120) * π/180]
+                    rearAxis.transform.eulerRotation = [0.0, rearAxis.transform.eulerRotation[2] + positionalData.sensorSpeed * 5, 0.0]
                 end
 
                 for model in models                
