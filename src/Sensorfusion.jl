@@ -6,6 +6,20 @@ predictedStates = StructArray(PositionalState[])
 
 rateCameraConfidence(cc, exponent) = cc^exponent
 
+# linearized system matrix
+F(state::PositionalState, u::PositionalData) = [1 0 0 -u.deltaTime*state.v*sin(state.Ψ) 0;
+                                                0 1 0 u.deltaTime*state.v*cos(state.Ψ) 0;
+                                                0 0 1 0 u.deltaTime*state.v*cos(state.θ);
+                                                0 0 0 1 0;
+                                                0 0 0 0 1]
+
+const H = [1 0 0 0 0;
+             0 1 0 0 0;
+             0 0 1 0 0]
+
+P(F, Q, oldP) = F*oldP*transpose(F) .+ Q*Matrix(I, 5, 5)
+K(P, R) = P*transpose(H)*(H*P*transpose(H) .+ R*Matrix(I, 3, 3))^-1
+
 """
 This function transforms a given position so that the z-vector points up in the intertial frame 
 
@@ -100,8 +114,20 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       δCamPos = dataPoints[amountDataPoints].cameraPos[1:3] - dataPoints[amountDataPoints - 1].cameraPos[1:3]
 
       ratedCC = rateCameraConfidence(newData.cameraConfidence, settings.exponentCC)
-      newPosition = posState.position + (1-ratedCC)*(settings.steerGyroRatio*δOdoAngularVelocity+(1-settings.steerGyroRatio)*δOdoSteeringAngle) + ratedCC*δCamPos
-      return PositionalState(newPosition, 
+      δodometryPos = (settings.steerGyroRatio*δOdoAngularVelocity+(1-settings.steerGyroRatio)*δOdoSteeringAngle)
+
+      newPosition = posState.position + (1-ratedCC)*δodometryPos + ratedCC*δCamPos
+      P_update = Matrix(I, 5, 5)
+      if settings.kalmanFilterCamera
+            P_predict = P(F(posState, dataPoints[amountDataPoints]), settings.processNoise, posState.P)
+            kalmanGain = K(P_predict, settings.measurementNoise)
+            P_update = P_predict .- kalmanGain*H*P_predict
+            newPosition = posState.position + δodometryPos + kalmanGain[1:3, 1:3] * (dataPoints[amountDataPoints].cameraPos[1:3] - (posState.position + δodometryPos))
+      end
+
+      return PositionalState(newPosition,
+                             v,
+                             P_update,
                              (settings.steerGyroRatio*Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle-120)))+(1-settings.steerGyroRatio)*Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro)), 
                              (settings.steerGyroRatio*θ_acc(posState.θ, newData.deltaTime, newData.imuAcc)+(1-settings.steerGyroRatio)*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)))
 end
@@ -135,7 +161,7 @@ This function predicts position from recorded data.
 function predictFromRecordedData(posData::StructVector{PositionalData}, settings::PredictionSettings)
       # Set up predicted states and initialize first one
       predictedStates = StructArray(PositionalState[])
-      push!(predictedStates, PositionalState(posData[1].cameraPos[1:3], convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc)))
+      push!(predictedStates, PositionalState(posData[1].cameraPos[1:3], posData[1].sensorSpeed, Matrix(I, 5, 5), convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc)))
 
       # Predict for every coming positional value
       for i in 2:length(posData)
@@ -159,7 +185,7 @@ Start sensor fusion with a continuous flow of data.
 function initializeSensorFusion(posData::StructVector{PositionalData}, settings::PredictionSettings)
       if length(predictedStates) == 0
             # Set first state
-            global predictedStates[1] = PositionalState(posData[1].cameraPos[1:3], convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc))
+            global predictedStates[1] = PositionalState(posData[1].cameraPos[1:3], posData[1].sensorSpeed, Matrix(I, 5, 5), convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc))
       end
 
       push!(predictedStates, predict(predictedStates[length(predictedStates)  - 1], posData, settings))

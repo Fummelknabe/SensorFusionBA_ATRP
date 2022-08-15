@@ -2,6 +2,8 @@ export PositionalState
 
 mutable struct PositionalState
     position::Vector{Float32}
+    v::Float32
+    P::Matrix{Float32}
     Ψ::Float32
     θ::Float32
 end
@@ -11,6 +13,8 @@ mutable struct PredictionSettings
     exponentCC::Float32
     steerAngleFactor::Float32
     steerGyroRatio::Float32
+    processNoise::Float32
+    measurementNoise::Float32
 end
 
 export PositionalData

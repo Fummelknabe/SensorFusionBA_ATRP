@@ -218,6 +218,13 @@ for i=2:l
     predictedPos(i, :) = predictedPos(i-1, :) + (1-rateCamConf(camConf(i)))*(2*deltaAngVel + deltaSteAng)./3 + rateCamConf(camConf(i))*deltaCamPos;
 end
 
+%% Kalman Filter
+f = @(k) [predictedPos(k, 1)+dt(k)*v_combined(k)*cos(phi(k));
+          predictedPos(k, 2)+dt(k)*v_combined(k)*sin(phi(k));
+          predictedPos(k, 3)+dt(k)*v_combined(k)*sin(theta);
+          phi(k)+dt(k)*phi_dot(k);
+          theta(k)+dt(k)*theta_dot(k)];
+
 %% Plot Position 
 subplot(1, 2, 1)
 % Plot camera position in 3D

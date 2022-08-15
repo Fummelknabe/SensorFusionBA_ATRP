@@ -177,9 +177,9 @@ end
 
 function predictionSettingsWindow()
     CImGui.Begin("Prediction Settings")
-    pred = PredictionSettings(false, 0, 0, 0)
+    pred = PredictionSettings(false, 0, 0, 0, 0, 0)
 
-    @cstatic check=false exponent=Cfloat(5.0) factor=Cfloat(0.075) ratio=Cfloat(0.66) begin 
+    @cstatic check=false exponent=Cfloat(5.0) factor=Cfloat(0.075) ratio=Cfloat(0.66) r=Cfloat(1.0) q=Cfloat(1.0) begin 
         CImGui.Text("Kalman Filter for Camera Data")
         @c CImGui.Checkbox("", &check)
 
@@ -198,9 +198,16 @@ function predictionSettingsWindow()
         CImGui.SameLine()
         ShowHelpMarker("At 1, use only steerangle for odometry.")
 
+        if check
+            CImGui.Text("Measurement Noise")
+            @c CImGui.SliderFloat("    ", &r, 0.0, 1.0)
+            CImGui.Text("Process Noise")
+            @c CImGui.SliderFloat("     ", &q, 0.0, 1.0)
+        end
+        
         CImGui.End()
 
-        pred = PredictionSettings(check, exponent, factor, ratio)
+        pred = PredictionSettings(check, exponent, factor, ratio, q, r)
     end 
 
     return pred

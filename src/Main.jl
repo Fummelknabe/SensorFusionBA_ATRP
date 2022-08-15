@@ -146,7 +146,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
             end
 
             # initialize with standard settings
-            settings = PredictionSettings(false, 5, 0.075, 0.66)
+            settings = PredictionSettings(false, 5, 0.075, 0.66, 0, 0)
             if predSettingWindow
                 settings = predictionSettingsWindow()
             end
