@@ -185,14 +185,8 @@ Has to be called inside the render loop.
 function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{PositionalData}, windowName::String)
     CImGui.SetNextWindowSizeConstraints(rectSize, (rectSize[1], windowSize[2]))
     CImGui.Begin(windowName, C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
-    
-    # Plot camera pos
-    drawList = CImGui.GetWindowDrawList()    
-    rectPos = CImGui.GetWindowPos()
 
     cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))#rawSavePosData for keeping same size of rectangle
-
-    CImGui.SetCursorPos(Float32.((0.0, rectSize[2])))
 
     # Draw the prediction button under map
     CImGui.Button(predicting ? "Predicting..." : "Update Prediction") && global predicting = !predicting
@@ -201,9 +195,6 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         global prediction = predictFromRecordedData(posData)
     end
 
-    CImGui.SetCursorPos((0, 20))
-    CImGui.AddRectFilled(drawList, rectPos, (rectPos.x + rectSize[1], rectPos.y + rectSize[2] - CImGui.GetScrollY()), CImGui.IM_COL32(100, 100, 100, 255))
-    
     (minX, minZ) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 3])))
     (maxX, maxZ) = (maximum(float.(cameraPosMatrix[:, 1])), maximum(float.(cameraPosMatrix[:, 3])))
 
@@ -217,28 +208,19 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         (maxX, maxZ) = (maximum([predMaxX, maxX]), maximum([predMaxY, maxZ]))
     end
 
-    xDif = abs(minX) + abs(maxX)
-    zDif = abs(minZ) + abs(maxZ)
-    factor = round(minimum((rectSize[1] / xDif, rectSize[2] / zDif)))    # Pixel pro meter
-
-    meanX = round((minX + maxX) / 2)
-    meanZ = round((minZ + maxZ) / 2)
-
-    for i in 1:length(posData.cameraPos)
-        lastPoint = i == length(posData.cameraPos)
-        pointPos = (rectPos.x + floor(rectSize[1]/2) + (posData.cameraPos[i][1] - meanX)*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (posData.cameraPos[i][3] - meanZ)*factor) # factor * 10
-        CImGui.AddCircleFilled(drawList, pointPos, lastPoint ? 5 : 1, 
-            lastPoint ? CImGui.IM_COL32(0, 255, 0, 255) : CImGui.IM_COL32(255, 0, 0, 255))
-
+    # Scatter plot positions 
+    ImPlot.SetNextPlotLimits(-50, 50, -50, 50)   
+    if ImPlot.BeginPlot("Positions", "x [m]", "y [m]", ImVec2(rectSize[1], rectSize[2]))         
+        xValues = float.(cameraPosMatrix[:, 1])
+        yValues = float.(cameraPosMatrix[:, 3])
+        ImPlot.PlotScatter("Camera Pos", xValues, yValues, length(posData))
         if predicting
-            predPointPos = (rectPos.x + floor(rectSize[1]/2) + (prediction.position[i][1] - meanX)*factor, rectPos.y + floor(rectSize[2]/2) - CImGui.GetScrollY() + (prediction.position[i][2] - meanZ)*factor) # factor * 10                       
-            CImGui.AddCircleFilled(drawList, predPointPos, lastPoint ? 5 : 1, 
-                lastPoint ? CImGui.IM_COL32(0, 0, 255, 255) : CImGui.IM_COL32(60, 130, 60, 255))
+            xValues = float.(predictionMatrix[:, 1])
+            yValues = float.(predictionMatrix[:, 2])
+            ImPlot.PlotScatter("Predicted Pos", xValues, yValues, length(posData))
         end
+        ImPlot.EndPlot()
     end
-
-    # Spacing to accomodate for rect
-    CImGui.Dummy(0.0, rectSize[2])
 
     if CImGui.CollapsingHeader("Show Data Plots")
         if CImGui.CollapsingHeader("Prediction Position") && predicting

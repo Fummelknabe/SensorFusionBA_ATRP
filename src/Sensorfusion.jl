@@ -54,7 +54,7 @@ end
 θ_ang(oldθ, δt, ω::Vector{Float32}) = oldθ - δt*ω[2]
 
 # Calculate angles using steering angle δ and acceleration
-Ψ(oldΨ, δt, δ::Int64) = oldΨ + δt*δ
+Ψ(oldΨ, δt, δ::Float32) = oldΨ + δt*δ
 θ_acc(oldθ, δt, a::Vector{Float32}) = oldθ + δt*acos(a[3]/norm(a))
 
 function changeInPosition(a::Vector{Float32}, v::Float32, Ψ::Float32, θ::Float32, δt::Float32)
@@ -88,7 +88,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       v = computeSpeed(camPosMatrix[:, 4], dataPoints.deltaTime, newData.sensorSpeed, newData.cameraConfidence)
       δOdoSteeringAngle = changeInPosition(newData.imuAcc, 
                                            v, 
-                                           Ψ(posState.Ψ, newData.deltaTime, newData.steerAngle),
+                                           Ψ(posState.Ψ, newData.deltaTime, Float32(0.075*(newData.steerAngle-120))),
                                            θ_acc(posState.θ, newData.deltaTime, newData.imuAcc),
                                            newData.deltaTime)
 
@@ -103,7 +103,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       ratedCC = rateCameraConfidence(newData.cameraConfidence)
       newPosition = posState.position + (1-ratedCC)*(2*δOdoAngularVelocity+δOdoSteeringAngle)./3 + ratedCC*δCamPos
       return PositionalState(newPosition, 
-                             (2*Ψ(posState.Ψ, newData.deltaTime, newData.steerAngle)+Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))./3, 
+                             (2*Ψ(posState.Ψ, newData.deltaTime, Float32(0.075*(newData.steerAngle-120)))+Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))./3, 
                              (2*θ_acc(posState.θ, newData.deltaTime, newData.imuAcc)+θ_ang(posState.θ, newData.deltaTime, newData.imuGyro))./3)
 end
 
@@ -135,14 +135,13 @@ This function predicts position from recorded data.
 """
 function predictFromRecordedData(posData::StructVector{PositionalData})
       # Set up predicted states and initialize first one
-      println(length(posData))
       predictedStates = StructArray(PositionalState[])
       push!(predictedStates, PositionalState(posData[1].cameraPos[1:3], convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc)))
 
       # Predict for every coming positional value
       for i in 2:length(posData)
             push!(predictedStates, predict(
-                  predictedStates[1],
+                  predictedStates[i-1],
                   # give mutiple positional data points if possible
                   (i > 9) ? posData[(i-9):i] : posData[(i-1):i]
             ))

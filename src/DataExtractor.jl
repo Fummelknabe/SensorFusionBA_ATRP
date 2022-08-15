@@ -46,13 +46,14 @@ function convertDictToPosData(dict::Dict)
     posData.sensorAngle = dict["sensorAngle"]
     posData.maxSpeed = dict["maxSpeed"]
     posData.sensorSpeed = dict["sensorSpeed"]
-    posData.cameraPos = dict["cameraPos"]
+    camPos = dict["cameraPos"]
+    posData.cameraPos = [camPos[1], camPos[2], -camPos[3], camPos[4]]
     posData.cameraOri = dict["cameraOri"]
-    posData.imuGyro = dict["imuGyro"]
+    posData.imuGyro = deg2rad.(dict["imuGyro"])
     posData.imuAcc = dict["imuAcc"]
     posData.imuMag = dict["imuMag"]
     posData.deltaTime = dict["deltaTime"]
-    posData.cameraConfidence = dict["cameraConfidence"]
+    posData.cameraConfidence = dict["cameraConfidence"] ./ 100
 
     return posData
 end
