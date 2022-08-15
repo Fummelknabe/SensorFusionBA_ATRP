@@ -145,13 +145,19 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 end
             end
 
+            # initialize with standard settings
+            settings = PredictionSettings(false, 5, 0.075, 0.66)
+            if predSettingWindow
+                settings = predictionSettingsWindow()
+            end
+
             if showRecoredDataPlots
-                plotData((1000, 700), rawSavePosData[1:rawSaveDataLength], "Recorded data Plot")
+                plotData((1000, 700), rawSavePosData[1:rawSaveDataLength], "Recorded data Plot", settings)
             end
 
             if showDataPlots && size(rawPositionalData, 1) > 0
-                plotData((1000, 700), rawPositionalData, "On time positional data")
-            end
+                plotData((1000, 700), rawPositionalData, "On time positional data", settings)
+            end            
 
             CImGui.Render()
             ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())                 

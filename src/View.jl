@@ -27,6 +27,8 @@ const fragShaderScript = read("shader/shader.frag", String)
 predicting = false
 prediction = StructArray(PositionalState[])
 
+predSettingWindow = false
+
 export setUpWindow
 """
 Set up a GLFW window, callbacks and render context.
@@ -173,6 +175,37 @@ function toggleRecordedDataPlots(posData::StructArray)
     end
 end
 
+function predictionSettingsWindow()
+    CImGui.Begin("Prediction Settings")
+    pred = PredictionSettings(false, 0, 0, 0)
+
+    @cstatic check=false exponent=Cfloat(5.0) factor=Cfloat(0.075) ratio=Cfloat(0.66) begin 
+        CImGui.Text("Kalman Filter for Camera Data")
+        @c CImGui.Checkbox("", &check)
+
+        CImGui.Text("Camera Confidence Impact")
+        @c CImGui.SliderFloat(" ", &exponent, 0.0, 30.0)
+        CImGui.SameLine()
+        ShowHelpMarker("At 0, camera is fully trusted.")
+
+        CImGui.Text("Factor to adjust steerangle")
+        @c CImGui.SliderFloat("  ", &factor, 0.0, 0.25)
+        CImGui.SameLine()
+        ShowHelpMarker("At 0, robot always goes straight.")
+
+        CImGui.Text("Ratio between steerangle and gyroscope")
+        @c CImGui.SliderFloat("   ", &ratio, 0.0, 1.0)
+        CImGui.SameLine()
+        ShowHelpMarker("At 1, use only steerangle for odometry.")
+
+        CImGui.End()
+
+        pred = PredictionSettings(check, exponent, factor, ratio)
+    end 
+
+    return pred
+end
+
 """
 Plot the positional data received from the AT-RP.
 Has to be called inside the render loop.
@@ -182,7 +215,7 @@ Has to be called inside the render loop.
 - `posData::StructVector{PositionalData}`: The positional data from the atrp to plot.
 - `windowName::String`: The name of the window.
 """
-function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{PositionalData}, windowName::String)
+function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{PositionalData}, windowName::String, settings::PredictionSettings)
     CImGui.SetNextWindowSizeConstraints(rectSize, (rectSize[1], windowSize[2]))
     CImGui.Begin(windowName, C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
 
@@ -190,13 +223,15 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
 
     # Draw the prediction button under map
     CImGui.Button(predicting ? "Predicting..." : "Update Prediction") && global predicting = !predicting
+    CImGui.SameLine()
+    CImGui.Button(predSettingWindow ? "Close Settings" : "Open Settings") && global predSettingWindow = !predSettingWindow
 
     if predicting
-        global prediction = predictFromRecordedData(posData)
+        global prediction = predictFromRecordedData(posData, settings)
     end
 
-    (minX, minZ) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 3])))
-    (maxX, maxZ) = (maximum(float.(cameraPosMatrix[:, 1])), maximum(float.(cameraPosMatrix[:, 3])))
+    (minX, minZ) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 2])))
+    (maxX, maxZ) = (maximum(float.(cameraPosMatrix[:, 1])), maximum(float.(cameraPosMatrix[:, 2])))
 
     if predicting
         predictionMatrix = reduce(vcat, transpose.(prediction.position))   
@@ -212,7 +247,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     ImPlot.SetNextPlotLimits(-50, 50, -50, 50)   
     if ImPlot.BeginPlot("Positions", "x [m]", "y [m]", ImVec2(rectSize[1], rectSize[2]))         
         xValues = float.(cameraPosMatrix[:, 1])
-        yValues = float.(cameraPosMatrix[:, 3])
+        yValues = float.(cameraPosMatrix[:, 2])
         ImPlot.PlotScatter("Camera Pos", xValues, yValues, length(posData))
         if predicting
             xValues = float.(predictionMatrix[:, 1])

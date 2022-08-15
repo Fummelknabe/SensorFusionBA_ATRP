@@ -6,6 +6,13 @@ mutable struct PositionalState
     θ::Float32
 end
 
+mutable struct PredictionSettings
+    kalmanFilterCamera::Bool
+    exponentCC::Float32
+    steerAngleFactor::Float32
+    steerGyroRatio::Float32
+end
+
 export PositionalData
 """
 Struct to store the data acquired by the AT-RP
