@@ -29,3 +29,4 @@ TODO:
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended
 - Mathematical model with inputs: speedValue and steerAngle
+- Choose correct initial transform for camera

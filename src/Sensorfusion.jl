@@ -21,6 +21,22 @@ P(F, Q, oldP) = F*oldP*transpose(F) .+ Q*Matrix(I, 5, 5)
 K(P, R) = P*transpose(H)*(H*P*transpose(H) .+ R*Matrix(I, 3, 3))^-1
 
 """
+This function transforms camera coords ontop of the prediction. This should be 
+unnecessary if the correct initial transform is choosen for the camera. 
+(for old data, this has to be used)
+DISCLAIMER: this function does not transform the orientation of the camera.
+"""
+function transformCameraCoords(cameraCoords::Vector{Float32}, Ψ::Float32)
+      # Create 2D rotational matrix
+      R = [cos(Ψ - π/2) -sin(Ψ - π/2);
+           sin(Ψ - π/2) cos(Ψ - π/2)]
+
+      temp = R*cameraCoords[1:2]
+
+      return [temp[1], temp[2], cameraCoords[3], cameraCoords[4]]
+end
+
+"""
 This function transforms a given position so that the z-vector points up in the intertial frame 
 
 # Arguments

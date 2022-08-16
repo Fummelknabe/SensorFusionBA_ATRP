@@ -149,8 +149,14 @@ function handleRecordDataWindow(amountDataPoints)
     dataLength = 0
     CImGui.InputText("", amountDataPoints, length(amountDataPoints), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && (dataLength = toggleRecordData(amountDataPoints))
     CImGui.Button(recordData ? "Recording" : "Record") && (dataLength = toggleRecordData(amountDataPoints))
-    CImGui.SameLine()
-    CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(loadFromJSon()))
+    CImGui.SameLine()    
+    @cstatic check=false begin 
+        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(loadFromJSon(check)))
+        CImGui.SameLine()    
+        @c CImGui.Checkbox("Rotate Camera Coords", &check)
+        CImGui.SameLine()
+        ShowHelpMarker("Unnecessary if the correct initial transform is choosen for the camera.\n This transforms the camera data onto the predicted data.")
+    end
     if showRecoredDataPlots
         @cstatic  dispDataPoints=Cint(1) begin
             CImGui.Text("Display Datapoint: ")
@@ -226,30 +232,18 @@ Has to be called inside the render loop.
 """
 function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{PositionalData}, windowName::String, settings::PredictionSettings)
     CImGui.SetNextWindowSizeConstraints(rectSize, (rectSize[1], windowSize[2]))
-    CImGui.Begin(windowName, C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)
-
-    cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))#rawSavePosData for keeping same size of rectangle
+    CImGui.Begin(windowName, C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)    
 
     # Draw the prediction button under map
     CImGui.Button(predicting ? "Predicting..." : "Update Prediction") && global predicting = !predicting
     CImGui.SameLine()
     CImGui.Button(predSettingWindow ? "Close Settings" : "Open Settings") && global predSettingWindow = !predSettingWindow
 
+    cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
+
     if predicting
         global prediction = predictFromRecordedData(posData, settings)
-    end
-
-    (minX, minZ) = (minimum(float.(cameraPosMatrix[:, 1])), minimum(float.(cameraPosMatrix[:, 2])))
-    (maxX, maxZ) = (maximum(float.(cameraPosMatrix[:, 1])), maximum(float.(cameraPosMatrix[:, 2])))
-
-    if predicting
-        predictionMatrix = reduce(vcat, transpose.(prediction.position))   
-
-        (predMinX, predMinY) = (minimum(float.(predictionMatrix[:, 1])), minimum(float.(predictionMatrix[:, 2])))
-        (predMaxX, predMaxY) = (maximum(float.(predictionMatrix[:, 1])), maximum(float.(predictionMatrix[:, 2])))
-
-        (minX, minZ) = (minimum([predMinX, minX]), minimum([predMinY, minZ]))
-        (maxX, maxZ) = (maximum([predMaxX, maxX]), maximum([predMaxY, maxZ]))
+        predictionMatrix = reduce(vcat, transpose.(prediction.position))  
     end
 
     # Scatter plot positions 
@@ -258,7 +252,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         xValues = float.(cameraPosMatrix[:, 1])
         yValues = float.(cameraPosMatrix[:, 2])
         ImPlot.PlotScatter("Camera Pos", xValues, yValues, length(posData))
-        if predicting
+        if predicting             
             xValues = float.(predictionMatrix[:, 1])
             yValues = float.(predictionMatrix[:, 2])
             ImPlot.PlotScatter("Predicted Pos", xValues, yValues, length(posData))
