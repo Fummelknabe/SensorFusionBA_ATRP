@@ -61,7 +61,7 @@ function convertQuaternionToEuler(q::Vector{Float32})
     z = q[3]
     w = q[4]
 
-    return [atan2(2*(w*x+y*z), 1-2*(x^2+y^2)); asin(2*(w*y-z*x)); atan2(2*(w*z+x*y), 1-2*(y^2+z^2))]
+    return [atan(2*(w*x+y*z), 1-2*(x^2+y^2)); asin(2*(w*y-z*x)); atan(2*(w*z+x*y), 1-2*(y^2+z^2))]
 end
 
 function loadGLTFModelInBuffers(model::GLTF.Object, modelData::GLTF.ZVector)

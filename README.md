@@ -12,6 +12,10 @@ VEHICLE STATS:
 - IMU is vehilce reference point 
     - l_f = 59cm
     - l_r = 10cm
+- Correspondance between speedValue and m/s:
+    - speedValue = round(19 + v * 1.325) (only a rough estimate)
+    - That is not realistic as it would settle  for 57 km/h top speed
+    - Better estimate: round(19 + v*2.1) with 36 km/h top speed
 
 ISSUES:
 - Acceleration data is not useful other to determine up direction
@@ -24,5 +28,4 @@ TODO:
 - Maybe seperate code in different modules
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended
-- Fix depiction of prediction + camera 
-- Try out camera with spatial_memory = True
+- Mathematical model with inputs: speedValue and steerAngle
