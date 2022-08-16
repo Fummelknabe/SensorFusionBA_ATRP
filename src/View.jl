@@ -179,7 +179,7 @@ function predictionSettingsWindow()
     CImGui.Begin("Prediction Settings")
     pred = PredictionSettings(false, 0, 0, 0, 0, 0)
 
-    @cstatic check=false exponent=Cfloat(5.0) factor=Cfloat(0.075) ratio=Cfloat(0.66) r=Cfloat(1.0) q=Cfloat(1.0) begin 
+    @cstatic check=false exponent=Cfloat(5.0) factor=Cfloat(0.075) ratio=Cfloat(0.66) r=Cfloat(0.1) q=Cfloat(0.1) begin 
         CImGui.Text("Kalman Filter for Camera Data")
         @c CImGui.Checkbox("", &check)
 
@@ -200,9 +200,9 @@ function predictionSettingsWindow()
 
         if check
             CImGui.Text("Measurement Noise")
-            @c CImGui.SliderFloat("    ", &r, 0.0, 1.0)
+            @c CImGui.SliderFloat("    ", &r, 0.01, 100.0)
             CImGui.Text("Process Noise")
-            @c CImGui.SliderFloat("     ", &q, 0.0, 1.0)
+            @c CImGui.SliderFloat("     ", &q, -0.1, 0.1)
         end
         
         CImGui.End()
