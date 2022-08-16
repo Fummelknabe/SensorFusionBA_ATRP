@@ -199,10 +199,12 @@ function predictionSettingsWindow()
         ShowHelpMarker("At 1, use only steerangle for odometry.")
 
         if check
-            CImGui.Text("Measurement Noise")
-            @c CImGui.SliderFloat("    ", &r, 0.01, 100.0)
-            CImGui.Text("Process Noise")
-            @c CImGui.SliderFloat("     ", &q, -0.1, 0.1)
+            if CImGui.CollapsingHeader("Kalman Filter Settings", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
+                CImGui.Text("Measurement Noise")
+                @c CImGui.SliderFloat("    ", &r, 0.01, 100.0)
+                CImGui.Text("Process Noise")
+                @c CImGui.SliderFloat("     ", &q, -0.1, 0.1)
+            end
         end
         
         CImGui.End()
