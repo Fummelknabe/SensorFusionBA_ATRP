@@ -22,6 +22,7 @@ ISSUES:
     - Maybe Quad is accerlerating too fast and it is often not sensed by imu
     - Only when v_k-1 != v_k != v_k+1 then acceleration can be used
 - No sensed steering angle was recorded 
+- Compass Course has weird impact on data
 
 TODO:
 - Maybe seperate code in different modules

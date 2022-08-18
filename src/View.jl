@@ -191,30 +191,30 @@ function predictionSettingsWindow()
         @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
 
         CImGui.Text("Camera Confidence Impact")
-        @c CImGui.SliderFloat(" ", &exponent, 0.0, 30.0)
+        @c CImGui.SliderFloat("##exponent", &exponent, 0.0, 30.0)
         CImGui.SameLine()
         ShowHelpMarker("At 0, camera is fully trusted.")
 
         CImGui.Text("Factor to adjust steerangle")
-        @c CImGui.SliderFloat("  ", &factor, 0.0, 0.25)
+        @c CImGui.SliderFloat("##factor", &factor, 0.0, 0.25)
         CImGui.SameLine()
         ShowHelpMarker("At 0, robot always goes straight.")
 
         CImGui.Text("Factor to influence steering angle part.")
-        @c CImGui.SliderFloat("   ", &steerFactor, 0.0, 1.0)
+        @c CImGui.SliderFloat("##steer_factor", &steerFactor, 0.0, 1.0)
 
         CImGui.Text("Factor to influence gyroscope part.")
-        @c CImGui.SliderFloat("    ", &gyroFactor, 0.0, 1.0)
+        @c CImGui.SliderFloat("##gyro_factor", &gyroFactor, 0.0, 1.0)
 
         CImGui.Text("Factor to influence compass course part.")
-        @c CImGui.SliderFloat("       ", &magFactor, 0.0, 1.0)
+        @c CImGui.SliderFloat("##mag_factor", &magFactor, 0.0, 1.0)
 
         if check
             if CImGui.CollapsingHeader("Kalman Filter Settings (Camera)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
                 CImGui.Text("Measurement Noise")
-                @c CImGui.SliderFloat("      ", &r_c, 0.01, 100.0)
+                @c CImGui.SliderFloat("##measurement_noise_c", &r_c, 0.01, 100.0)
                 CImGui.Text("Process Noise")
-                @c CImGui.SliderFloat("     ", &q_c, -0.1, 0.1)
+                @c CImGui.SliderFloat("##process_noise_c", &q_c, -0.1, 0.1)
             end
         end
 
@@ -222,9 +222,9 @@ function predictionSettingsWindow()
         if check2
             if CImGui.CollapsingHeader("Kalman Filter Settings (Gyroscope)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
                 CImGui.Text("Measurement Noise")
-                @c CImGui.SliderFloat(C_NULL, &r_g, 0.01, 100.0)
+                @c CImGui.SliderFloat("##measurement_noise_g", &r_g, 0.01, 100.0)
                 CImGui.Text("Process Noise")
-                @c CImGui.SliderFloat(C_NULL, &q_g, -0.1, 0.1)
+                @c CImGui.SliderFloat("##process_noise_g", &q_g, -0.1, 0.1)
             end
         end
 
