@@ -3,18 +3,24 @@ export PositionalState
 mutable struct PositionalState
     position::Vector{Float32}
     v::Float32
-    P::Matrix{Float32}
+    P_c::Matrix{Float32}
+    P_g::Matrix{Float32}
     Ψ::Float32
     θ::Float32
 end
 
 mutable struct PredictionSettings
     kalmanFilterCamera::Bool
+    kalmanFilterGyro::Bool
     exponentCC::Float32
     steerAngleFactor::Float32
-    steerGyroRatio::Float32
-    processNoise::Float32
-    measurementNoise::Float32
+    odoSteerFactor::Float32
+    odoGyroFactor::Float32
+    odoMagFactor::Float32
+    processNoiseC::Float32
+    measurementNoiseC::Float32
+    processNoiseG::Float32
+    measurementNoiseG::Float32
 end
 
 export PositionalData

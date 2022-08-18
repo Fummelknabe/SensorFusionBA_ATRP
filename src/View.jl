@@ -183,11 +183,12 @@ end
 
 function predictionSettingsWindow()
     CImGui.Begin("Prediction Settings")
-    pred = PredictionSettings(false, 0, 0, 0, 0, 0)
+    pred = PredictionSettings(false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-    @cstatic check=false exponent=Cfloat(5.0) factor=Cfloat(0.075) ratio=Cfloat(0.66) r=Cfloat(0.1) q=Cfloat(0.1) begin 
-        CImGui.Text("Kalman Filter for Camera Data")
-        @c CImGui.Checkbox("", &check)
+    @cstatic check=false check2=false exponent=Cfloat(5.0) factor=Cfloat(0.075) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.1) r_g=Cfloat(0.1) q_g=Cfloat(0.1) begin 
+        @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
+        CImGui.SameLine()
+        @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
 
         CImGui.Text("Camera Confidence Impact")
         @c CImGui.SliderFloat(" ", &exponent, 0.0, 30.0)
@@ -199,23 +200,36 @@ function predictionSettingsWindow()
         CImGui.SameLine()
         ShowHelpMarker("At 0, robot always goes straight.")
 
-        CImGui.Text("Ratio between steerangle and gyroscope")
-        @c CImGui.SliderFloat("   ", &ratio, 0.0, 1.0)
-        CImGui.SameLine()
-        ShowHelpMarker("At 1, use only steerangle for odometry.")
+        CImGui.Text("Factor to influence steering angle part.")
+        @c CImGui.SliderFloat("   ", &steerFactor, 0.0, 1.0)
+
+        CImGui.Text("Factor to influence gyroscope part.")
+        @c CImGui.SliderFloat("    ", &gyroFactor, 0.0, 1.0)
+
+        CImGui.Text("Factor to influence compass course part.")
+        @c CImGui.SliderFloat("       ", &magFactor, 0.0, 1.0)
 
         if check
-            if CImGui.CollapsingHeader("Kalman Filter Settings", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
+            if CImGui.CollapsingHeader("Kalman Filter Settings (Camera)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
                 CImGui.Text("Measurement Noise")
-                @c CImGui.SliderFloat("    ", &r, 0.01, 100.0)
+                @c CImGui.SliderFloat("      ", &r_c, 0.01, 100.0)
                 CImGui.Text("Process Noise")
-                @c CImGui.SliderFloat("     ", &q, -0.1, 0.1)
+                @c CImGui.SliderFloat("     ", &q_c, -0.1, 0.1)
+            end
+        end
+
+        if check2
+            if CImGui.CollapsingHeader("Kalman Filter Settings (Gyroscope)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
+                CImGui.Text("Measurement Noise")
+                @c CImGui.SliderFloat(C_NULL, &r_g, 0.01, 100.0)
+                CImGui.Text("Process Noise")
+                @c CImGui.SliderFloat(C_NULL, &q_g, -0.1, 0.1)
             end
         end
         
         CImGui.End()
 
-        pred = PredictionSettings(check, exponent, factor, ratio, q, r)
+        pred = PredictionSettings(check, check2, exponent, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g)
     end 
 
     return pred
