@@ -157,7 +157,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       newPosition = posState.position + (1-ratedCC)*δodometryPos + ratedCC*δCamPos
       P_c_update = Matrix(I, 5, 5)
       if settings.kalmanFilterCamera
-            P_predict = P(F_c(posState, dataPoints[amountDataPoints]), settings.processNoiseC, posState.P, 5)
+            P_predict = P(F_c(posState, dataPoints[amountDataPoints]), settings.processNoiseC, posState.P_c, 5)
             kalmanGain = K(P_predict, H_c, settings.measurementNoiseC, 3)
             P_c_update = P_predict .- kalmanGain*H_c*P_predict
             newPosition = posState.position + δodometryPos + kalmanGain[1:3, 1:3] * (dataPoints[amountDataPoints].cameraPos[1:3] - (posState.position + δodometryPos))

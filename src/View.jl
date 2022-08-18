@@ -218,6 +218,7 @@ function predictionSettingsWindow()
             end
         end
 
+        # This breaks for some reason the program (try on Laptop)
         if check2
             if CImGui.CollapsingHeader("Kalman Filter Settings (Gyroscope)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
                 CImGui.Text("Measurement Noise")
@@ -226,7 +227,7 @@ function predictionSettingsWindow()
                 @c CImGui.SliderFloat(C_NULL, &q_g, -0.1, 0.1)
             end
         end
-        
+
         CImGui.End()
 
         pred = PredictionSettings(check, check2, exponent, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g)
