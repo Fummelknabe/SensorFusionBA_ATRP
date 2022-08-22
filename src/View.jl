@@ -185,7 +185,7 @@ function predictionSettingsWindow()
     CImGui.Begin("Prediction Settings")
     pred = PredictionSettings(false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-    @cstatic check=false check2=false exponent=Cfloat(5.0) factor=Cfloat(0.075) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.1) r_g=Cfloat(0.1) q_g=Cfloat(0.1) begin 
+    @cstatic check=false check2=false exponent=Cfloat(5.0) factor=Cfloat(0.075) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) begin 
         @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
         CImGui.SameLine()
         @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
@@ -249,10 +249,16 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     CImGui.SetNextWindowSizeConstraints(rectSize, (rectSize[1], windowSize[2]))
     CImGui.Begin(windowName, C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)    
 
-    # Draw the prediction button under map
+    showCameraPos = false
+
+    # Draw the prediction button under map    
     CImGui.Button(predicting ? "Predicting..." : "Update Prediction") && global predicting = !predicting
     CImGui.SameLine()
     CImGui.Button(predSettingWindow ? "Close Settings" : "Open Settings") && global predSettingWindow = !predSettingWindow
+    CImGui.SameLine()
+    @cstatic showCameraPosC=false begin
+    @c CImGui.Checkbox("Show Raw Camera Position", &showCameraPosC) 
+    showCameraPos = showCameraPosC end
 
     cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
 
@@ -264,9 +270,11 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     # Scatter plot positions 
     ImPlot.SetNextPlotLimits(-50, 50, -50, 50)   
     if ImPlot.BeginPlot("Positions", "x [m]", "y [m]", ImVec2(rectSize[1], rectSize[2]))         
-        xValues = float.(cameraPosMatrix[:, 1])
-        yValues = float.(cameraPosMatrix[:, 2])
-        ImPlot.PlotScatter("Camera Pos", xValues, yValues, length(posData))
+        if showCameraPos
+            xValues = float.(cameraPosMatrix[:, 1])
+            yValues = float.(cameraPosMatrix[:, 2])
+            ImPlot.PlotScatter("Camera Pos", xValues, yValues, length(posData))
+        end
         if predicting             
             xValues = float.(predictionMatrix[:, 1])
             yValues = float.(predictionMatrix[:, 2])

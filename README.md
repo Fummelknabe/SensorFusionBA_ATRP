@@ -28,6 +28,8 @@ TODO:
 - Maybe seperate code in different modules
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended
+- Redo Camera Movement
+- Fix Model movement
 - Choose correct initial transform for camera
     - Position can stay as is
 

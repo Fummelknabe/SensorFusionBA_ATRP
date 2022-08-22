@@ -51,7 +51,7 @@ function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool)
     camPos = dict["cameraPos"]
     camPos = [camPos[1], -camPos[3], camPos[2], camPos[4]]
     if rotateCameraCoords 
-        firstMagValue == -1 && global firstMagValue = posData.imuMag 
+        firstMagValue == -1 && global firstMagValue = posData.imuMag
         camPos = transformCameraCoords(Float32.(camPos), convertMagToCompass(firstMagValue)) 
     end
     posData.cameraPos = camPos
