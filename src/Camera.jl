@@ -43,25 +43,12 @@ function checkCameraMovement(mousePos::Vector{Float64}, cam::Camera)
         camX = cam.speed * difVector[1]
         camY = cam.speed * difVector[2]
 
-        rotateLeft(camX, cam)
-        rotateUp(camY, cam)
+        sideAxis = cross(cam.up, cam.position);
+        transformMatrix = rotateAroundAxis(camX, cam.up) * rotateAroundAxis(camY, normalize!(sideAxis))
+
+        cam.up = normalize!(deleteat!(transformMatrix * push!(cam.up, 1.0), 4))
+	    cam.position = deleteat!(transformMatrix * push!(cam.position, 1.0), 4);
     end 
 
     global oldMousePosition = mousePos
-end
-
-function rotateLeft(degrees::Float64, cam::Camera)
-    pos = cam.position
-	transformMatrix = rotateAroundAxis(degrees, cam.up);
-	cam.position = deleteat!(transformMatrix * push!(pos, 1.0), 4);
-end
-
-function rotateUp(degrees::Float64, cam::Camera)
-    sideAxis = cross(cam.up, cam.position);
-
-    up = cam.up
-    pos = cam.position
-	transformMatrix = rotateAroundAxis(degrees, normalize!(sideAxis));
-	cam.up = normalize!(deleteat!(transformMatrix * push!(up, 1.0), 4));
-	cam.position = deleteat!(transformMatrix * push!(pos, 1.0), 4);
 end
