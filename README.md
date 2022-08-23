@@ -16,6 +16,8 @@ VEHICLE STATS:
     - speedValue = round(19 + v * 1.325) (only a rough estimate)
     - That is not realistic as it would settle  for 57 km/h top speed
     - Better estimate: round(19 + v*2.1) with 36 km/h top speed
+- Battery Width: 15.5cm
+- Command to install cfclient: python -m pip install cfclient
 
 ISSUES:
 - Acceleration data is not useful other to determine up direction
