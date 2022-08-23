@@ -3,6 +3,7 @@ using CImGui
 using ImPlot
 using ModernGL
 using CSyntax
+using FileIO
 using CImGui: ImVec2
 
 # Status Text for connection Window
@@ -37,9 +38,12 @@ Set up a GLFW window, callbacks and render context.
 - `size::Tuple{Integer, Integer}`: Size of the window.
 - `title::String`: The title of the window.
 """
-function setUpWindow(size::Tuple{Integer, Integer}, title::String)
-    window = GLFW.CreateWindow(size[1], size[2], title)
+function setUpWindow(size::Tuple{Integer, Integer}, title::String, iconPath::String)
+    window = GLFW.CreateWindow(size[1], size[2], title)    
+    #icon = reinterpret(NTuple{4, UInt8}, FileIO.load(iconPath))
+    #GLFW.SetWindowIcon(window,  icon)
     GLFW.MakeContextCurrent(window)
+    #GLFW.PollEvents()
     ctx = CImGui.CreateContext()
 
     # Create ImPlot context
@@ -218,7 +222,6 @@ function predictionSettingsWindow()
             end
         end
 
-        # This breaks for some reason the program (try on Laptop)
         if check2
             if CImGui.CollapsingHeader("Kalman Filter Settings (Gyroscope)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
                 CImGui.Text("Measurement Noise")

@@ -176,7 +176,7 @@ This is the starting point of the program.
 """
 function main()
     # Create window and start main loop
-    window, ctx, program = setUpWindow(windowSize, "AT-RP Controller")
+    window, ctx, program = setUpWindow(windowSize, "AT-RP Controller", "assets/icon_64.png")
     cam.aspectRatio = windowSize[1]/windowSize[2]
     mainLoop(window, ctx, program)
 end
