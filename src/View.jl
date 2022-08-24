@@ -187,17 +187,30 @@ end
 
 function predictionSettingsWindow()
     CImGui.Begin("Prediction Settings")
-    pred = PredictionSettings(false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-    @cstatic check=false check2=false exponent=Cfloat(5.0) factor=Cfloat(0.075) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) begin 
+    @cstatic check=false check2=false exponent=Cfloat(5.0) useSin=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(0.075) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) σ=Cfloat(1/3) begin 
         @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
         CImGui.SameLine()
         @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
 
         CImGui.Text("Camera Confidence Impact")
-        @c CImGui.SliderFloat("##exponent", &exponent, 0.0, 30.0)
+        @c CImGui.SliderFloat("##exponent", &exponent, 0.0, 40.0)
         CImGui.SameLine()
         ShowHelpMarker("At 0, camera is fully trusted.")
+        CImGui.SameLine()
+        @c CImGui.Checkbox("##use_sin", &useSin)
+        CImGui.SameLine()
+        ShowHelpMarker("Use a Sinus for Camera Confidence.")
+
+        CImGui.Text("Camera Confidence Impact on Speed")
+        @c CImGui.SliderFloat("##exponent_speed", &speedExponent, 0.0, 40.0)
+        CImGui.SameLine()
+        ShowHelpMarker("At 0, camera is fully trusted.")
+        CImGui.SameLine()
+        @c CImGui.Checkbox("##use_sin_speed", &useSinSpeed)
+        CImGui.SameLine()
+        ShowHelpMarker("Use a Sinus for Camera Confidence on speed.")
 
         CImGui.Text("Factor to adjust steerangle")
         @c CImGui.SliderFloat("##factor", &factor, 0.0, 0.25)
@@ -213,12 +226,15 @@ function predictionSettingsWindow()
         CImGui.Text("Factor to influence compass course part.")
         @c CImGui.SliderFloat("##mag_factor", &magFactor, 0.0, 1.0)
 
+        CImGui.Text("Modify Kernel to smooth speed value.")
+        @c CImGui.SliderFloat("##variance", &σ, 0.01, 1.0)
+
         if check
             if CImGui.CollapsingHeader("Kalman Filter Settings (Camera)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
                 CImGui.Text("Measurement Noise")
                 @c CImGui.SliderFloat("##measurement_noise_c", &r_c, 0.01, 100.0)
                 CImGui.Text("Process Noise")
-                @c CImGui.SliderFloat("##process_noise_c", &q_c, -0.1, 0.1)
+                @c CImGui.SliderFloat("##process_noise_c", &q_c, 0.0, 0.1)
             end
         end
 
@@ -233,7 +249,7 @@ function predictionSettingsWindow()
 
         CImGui.End()
 
-        pred = PredictionSettings(check, check2, exponent, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g)
+        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ)
     end 
 
     return pred

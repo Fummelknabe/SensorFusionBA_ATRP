@@ -4,7 +4,7 @@ using LinearAlgebra
 
 predictedStates = StructArray(PositionalState[])
 
-rateCameraConfidence(cc, exponent) = cc^exponent
+rateCameraConfidence(cc, exponent, useSin::Bool) = Float32(useSin ? sin(π/2 * cc)^exponent : cc^exponent)
 
 # linearized system matrices
 F_c(state::PositionalState, u::PositionalData) = [1 0 0 -u.deltaTime*state.v*sin(state.Ψ) 0;
@@ -70,12 +70,12 @@ function transformCoords(pos::Vector{T}, up::Vector{T}, angularSpeed::Vector{T},
     return (Rx*Ry)*pos
 end
 
-function computeSpeed(cameraChange::Vector{Float32}, δt::Vector{Float32}, v::Float32, ratedCamConfidence::Float32)
+function computeSpeed(cameraChange::Vector{Float32}, δt::Vector{Float32}, v::Float32, ratedCamConfidence::Float32, σ::Float32)
       length(cameraChange) == length(δt) || throw("Computing Speed failed, as $(cameraChange) and $(δt) were not the same length.")
       
       # Filter speed from camera change
       l = length(cameraChange)
-      kernel = gaussian(l, 1/3)
+      kernel = gaussian(l, σ)
       kernel = kernel ./ sum(kernel)
       cameraSpeed = conv(cameraChange ./ δt, kernel)
       
@@ -119,7 +119,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       newData = dataPoints[amountDataPoints]
 
       camPosMatrix = reduce(vcat, transpose.(dataPoints.cameraPos))   
-      v = computeSpeed(camPosMatrix[:, 4], dataPoints.deltaTime, newData.sensorSpeed, rateCameraConfidence(newData.cameraConfidence, settings.exponentCC))
+      v = computeSpeed(camPosMatrix[:, 4], dataPoints.deltaTime, newData.sensorSpeed, rateCameraConfidence(newData.cameraConfidence, settings.speedExponentCC, settings.speedUseSinCC), settings.σ_forSpeedKernel)
       
       # Apply Kalman Filter to angular velocity data if wanted
       P_g_update = Matrix(I, 2, 2)
@@ -151,7 +151,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
 
       δCamPos = dataPoints[amountDataPoints].cameraPos[1:3] - dataPoints[amountDataPoints - 1].cameraPos[1:3]
 
-      ratedCC = rateCameraConfidence(newData.cameraConfidence, settings.exponentCC)
+      ratedCC = rateCameraConfidence(newData.cameraConfidence, settings.exponentCC, settings.useSinCC)
       δodometryPos = (settings.odoGyroFactor*δOdoAngularVelocity + settings.odoSteerFactor*δOdoSteeringAngle + settings.odoMagFactor*δOdoCompassCourse) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
 
       newPosition = posState.position + (1-ratedCC)*δodometryPos + ratedCC*δCamPos
