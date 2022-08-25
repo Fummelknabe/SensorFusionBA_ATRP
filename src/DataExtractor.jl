@@ -74,3 +74,26 @@ function loadFromJSon(rotateCameraCoords::Bool)
     
     return posData
 end
+
+function loadFromJSon()
+    settings = PredictionSettings(false, false, 5, false, 5, false, 0.075, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3)
+    settingsDict = JSON.parsefile("data/pred_params.json", dicttype=Dict, inttype=Int64)
+
+    settings.exponentCC = settingsDict["exponentCC"]
+    settings.speedExponentCC = settingsDict["speedExponentCC"]
+    settings.kalmanFilterCamera = settingsDict["kalmanFilterCamera"]
+    settings.kalmanFilterGyro = settingsDict["kalmanFilterGyro"]
+    settings.measurementNoiseC = settingsDict["measurementNoiseC"]
+    settings.measurementNoiseG = settingsDict["measurementNoiseG"]
+    settings.processNoiseC = settingsDict["processNoiseC"]
+    settings.processNoiseG = settingsDict["processNoiseG"]
+    settings.odoGyroFactor = settingsDict["odoGyroFactor"]
+    settings.odoMagFactor = settingsDict["odoMagFactor"]
+    settings.odoSteerFactor = settingsDict["odoSteerFactor"]
+    settings.steerAngleFactor = settingsDict["steerAngleFactor"]
+    settings.speedUseSinCC = settingsDict["speedSinCC"]
+    settings.useSinCC = settingsDict["useSinCC"]
+    settings.σ_forSpeedKernel = settingsDict["σ_forSpeedKernel"]
+
+    return settings
+end

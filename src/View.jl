@@ -29,6 +29,7 @@ predicting = false
 prediction = StructArray(PositionalState[])
 
 predSettingWindow = false
+loadingSettingsJSON = false
 
 export setUpWindow
 """
@@ -189,6 +190,8 @@ function predictionSettingsWindow()
     CImGui.Begin("Prediction Settings")
     pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
+    CImGui.Button("Toggle use Parameters in JSON") && global loadingSettingsJSON = !loadingSettingsJSON        
+
     @cstatic check=false check2=false exponent=Cfloat(5.0) useSin=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(0.075) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) σ=Cfloat(1/3) begin 
         @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
         CImGui.SameLine()
@@ -252,6 +255,7 @@ function predictionSettingsWindow()
         pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ)
     end 
 
+    if loadingSettingsJSON return loadFromJSon() end
     return pred
 end
 
@@ -452,7 +456,24 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
             end
         end
     end # End CollapsingHeader
-    CImGui.End()
+
+    if CImGui.CollapsingHeader("Prediction Settings")
+        CImGui.Text("Use Kalman Filter Camera: $(settings.kalmanFilterCamera)")
+        CImGui.Text("Use Kalman Filter Gyro: $(settings.kalmanFilterGyro)")
+        CImGui.Text("Camera Confidence Impact: $(settings.exponentCC)")
+        CImGui.Text("Use Sin for Camera: $(settings.useSinCC)")
+        CImGui.Text("Camera Confidence Impact on Speed: $(settings.speedExponentCC)")
+        CImGui.Text("Use Sinus for Speed: $(settings.speedUseSinCC)")
+        CImGui.Text("Factor to adjust steerangle: $(settings.steerAngleFactor)")
+        CImGui.Text("Factor to influence steering angle part: $(settings.odoSteerFactor)")
+        CImGui.Text("Factor to influence gyroscope part: $(settings.odoGyroFactor)")
+        CImGui.Text("Factor to influence compass course part: $(settings.odoMagFactor)")
+        CImGui.Text("Modify Kernel to smooth speed value: $(settings.σ_forSpeedKernel)")
+        CImGui.Text("Measurement Noise Camera: $(settings.measurementNoiseC)")
+        CImGui.Text("Process Noise Camera: $(settings.processNoiseC)")
+        CImGui.Text("Measurement Noise Gyro: $(settings.measurementNoiseG)")
+        CImGui.Text("Process Noise Gyro: $(settings.processNoiseG)")        
+    end
 end
 
 let (previousTime, previousTimeCounting) = (time(), time())
