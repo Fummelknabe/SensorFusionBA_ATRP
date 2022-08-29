@@ -27,7 +27,7 @@ const fragShaderScript = read("shader/shader.frag", String)
 estimating = false
 estimation = StructArray(PositionalState[])
 
-predSettingWindow = false
+estSettingWindow = false
 loadingSettingsJSON = false
 
 export setUpWindow
@@ -188,8 +188,8 @@ function toggleRecordedDataPlots(posData::StructArray)
     end
 end
 
-function predictionSettingsWindow()
-    CImGui.Begin("Prediction Settings")
+function estimationSettingsWindow()
+    CImGui.Begin("Estimation Settings")
     pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
     CImGui.Button("Toggle use Parameters in JSON") && global loadingSettingsJSON = !loadingSettingsJSON        
@@ -279,7 +279,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     # Draw the estimation button under map    
     CImGui.Button(estimating ? "Estimating..." : "Update Estimation") && global estimating = !estimating
     CImGui.SameLine()
-    CImGui.Button(predSettingWindow ? "Close Settings" : "Open Settings") && global predSettingWindow = !predSettingWindow
+    CImGui.Button(estSettingWindow ? "Close Settings" : "Open Settings") && global estSettingWindow = !estSettingWindow
     CImGui.SameLine()
     @cstatic showCameraPosC=false begin
     @c CImGui.Checkbox("Show Raw Camera Position", &showCameraPosC) 
@@ -289,7 +289,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
 
     if estimating
         global estimation = predictFromRecordedData(posData, settings)
-        predictionMatrix = reduce(vcat, transpose.(estimation.position))  
+        estimationMatrix = reduce(vcat, transpose.(estimation.position))  
     end
 
     # Scatter plot positions 
@@ -301,8 +301,8 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
             ImPlot.PlotScatter("Camera Pos", xValues, yValues, length(posData))
         end
         if estimating             
-            xValues = float.(predictionMatrix[:, 1])
-            yValues = float.(predictionMatrix[:, 2])
+            xValues = float.(estimationMatrix[:, 1])
+            yValues = float.(estimationMatrix[:, 2])
             ImPlot.PlotScatter("Predicted Pos", xValues, yValues, length(posData))
         end
         ImPlot.EndPlot()
@@ -310,14 +310,14 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
 
     if CImGui.CollapsingHeader("Show Data Plots")
         if CImGui.CollapsingHeader("Estimated Position") && estimating
-            predictionMatrix = reduce(vcat, transpose.(estimation.position))  
-            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(predictionMatrix), maximum(predictionMatrix))
+            estimationMatrix = reduce(vcat, transpose.(estimation.position))  
+            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(estimationMatrix), maximum(estimationMatrix))
             if ImPlot.BeginPlot("Predicted Position", "Data Point", "Distance [m]")
-                xValues = float.(predictionMatrix[:, 1]) 
+                xValues = float.(estimationMatrix[:, 1]) 
                 ImPlot.PlotLine("x", xValues, size(xValues, 1))
-                yValues = float.(predictionMatrix[:, 2]) 
+                yValues = float.(estimationMatrix[:, 2]) 
                 ImPlot.PlotLine("y", yValues, size(yValues, 1))
-                zValues = float.(predictionMatrix[:, 3]) 
+                zValues = float.(estimationMatrix[:, 3]) 
                 ImPlot.PlotLine("z", zValues, size(zValues, 1))
                 ImPlot.EndPlot()
             end
@@ -459,7 +459,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         end
     end # End CollapsingHeader
 
-    if CImGui.CollapsingHeader("Prediction Settings")
+    if CImGui.CollapsingHeader("Estimation Settings")
         CImGui.Text("Use Kalman Filter Camera: $(settings.kalmanFilterCamera)")
         CImGui.Text("Use Kalman Filter Gyro: $(settings.kalmanFilterGyro)")
         CImGui.Text("Camera Confidence Impact: $(settings.exponentCC)")
