@@ -24,9 +24,8 @@ const plateData = [read("assets/"*b.uri) for b in plateSource.buffers]
 
 const vertShaderScript = read("shader/shader.vert", String)
 const fragShaderScript = read("shader/shader.frag", String)
-
-predicting = false
-prediction = StructArray(PositionalState[])
+estimating = false
+estimation = StructArray(PositionalState[])
 
 predSettingWindow = false
 loadingSettingsJSON = false
@@ -146,15 +145,8 @@ function handleConnectWindow(ipData, portData)
     CImGui.End()
 end
 
-function handleRecordDataWindow(amountDataPoints)
-    CImGui.Begin("Record Positional Data", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
-    CImGui.Text(" Specify the amount of datapoints to save. \n Click 'Record' to save the next 'x' datapoints.")
-    CImGui.Text("Enter Amount:")
-    CImGui.SameLine()
-    dataLength = 0
-    CImGui.InputText("", amountDataPoints, length(amountDataPoints), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && (dataLength = toggleRecordData(amountDataPoints))
-    CImGui.Button(recordData ? "Recording" : "Record") && (dataLength = toggleRecordData(amountDataPoints))
-    CImGui.SameLine()    
+function handleShowDataWindow()
+    CImGui.Begin("Load Positional Data as JSON", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     @cstatic check=false begin 
         CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(loadFromJSon(check)))
         CImGui.SameLine()    
@@ -172,6 +164,16 @@ function handleRecordDataWindow(amountDataPoints)
             ShowHelpMarker("Use Slider to display set amount of data points.")
         end
     end
+end
+
+function handleRecordDataWindow(amountDataPoints)
+    CImGui.Begin("Record Positional Data", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+    CImGui.Text(" Specify the amount of datapoints to save. \n Click 'Record' to save the next 'x' datapoints.")
+    CImGui.Text("Enter Amount:")
+    CImGui.SameLine()
+    dataLength = 0
+    CImGui.InputText("", amountDataPoints, length(amountDataPoints), CImGui.ImGuiInputTextFlags_EnterReturnsTrue) && (dataLength = toggleRecordData(amountDataPoints))
+    CImGui.Button(recordData ? "Recording" : "Record") && (dataLength = toggleRecordData(amountDataPoints))  
     CImGui.End()
     return dataLength
 end
@@ -274,8 +276,8 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
 
     showCameraPos = false
 
-    # Draw the prediction button under map    
-    CImGui.Button(predicting ? "Predicting..." : "Update Prediction") && global predicting = !predicting
+    # Draw the estimation button under map    
+    CImGui.Button(estimating ? "Estimating..." : "Update Estimation") && global estimating = !estimating
     CImGui.SameLine()
     CImGui.Button(predSettingWindow ? "Close Settings" : "Open Settings") && global predSettingWindow = !predSettingWindow
     CImGui.SameLine()
@@ -285,9 +287,9 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
 
     cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
 
-    if predicting
-        global prediction = predictFromRecordedData(posData, settings)
-        predictionMatrix = reduce(vcat, transpose.(prediction.position))  
+    if estimating
+        global estimation = predictFromRecordedData(posData, settings)
+        predictionMatrix = reduce(vcat, transpose.(estimation.position))  
     end
 
     # Scatter plot positions 
@@ -298,7 +300,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
             yValues = float.(cameraPosMatrix[:, 2])
             ImPlot.PlotScatter("Camera Pos", xValues, yValues, length(posData))
         end
-        if predicting             
+        if estimating             
             xValues = float.(predictionMatrix[:, 1])
             yValues = float.(predictionMatrix[:, 2])
             ImPlot.PlotScatter("Predicted Pos", xValues, yValues, length(posData))
@@ -307,8 +309,8 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     end
 
     if CImGui.CollapsingHeader("Show Data Plots")
-        if CImGui.CollapsingHeader("Prediction Position") && predicting
-            predictionMatrix = reduce(vcat, transpose.(prediction.position))  
+        if CImGui.CollapsingHeader("Estimated Position") && estimating
+            predictionMatrix = reduce(vcat, transpose.(estimation.position))  
             ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(predictionMatrix), maximum(predictionMatrix))
             if ImPlot.BeginPlot("Predicted Position", "Data Point", "Distance [m]")
                 xValues = float.(predictionMatrix[:, 1]) 
@@ -321,16 +323,16 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
             end
         end
 
-        if CImGui.CollapsingHeader("Prediction Ψ") && predicting
-            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(prediction.Ψ), maximum(prediction.Ψ))
+        if CImGui.CollapsingHeader("Estimated Ψ") && estimating
+            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(estimation.Ψ), maximum(estimation.Ψ))
             if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
                 # Converting Ψ to compass course in degrees             
-                for i in 1:length(prediction.Ψ)
-                    prediction.Ψ[i] = prediction.Ψ[i] * 180/π
-                    prediction.Ψ[i] = (prediction.Ψ[i] < 0) ? prediction.Ψ[i] + 360 : prediction.Ψ[i]
+                for i in 1:length(estimation.Ψ)
+                    estimation.Ψ[i] = estimation.Ψ[i] * 180/π
+                    estimation.Ψ[i] = (estimation.Ψ[i] < 0) ? estimation.Ψ[i] + 360 : estimation.Ψ[i]
                 end
                 
-                values = float.(prediction.Ψ) 
+                values = float.(estimation.Ψ) 
                 ImPlot.PlotLine("Ψ", values, size(values, 1))
                 ImPlot.EndPlot()
             end

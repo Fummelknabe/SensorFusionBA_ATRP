@@ -24,6 +24,7 @@ showDataPlots = false
 renderRobot = false
 recordDataWindow = false
 showRecoredDataPlots = false
+showLoadDataWindow = false
 
 isLeftMouseButtonDown = false
 isRightMouseButtonDown = false
@@ -105,6 +106,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots
                 CImGui.MenuItem("Render Robot") && global renderRobot = !renderRobot
                 CImGui.MenuItem("Record Data") && global recordDataWindow = !recordDataWindow
+                CImGui.MenuItem("Load Data") && global showLoadDataWindow = !showLoadDataWindow
                 CImGui.EndMainMenuBar()
             end
 
@@ -124,6 +126,10 @@ function mainLoop(window::GLFW.Window, ctx, program)
                     !recordData && (saveDataLength = handleRecordDataWindow(amountDataPoints))
                     recordData && handleRecordDataWindow(amountDataPoints)
                 end
+            end
+
+            if showLoadDataWindow
+                handleShowDataWindow()
             end
  
             # if connected this call interupts for 0.025sec

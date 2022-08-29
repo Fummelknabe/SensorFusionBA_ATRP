@@ -4,6 +4,9 @@ imgui.ini
 # Ignore VSCODe file
 .vscode
 
+# Ignore helper executable
+execute.bat
+
 # Ignore weird latex files
 ba/bachelorthesis.aux
 ba/bachelorthesis.fdb_latexmk
