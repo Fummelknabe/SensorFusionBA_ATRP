@@ -24,7 +24,7 @@ ISSUES:
     - Maybe Quad is accerlerating too fast and it is often not sensed by imu
     - Only when v_k-1 != v_k != v_k+1 then acceleration can be used
 - No sensed steering angle was recorded 
-- Compass Course has weird impact on data
+- Compass Course has weird impact on data (its strange)
 
 TODO:
 - Maybe seperate code in different modules
@@ -32,7 +32,4 @@ TODO:
     - Implement Kalman Filter, propably extended
 - Redo Camera Movement
 - Fix Model movement
-- Choose correct initial transform for camera
-    - Position can stay as is
-
-    Transform.init_rotation_translation(Rotation(), Translation(0.0f, 0.0f, 0.0f))
+- Redo Sensorfusion

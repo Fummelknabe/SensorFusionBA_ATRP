@@ -29,7 +29,6 @@ K(P, H, R, size) = P*transpose(H)*(H*P*transpose(H) .+ R*Matrix(I, size, size))^
 This function transforms camera coords ontop of the prediction. This should be 
 unnecessary if the correct initial transform is choosen for the camera. 
 (for old data, this has to be used)
-DISCLAIMER: this function does not transform the orientation of the camera.
 """
 function transformCameraCoords(cameraCoords::Vector{Float32}, Ψ::Float32)
       # Create 2D rotational matrix
@@ -143,16 +142,16 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                                              θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
                                              newData.deltaTime)
 
-      δOdoCompassCourse = changeInPosition(newData.imuAcc,
-                                           v,
-                                           -convertMagToCompass(newData.imuMag),
-                                           θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
-                                           newData.deltaTime)
+      δOdoCompassCourse = [1.0, -1.0, 1.0] .* changeInPosition(newData.imuAcc,
+                                                               v,
+                                                               -convertMagToCompass(newData.imuMag),
+                                                               θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
+                                                               newData.deltaTime)
 
       δCamPos = dataPoints[amountDataPoints].cameraPos[1:3] - dataPoints[amountDataPoints - 1].cameraPos[1:3]
 
       ratedCC = rateCameraConfidence(newData.cameraConfidence, settings.exponentCC, settings.useSinCC)
-      δodometryPos = (settings.odoGyroFactor*δOdoAngularVelocity + settings.odoSteerFactor*δOdoSteeringAngle + settings.odoMagFactor*δOdoCompassCourse) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
+      δodometryPos = (settings.odoGyroFactor.*δOdoAngularVelocity .+ settings.odoSteerFactor.*δOdoSteeringAngle .+ settings.odoMagFactor.*δOdoCompassCourse) ./ (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
 
       newPosition = posState.position + (1-ratedCC)*δodometryPos + ratedCC*δCamPos
       P_c_update = Matrix(I, 5, 5)
@@ -188,7 +187,7 @@ function convertMagToCompass(magnetometerVector::Vector{Float32}; accelerometerV
       end
       angle = atan(northVector[1], northVector[2])
 
-      return Float32((angle > 0) ? angle : angle + 2*π)
+      return Float32(abs((angle > 0) ? angle : angle + 2*π) - 2*π)
 end
 
 """
