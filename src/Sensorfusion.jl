@@ -142,11 +142,11 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                                              θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
                                              newData.deltaTime)
 
-      δOdoCompassCourse = [1.0, -1.0, 1.0] .* changeInPosition(newData.imuAcc,
-                                                               v,
-                                                               -convertMagToCompass(newData.imuMag),
-                                                               θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
-                                                               newData.deltaTime)
+      δOdoCompassCourse = changeInPosition(newData.imuAcc,
+                                           v,
+                                           convertMagToCompass(newData.imuMag),
+                                           θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
+                                           newData.deltaTime)
 
       δCamPos = dataPoints[amountDataPoints].cameraPos[1:3] - dataPoints[amountDataPoints - 1].cameraPos[1:3]
 
@@ -162,12 +162,15 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
             newPosition = posState.position + δodometryPos + kalmanGain[1:3, 1:3] * (dataPoints[amountDataPoints].cameraPos[1:3] - (posState.position + δodometryPos))
       end
 
+      Ψₒ = (settings.odoSteerFactor*Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle-120)))+settings.odoGyroFactor*(settings.kalmanFilterGyro ? Float32(Ψ_ang) : Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))+(settings.ΨₒmagInfluence ? settings.odoMagFactor*convertMagToCompass(newData.imuMag) : 0)) / (settings.odoGyroFactor + (settings.ΨₒmagInfluence ? settings.odoMagFactor : 0) + settings.odoSteerFactor)
+
       return PositionalState(newPosition,
                              v,
                              P_c_update,
                              P_g_update,
-                             (settings.odoSteerFactor*Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle-120)))+settings.odoGyroFactor*(settings.kalmanFilterGyro ? Float32(Ψ_ang) : Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))+settings.odoMagFactor*(-convertMagToCompass(newData.imuMag))) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor), 
-                             (settings.odoSteerFactor*θ_acc(posState.θ, newData.deltaTime, newData.imuAcc)+settings.odoGyroFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)+settings.odoMagFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor))
+                             Ψₒ, 
+                             (settings.odoSteerFactor*θ_acc(posState.θ, newData.deltaTime, newData.imuAcc)+settings.odoGyroFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)+settings.odoMagFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
+                        )
 end
 
 """

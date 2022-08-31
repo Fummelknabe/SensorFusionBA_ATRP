@@ -17,14 +17,12 @@ VEHICLE STATS:
     - That is not realistic as it would settle  for 57 km/h top speed
     - Better estimate: round(19 + v*2.1) with 36 km/h top speed
 - Battery Width: 15.5cm
-- Command to install cfclient: python -m pip install cfclient
 
 ISSUES:
 - Acceleration data is not useful other to determine up direction
     - Maybe Quad is accerlerating too fast and it is often not sensed by imu
     - Only when v_k-1 != v_k != v_k+1 then acceleration can be used
 - No sensed steering angle was recorded 
-- Compass Course has weird impact on data (its strange)
 
 TODO:
 - Maybe seperate code in different modules

@@ -25,6 +25,7 @@ mutable struct PredictionSettings
     processNoiseG::Float32
     measurementNoiseG::Float32
     σ_forSpeedKernel::Float32
+    ΨₒmagInfluence::Bool
 end
 
 export PositionalData

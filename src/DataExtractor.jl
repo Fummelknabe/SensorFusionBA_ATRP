@@ -76,7 +76,7 @@ function loadFromJSon(rotateCameraCoords::Bool)
 end
 
 function loadFromJSon()
-    settings = PredictionSettings(false, false, 5, false, 5, false, 0.075, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3)
+    settings = PredictionSettings(false, false, 5, false, 5, false, 0.075, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false)
     settingsDict = JSON.parsefile("data/pred_params.json", dicttype=Dict, inttype=Int64)
 
     settings.exponentCC = settingsDict["exponentCC"]
@@ -94,6 +94,7 @@ function loadFromJSon()
     settings.speedUseSinCC = settingsDict["speedSinCC"]
     settings.useSinCC = settingsDict["useSinCC"]
     settings.σ_forSpeedKernel = settingsDict["σ_forSpeedKernel"]
+    settings.ΨₒmagInfluence = settingsDict["ΨₒmagInfluence"]
 
     return settings
 end

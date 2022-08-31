@@ -190,11 +190,11 @@ end
 
 function estimationSettingsWindow()
     CImGui.Begin("Estimation Settings")
-    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, false)
 
     CImGui.Button("Toggle use Parameters in JSON") && global loadingSettingsJSON = !loadingSettingsJSON        
 
-    @cstatic check=false check2=false exponent=Cfloat(5.0) useSin=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(0.075) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) σ=Cfloat(1/3) begin 
+    @cstatic check=false check2=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(0.075) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) σ=Cfloat(1/3) begin 
         @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
         CImGui.SameLine()
         @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
@@ -230,6 +230,10 @@ function estimationSettingsWindow()
 
         CImGui.Text("Factor to influence compass course part.")
         @c CImGui.SliderFloat("##mag_factor", &magFactor, 0.0, 1.0)
+        CImGui.SameLine()
+        @c CImGui.Checkbox("##mag_influence", &magInf)
+        CImGui.SameLine()
+        ShowHelpMarker("Should magnetometer data influence previous state.")
 
         CImGui.Text("Modify Kernel to smooth speed value.")
         @c CImGui.SliderFloat("##variance", &σ, 0.01, 1.0)
@@ -254,7 +258,7 @@ function estimationSettingsWindow()
 
         CImGui.End()
 
-        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ)
+        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ, magInf)
     end 
 
     if loadingSettingsJSON return loadFromJSon() end
