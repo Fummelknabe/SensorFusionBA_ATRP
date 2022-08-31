@@ -145,6 +145,37 @@ function handleConnectWindow(ipData, portData)
     CImGui.End()
 end
 
+function handleAutomaticInputWindow()
+    CImGui.Begin("Automatic Inputs", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+
+    @cstatic itemL=Cint(3) itemS=Cint(2) itemA=Cint(2) time=Cdouble(1.0) begin
+        @c CImGui.Combo("Select longitudinal Input", &itemL, "Forward\0Backward\0Stop\0Nothing")
+        @c CImGui.Combo("Select Steering Input", &itemS, "Left\0Right\0Straight")
+        @c CImGui.Combo("Acceleration", &itemA, "Accelerate\0Deccelerate\0Keep")
+        @c CImGui.InputDouble("Enter Time of Input [s]", &time)
+
+        CImGui.Button("Add") && push!(automaticInput, (createCommand(itemL, itemS, itemA), time))
+        CImGui.SameLine()    
+        if !isempty(automaticInput) 
+            CImGui.Button("Delete") && pop!(automaticInput) 
+            CImGui.SameLine()
+            if CImGui.Button(useAutomaticInput ? "Stop Sending!" : "Send to Robot!") 
+                global useAutomaticInput = !useAutomaticInput
+                global automaticInputIndex = 1
+            end
+        end
+        CImGui.SameLine()
+        ShowHelpMarker("Add Input to List of automatic inputs. Or delete last input")
+    end 
+
+    CImGui.Text("Input List:")
+    for s ∈ automaticInput
+        CImGui.Text(s[1]*" for $(s[2])s.")
+    end
+
+    CImGui.End()
+end
+
 function handleShowDataWindow()
     CImGui.Begin("Load Positional Data as JSON", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     @cstatic check=false begin 

@@ -25,7 +25,8 @@ ISSUES:
 - No sensed steering angle was recorded 
 
 TODO:
-- Maybe seperate code in different modules
+- Maybe:
+    - Seperate code in different modules
 - Create mathematical model of robot
     - Implement Kalman Filter, propably extended
 - Redo Camera Movement

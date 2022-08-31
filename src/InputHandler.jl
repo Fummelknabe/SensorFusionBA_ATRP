@@ -1,8 +1,10 @@
 include("DataExtractor.jl")
 
 recordData = false
+automaticInput = Vector{Tuple{String, Float64}}(undef, 0)
+automaticInputIndex = 1
 
-function commandLoop(window::GLFW.Window)
+function commandLoop(window::GLFW.Window; automaticInput::Union{String, Nothing}=nothing)
     # Key Inputs:
     #a = 65, d=68, w=87, s=83, shift =340,ctrl = 341, space=32, esc = 256
     if !connected
@@ -50,12 +52,43 @@ function commandLoop(window::GLFW.Window)
     end    
 
     try
-        answer = sendAndRecvData(command)
+        answer = sendAndRecvData(isnothing(automaticInput) ? command : automaticInput)
 
         return extractData(answer)
     catch error
         @warn "Error was caught: " * string(error)
     end    
+end
+
+function createCommand(itemL::Int32, itemS::Int32, itemA::Int32)
+    command = ""
+
+    # Left and right
+    if itemS == 0
+        command *= "_left"
+    elseif itemS == 1
+        command *= "_right"
+    end
+
+    # Accelerate and Deccelerate
+    if itemA == 0
+        command *= "_accelerate"
+    elseif itemA == 1
+        command *= "_deccelerate"
+    end
+
+    # Forward, Backwards and Stop
+    if itemL == 0
+        command *= "_forward"
+    elseif itemL == 1
+        command *= "_backward"
+    elseif itemL == 2
+        command *= "_stop"
+    else
+        command *= "_nothing"
+    end
+
+    return command
 end
 
 function onMouseButton(button, action)

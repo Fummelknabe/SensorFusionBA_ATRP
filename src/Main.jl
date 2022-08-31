@@ -25,6 +25,9 @@ renderRobot = false
 recordDataWindow = false
 showRecoredDataPlots = false
 showLoadDataWindow = false
+showAutomaticInputWindow = false
+useAutomaticInput = false
+automaticInputTimer = 0.0
 
 isLeftMouseButtonDown = false
 isRightMouseButtonDown = false
@@ -103,8 +106,11 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 CImGui.BeginMainMenuBar()
                 CImGui.MenuItem("Help") && global showHelperWindow = !showHelperWindow
                 CImGui.MenuItem("Connect Window") && global showConnectWindow = !showConnectWindow
-                CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots
-                CImGui.MenuItem("Render Robot") && global renderRobot = !renderRobot
+                if connected 
+                    CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots 
+                    CImGui.MenuItem("Render Robot") && global renderRobot = !renderRobot
+                    CImGui.MenuItem("Automatic Inputs") && global showAutomaticInputWindow = !showAutomaticInputWindow
+                end
                 CImGui.MenuItem("Record Data") && global recordDataWindow = !recordDataWindow
                 CImGui.MenuItem("Load Data") && global showLoadDataWindow = !showLoadDataWindow
                 CImGui.EndMainMenuBar()
@@ -122,7 +128,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
 
             # Record Data Window
             if recordDataWindow
-            @cstatic amountDataPoints = ""*"\0"^115 i0=Cint(123) begin
+            @cstatic amountDataPoints = ""*"\0"^115 #=i0=Cint(123)=# begin
                     !recordData && (saveDataLength = handleRecordDataWindow(amountDataPoints))
                     recordData && handleRecordDataWindow(amountDataPoints)
                 end
@@ -131,10 +137,26 @@ function mainLoop(window::GLFW.Window, ctx, program)
             if showLoadDataWindow
                 handleShowDataWindow()
             end
- 
-            # if connected this call interupts for 0.025sec
-            posData = commandLoop(window)
 
+            if showAutomaticInputWindow
+                handleAutomaticInputWindow()
+            end
+ 
+            if useAutomaticInput
+                time = automaticInput[automaticInputIndex][2]
+                global automaticInputTimer += deltaTime
+                if time <= automaticInputTimer
+                    global automaticInputTimer = 0.0
+                    global automaticInputIndex += 1
+
+                    if automaticInputIndex == length(automaticInput) global useAutomaticInput = !useAutomaticInput end
+                end
+
+                posData = commandLoop(window, automaticInput=automaticInput[automaticInputIndex][1])
+            else 
+                posData = commandLoop(window)
+            end
+            
             # Add Positional Data to storage
             if posData != 0 && !isnothing(posData)
                 push!(rawPositionalData, posData)
