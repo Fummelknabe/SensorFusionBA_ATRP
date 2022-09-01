@@ -142,17 +142,17 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 handleAutomaticInputWindow()
             end
  
-            if useAutomaticInput
+            if useAutomaticInput              
+                posData = commandLoop(window, automaticInput=automaticInput[automaticInputIndex][1])
+            
                 time = automaticInput[automaticInputIndex][2]
                 global automaticInputTimer += deltaTime
                 if time <= automaticInputTimer
                     global automaticInputTimer = 0.0
                     global automaticInputIndex += 1
 
-                    if automaticInputIndex == length(automaticInput) global useAutomaticInput = !useAutomaticInput end
+                    if automaticInputIndex >= length(automaticInput) global useAutomaticInput = !useAutomaticInput end
                 end
-
-                posData = commandLoop(window, automaticInput=automaticInput[automaticInputIndex][1])
             else 
                 posData = commandLoop(window)
             end

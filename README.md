@@ -27,8 +27,8 @@ ISSUES:
 TODO:
 - Maybe:
     - Seperate code in different modules
-- Create mathematical model of robot
-    - Implement Kalman Filter, propably extended
-- Redo Camera Movement
+    - Redo Camera Movement
 - Fix Model movement
 - Redo Sensorfusion
+    - Look at literature
+- Add big display of speed and max speed when connected 
