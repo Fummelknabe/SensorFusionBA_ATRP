@@ -13,16 +13,8 @@ VEHICLE STATS:
     - l_f = 59cm
     - l_r = 10cm
 - Correspondance between speedValue and m/s:
-    - speedValue = round(19 + v * 1.325) (only a rough estimate)
-    - That is not realistic as it would settle  for 57 km/h top speed
-    - Better estimate: round(19 + v*2.1) with 36 km/h top speed
+    - speedValue = round(19 + v*2.1) with 36 km/h top speed
 - Battery Width: 15.5cm
-
-ISSUES:
-- Acceleration data is not useful other to determine up direction
-    - Maybe Quad is accerlerating too fast and it is often not sensed by imu
-    - Only when v_k-1 != v_k != v_k+1 then acceleration can be used
-- No sensed steering angle was recorded 
 
 TODO:
 - Maybe:
@@ -31,4 +23,3 @@ TODO:
 - Fix Model movement
 - Redo Sensorfusion
     - Look at literature
-- Add big display of speed and max speed when connected 
