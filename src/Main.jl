@@ -39,6 +39,8 @@ include("Camera.jl")
 cam = Camera()
 cam.position = GLfloat[-4.0, -4.0, 3.0]
 
+connectedTextDisplay = "Robot data\nSpeed:\nMax Speed:\nSteering Angle:"
+
 const l_f = 0.59
 const l_r = 0.10
 
@@ -134,13 +136,9 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 end
             end
 
-            if showLoadDataWindow
-                handleShowDataWindow()
-            end
+            showLoadDataWindow && handleShowDataWindow()
 
-            if showAutomaticInputWindow
-                handleAutomaticInputWindow()
-            end
+            showAutomaticInputWindow && handleAutomaticInputWindow()
  
             if useAutomaticInput              
                 posData = commandLoop(window, automaticInput=automaticInput[automaticInputIndex][1])
@@ -159,6 +157,14 @@ function mainLoop(window::GLFW.Window, ctx, program)
             
             # Add Positional Data to storage
             if posData != 0 && !isnothing(posData)
+                # Draw over everyting dummy window
+                CImGui.SetNextWindowSize(windowSize)
+                CImGui.SetNextWindowPos((0, 30))
+                CImGui.Begin("##dummy_window", C_NULL, CImGui.ImGuiWindowFlags_NoResize | CImGui.ImGuiWindowFlags_NoTitleBar | CImGui.ImGuiWindowFlags_NoInputs | CImGui.ImGuiWindowFlags_NoMove | CImGui.ImGuiWindowFlags_NoSavedSettings | CImGui.ImGuiWindowFlags_NoScrollbar | CImGui.ImGuiWindowFlags_NoBackground)
+                CImGui.SetWindowFontScale(2.0)
+                CImGui.Text("Robot data\nSpeed: $(posData.sensorSpeed)\nMax Speed: $(posData.maxSpeed)\nSteering Angle: $(posData.steerAngle)")
+                CImGui.End()
+
                 push!(rawPositionalData, posData)
                 if size(rawPositionalData, 1) > rawDataLength
                     popfirst!(rawPositionalData)
