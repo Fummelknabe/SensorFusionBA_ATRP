@@ -27,6 +27,7 @@ function extractData(data::String)
     end
 
     posData = PositionalData()
+    posData.command = splitted[1] == "_nothing" ? String("") : parse(String, splitted[1])
     posData.maxSpeed = parse(Float32, splitted[2])
     posData.steerAngle = parse(Int, splitted[3])
     posData.sensorAngle = parse(Int, splitted[4])
@@ -62,6 +63,7 @@ function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool)
     posData.imuAcc = dict["imuAcc"]    
     posData.deltaTime = dict["deltaTime"]
     posData.cameraConfidence = dict["cameraConfidence"] ./ 100
+    posData.command = dict["command"]
 
     return posData
 end
@@ -69,6 +71,7 @@ end
 function loadFromJSon(rotateCameraCoords::Bool)
     posData = StructArray(PositionalData[])
     filename = open_dialog("Select JSON to load")
+    if filename == "" return posData end
     posDataDicts = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
 
     for dict in posDataDicts        
@@ -81,6 +84,10 @@ end
 function loadFromJSon()
     settings = PredictionSettings(false, false, 5, false, 5, false, 0.075, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false)
     filename = open_dialog("Select JSON to load")
+    if filename == "" 
+        @warn "No File was selected."
+        return settings 
+    end
     settingsDict = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
 
     settings.exponentCC = settingsDict["exponentCC"]

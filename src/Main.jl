@@ -130,7 +130,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
 
             # Record Data Window
             if recordDataWindow
-            @cstatic amountDataPoints = ""*"\0"^115 #=i0=Cint(123)=# begin
+            @cstatic amountDataPoints = ""*"\0"^115 begin
                     !recordData && (saveDataLength = handleRecordDataWindow(amountDataPoints))
                     recordData && handleRecordDataWindow(amountDataPoints)
                 end

@@ -179,7 +179,7 @@ end
 function handleShowDataWindow()
     CImGui.Begin("Load Positional Data as JSON", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     @cstatic check=false begin 
-        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(loadFromJSon(check)))
+        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadFromJSon(check)))
         CImGui.SameLine()    
         @c CImGui.Checkbox("Rotate Camera Coords", &check)
         CImGui.SameLine()
@@ -211,12 +211,7 @@ end
 
 function toggleRecordedDataPlots(posData::StructArray)
     global showRecoredDataPlots = !showRecoredDataPlots
-    if showRecoredDataPlots
-        # Transform camera position but this doenst work yet
-        global rawSavePosData = posData
-    else 
-        global rawSavePosData = StructArray(PositionalData[])
-    end
+    global rawSavePosData = posData
 end
 
 function estimationSettingsWindow()
@@ -322,6 +317,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
 
     cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
 
+    # Atleast 3 data points are required to predict accurately
     if estimating
         global estimation = predictFromRecordedData(posData, settings)
         estimationMatrix = reduce(vcat, transpose.(estimation.position))  
@@ -359,7 +355,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         end
 
         if CImGui.CollapsingHeader("Estimated Ψ") && estimating
-            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(estimation.Ψ), maximum(estimation.Ψ))
+            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), 0, 360)
             if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
                 # Converting Ψ to compass course in degrees             
                 for i in 1:length(estimation.Ψ)
@@ -369,6 +365,15 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
                 
                 values = float.(estimation.Ψ) 
                 ImPlot.PlotLine("Ψ", values, size(values, 1))
+                ImPlot.EndPlot()
+            end
+        end
+
+        if CImGui.CollapsingHeader("Estimated Speed") && estimating
+            value = float.(estimation.v) 
+            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(value), maximum(value))
+            if ImPlot.BeginPlot("Estimaed v", "Data Point", "v [m/s]")                
+                ImPlot.PlotLine("v", value, size(value, 1))
                 ImPlot.EndPlot()
             end
         end
@@ -387,7 +392,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         end
 
         if CImGui.CollapsingHeader("Camera Confidence")
-            ImPlot.SetNextPlotLimits(0, length(posData), 0, 100)
+            ImPlot.SetNextPlotLimits(0, length(posData), 0, 1)
             if ImPlot.BeginPlot("Confidence Value for Camera", "Data Point", "Percent [%]")
                 values = float.(posData.cameraConfidence) 
                 ImPlot.PlotLine("", values, size(values, 1))

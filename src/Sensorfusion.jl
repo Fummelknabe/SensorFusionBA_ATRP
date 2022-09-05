@@ -69,8 +69,28 @@ function transformCoords(pos::Vector{T}, up::Vector{T}, angularSpeed::Vector{T},
     return (Rx*Ry)*pos
 end
 
-function computeSpeed(cameraChange::Vector{Float32}, δt::Vector{Float32}, v::Float32, ratedCamConfidence::Float32, σ::Float32)
+"""
+This function computes the speed from measured speed and camera position.
+"""
+function computeSpeed(cameraMatrix::Matrix{Float32}, δt::Vector{Float32}, v::Float32, ratedCamConfidence::Float32, σ::Float32, command::String, pastBackwards::Bool)
+      cameraChange = cameraMatrix[:, 4]
       length(cameraChange) == length(δt) || throw("Computing Speed failed, as $(cameraChange) and $(δt) were not the same length.")
+      sign = pastBackwards ? -1 : 1
+
+      if length(cameraChange) > 2 && ratedCamConfidence > 0.6
+            # get direction of robot from camera
+            posChange = cameraMatrix[end, 1:2] - cameraMatrix[end-1, 1:2]
+            prevPosChange = cameraMatrix[end-1, 1:2] - cameraMatrix[end-2, 1:2]
+            α = acos(round(dot(posChange, prevPosChange) / (norm(posChange) * norm(prevPosChange)); digits=4))
+            if α > 3/4*π  sign *= -1 end
+      else
+            # get direction of robot from command
+            if occursin("_backward", command)
+                  sign = -1
+            elseif  occursin("_forward", command)
+                  sign = 1
+            end            
+      end
       
       # Filter speed from camera change
       l = length(cameraChange)
@@ -79,7 +99,7 @@ function computeSpeed(cameraChange::Vector{Float32}, δt::Vector{Float32}, v::Fl
       cameraSpeed = conv(cameraChange ./ δt, kernel)
       
       # Combine with wheel odometry speed value
-      return Float32((1-ratedCamConfidence) * v + ratedCamConfidence * cameraSpeed[l])
+      return sign*(Float32((1-ratedCamConfidence) * v + ratedCamConfidence * cameraSpeed[l]))
 end
 
 # Calculate angles using angular Velocity ω
@@ -118,7 +138,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       newData = dataPoints[amountDataPoints]
 
       camPosMatrix = reduce(vcat, transpose.(dataPoints.cameraPos))   
-      v = computeSpeed(camPosMatrix[:, 4], dataPoints.deltaTime, newData.sensorSpeed, rateCameraConfidence(newData.cameraConfidence, settings.speedExponentCC, settings.speedUseSinCC), settings.σ_forSpeedKernel)
+      v = computeSpeed(camPosMatrix, dataPoints.deltaTime, newData.sensorSpeed, rateCameraConfidence(newData.cameraConfidence, settings.speedExponentCC, settings.speedUseSinCC), settings.σ_forSpeedKernel, newData.command, posState.v < 0)
       
       # Apply Kalman Filter to angular velocity data if wanted
       P_g_update = Matrix(I, 2, 2)
@@ -221,7 +241,7 @@ end
 Start sensor fusion with a continuous flow of data.
 
 # Arguments
-- `posData::StructVector{PositionalData}`: The last recorded data points. Length should be more than 1.
+- `posData::StructVector{PositionalData}`: The last recorded data points. Length should be more than 2.
 """
 function initializeSensorFusion(posData::StructVector{PositionalData}, settings::PredictionSettings)
       if length(predictedStates) == 0
