@@ -55,7 +55,7 @@ rawSavePosData = StructArray(PositionalData[])
 function mainLoop(window::GLFW.Window, ctx, program) 
     models = [loadGLTFModelInBuffers(robotSource, robotData), loadGLTFModelInBuffers(plateSource, plateData)]
     models[1].transform.scale = [0.15, 0.15, 0.15]
-    models[1].transform.position = [0.0, 2.5, 0.0]
+    models[1].transform.position = [0.0, 2.75, 0.0]
     models[1].transform.eulerRotation = [0.0, -π/8, π]
     saveDataLength = 0
 
@@ -79,18 +79,20 @@ function mainLoop(window::GLFW.Window, ctx, program)
                     # Get the meshes of the robot model
                     leftWheel = models[1].meshes[2]                    
                     rightWheel = models[1].meshes[4]                    
-                    rearAxis = models[1].meshes[3]
+                    rearAxis = models[1].meshes[1]
 
                     # change transform according to sensor values
-                    leftWheel.transform.eulerRotation = [0.0, 0.0, (positionalData.steerAngle - 120) * π/180]
-                    rightWheel.transform.eulerRotation = [0.0, 0.0, (positionalData.steerAngle - 120) * π/180]
-                    rearAxis.transform.eulerRotation = [0.0, rearAxis.transform.eulerRotation[2] + positionalData.sensorSpeed * 5, 0.0]
+                    # axis: [horizontal axis (left/right), vertical axis (up/down), longitudinal axis (forward/backward)]
+                    leftWheel.transform.eulerRotation = [0.0, (positionalData.steerAngle - 120) * π/180, 0.0]
+                    rightWheel.transform.eulerRotation = [0.0, (positionalData.steerAngle - 120) * π/180, 0.0]
+                    rearAxis.transform.position = [0.0, 10.5, 9.5]
+                    rearAxis.transform.eulerRotation = [rearAxis.transform.eulerRotation[1] + positionalData.sensorSpeed * 5, 0.0, 0.0]
                 end
 
                 for model in models                
                     
                     modelTransform = transformToMatrix(model.transform)
-                    for mesh in model.meshes                    
+                    for mesh in model.meshes            
                         writeToUniforms(program, modelTransform * transformToMatrix(mesh.transform), cam, GLfloat[1.0, 1.0, 1.0], mesh.material)
 
                         glBindVertexArray(mesh.vao)
