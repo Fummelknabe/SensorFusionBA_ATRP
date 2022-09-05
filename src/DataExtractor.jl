@@ -1,4 +1,6 @@
 using JSON
+# Used for select file dialog
+using Gtk
 
 firstMagValue = -1
 
@@ -66,7 +68,8 @@ end
 
 function loadFromJSon(rotateCameraCoords::Bool)
     posData = StructArray(PositionalData[])
-    posDataDicts = JSON.parsefile("data/pos_data.json", dicttype=Dict, inttype=Int64)
+    filename = open_dialog("Select JSON to load")
+    posDataDicts = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
 
     for dict in posDataDicts        
         push!(posData, convertDictToPosData(dict, rotateCameraCoords))
@@ -77,7 +80,8 @@ end
 
 function loadFromJSon()
     settings = PredictionSettings(false, false, 5, false, 5, false, 0.075, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false)
-    settingsDict = JSON.parsefile("data/pred_params.json", dicttype=Dict, inttype=Int64)
+    filename = open_dialog("Select JSON to load")
+    settingsDict = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
 
     settings.exponentCC = settingsDict["exponentCC"]
     settings.speedExponentCC = settingsDict["speedExponentCC"]

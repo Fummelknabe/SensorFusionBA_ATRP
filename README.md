@@ -23,3 +23,11 @@ TODO:
 - Fix Model movement
 - Redo Sensorfusion
     - Look at literature
+- Fix backward motion
+
+## Arbitrary Information
+Installing cfclient on windows:
+    pip3 install cfclient (if python 3.7 > is avaiable)
+For crazyradio on windows:
+    https://www.bitcraze.io/documentation/repository/crazyradio-firmware/master/building/usbwindows/
+    - Installing of driver is necessary 

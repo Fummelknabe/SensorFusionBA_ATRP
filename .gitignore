@@ -4,9 +4,15 @@ imgui.ini
 # Ignore VSCODe file
 .vscode
 
+# Ignore Prediction parameters
+data/predParams/*
+
 # Ignore helper executable
 *.bat
 *.sh
+
+# Ignore Manifest.toml
+Manifest.toml
 
 # Ignore weird latex files
 ba/bachelorthesis.aux
