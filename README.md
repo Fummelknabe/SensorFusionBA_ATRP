@@ -20,10 +20,9 @@ TODO:
 - Maybe:
     - Seperate code in different modules
     - Redo Camera Movement
-- Fix Model movement
 - Redo Sensorfusion
     - Look at literature
-- Fix backward motion
+- Test Backward motion with command recording
 
 ## Arbitrary Information
 Installing cfclient on windows:

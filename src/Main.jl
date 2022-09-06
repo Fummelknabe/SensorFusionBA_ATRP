@@ -115,8 +115,8 @@ function mainLoop(window::GLFW.Window, ctx, program)
                     CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots 
                     CImGui.MenuItem("Render Robot") && global renderRobot = !renderRobot
                     CImGui.MenuItem("Automatic Inputs") && global showAutomaticInputWindow = !showAutomaticInputWindow
+                    CImGui.MenuItem("Record Data") && global recordDataWindow = !recordDataWindow
                 end
-                CImGui.MenuItem("Record Data") && global recordDataWindow = !recordDataWindow
                 CImGui.MenuItem("Load Data") && global showLoadDataWindow = !showLoadDataWindow
                 CImGui.EndMainMenuBar()
             end
