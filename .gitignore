@@ -7,6 +7,9 @@ imgui.ini
 # Ignore Prediction parameters
 data/predParams/*
 
+# Ignore recorded pos data
+data/pos_data.json
+
 # Ignore helper executable
 *.bat
 *.sh
