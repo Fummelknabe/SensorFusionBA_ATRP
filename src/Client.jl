@@ -7,7 +7,7 @@ const HOST = "10.42.0.1";
       PORT = 2222
 
 export connected
-connected = false
+connected = true#false
 
 # Create a python socket
 export pysocket

@@ -2,12 +2,17 @@
 using GLTF
 
 mutable struct Transform
-    position::Vector{Float32}
-    eulerRotation::Vector{Float32}
-    scale::Vector{Float32}
+    position::Vector{Float64}
+    eulerRotation::Vector{Float64}
+    scale::Vector{Float64}
+    matrix::Union{Matrix{GLfloat}, Nothing}
 
     function Transform()
-        new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [1.0, 1.0, 1.0])
+        new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [1.0, 1.0, 1.0], nothing)
+    end
+
+    function Transform(position::Vector{Float64}, eulerRotation::Vector{Float64}, scale::Vector{Float64}; matrix::Union{Matrix{GLfloat}, Nothing}=nothing) 
+        new(position, eulerRotation, scale, matrix)
     end
 end
 
@@ -31,6 +36,24 @@ end
 mutable struct Model
     meshes::Vector{Mesh}
     transform::Transform
+end
+
+"""
+Transforms around a positional reference point. This is used because it is known where
+meshes are located in model.
+"""
+function transformAroundReference(transform::Transform, pointOfReference::Vector{Float64})
+    T = GLfloat[1.0 0.0 0.0 pointOfReference[1];
+                0.0 1.0 0.0 pointOfReference[2];
+                0.0 0.0 1.0 pointOfReference[3];
+                0.0 0.0 0.0 1.0]
+    
+    T⁻¹ = GLfloat[1.0 0.0 0.0 -pointOfReference[1];
+                  0.0 1.0 0.0 -pointOfReference[2];
+                  0.0 0.0 1.0 -pointOfReference[3];
+                  0.0 0.0 0.0 1.0]
+
+    return T⁻¹ * transformToMatrix(transform) * T
 end
 
 function transformToMatrix(t::Transform)

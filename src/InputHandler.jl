@@ -7,8 +7,13 @@ automaticInputIndex = 1
 function commandLoop(window::GLFW.Window; automaticInput::Union{String, Nothing}=nothing)
     # Key Inputs:
     #a = 65, d=68, w=87, s=83, shift =340,ctrl = 341, space=32, esc = 256
-    if !connected
-        return 0
+    if connected
+        posData = PositionalData()
+
+        posData.sensorSpeed = 5
+        posData.steerAngle = 107
+
+        return posData
     end
     
     command = ""
