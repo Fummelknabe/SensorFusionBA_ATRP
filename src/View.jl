@@ -210,7 +210,7 @@ function handleRecordDataWindow(amountDataPoints)
 end
 
 function toggleRecordedDataPlots(posData::StructArray)
-    global showRecoredDataPlots = !showRecoredDataPlots
+    global showRecoredDataPlots = isempty(posData) ? false : !showRecoredDataPlots
     global rawSavePosData = posData
 end
 

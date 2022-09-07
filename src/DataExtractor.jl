@@ -27,7 +27,7 @@ function extractData(data::String)
     end
 
     posData = PositionalData()
-    posData.command = splitted[1] == "_nothing" ? String("") : parse(String, splitted[1])
+    posData.command = splitted[1] == "_nothing" ? String("") : splitted[1]
     posData.maxSpeed = parse(Float32, splitted[2])
     posData.steerAngle = parse(Int, splitted[3])
     posData.sensorAngle = parse(Int, splitted[4])
