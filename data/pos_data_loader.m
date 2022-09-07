@@ -14,11 +14,21 @@ clear raw str
 
 rateCamConf = @(x) x^4;
 
+%% Load true positional data
+filename = 'true_pos_drone_7_9_2.json';
+fid = fopen(filename); 
+raw = fread(fid,inf); 
+str = char(raw'); 
+fclose(fid); 
+t_val = jsondecode(str);
+
+subplot(1, 2, 1)
+scatter3([t_val.x], [t_val.y], [t_val.z])
+subplot(1, 2, 2)
+scatter([t_val.x], [t_val.y], 'r')
+
 %% Delta Time
-dt = zeros(l, 1);
-for i=1:l
-    dt(i) = val(i).deltaTime;
-end
+dt = [val.deltaTime];
 
 %% Camera Position
 % Get Camera Position (note that position is being flipped)
@@ -38,23 +48,13 @@ gauss_filter = gauss_filter/sum(gauss_filter);
 cameraSpeed = filter(gauss_filter, 1, cameraSpeed);
 
 %% Camera Confidence
-camConf = zeros(l, 1);
-for i=1:l
-    % Convert to [0, 1]
-    camConf(i) = val(i).cameraConfidence / 100;
-end
+camConf = [val.cameraConfidence] ./ 100;
 
 %% Acceleration Data
-acc = zeros(l, 3);
-for i=1:l
-    acc(i, :) = val(i).imuAcc;
-end
+acc = [val.imuAcc];
 
 %% Magnetometer Data
-mag = zeros(l, 3);
-for i=1:l
-    mag(i, :) = val(i).imuMag;
-end
+mag = [val.imuMag];
 
 %% Compass Course
 phi = zeros(l, 1);
@@ -72,10 +72,7 @@ for i=1:l
 end
 
 %% Velocity
-v = zeros(l, 1);
-for i=1:l
-    v(i) = val(i).sensorSpeed;
-end
+v = [val.sensorSpeed];
 
 %% Combined Velocity
 v_combined = zeros(l, 1);
@@ -89,16 +86,10 @@ gauss_filter = gauss_filter/sum(gauss_filter);
 v_combined = filter(gauss_filter, 1, v_combined);
 
 %% Angular Velocity 
-angVel = zeros(l, 3);
-for i=1:l
-    % Convert to rad/s as data is given in °/s
-    angVel(i, :) = val(i).imuGyro .* pi/180;
-end
+angVel = [val.imuGyro] .* pi/180 ;
 
-steerAngle = zeros(l, 1);
-for i=1:l
-    steerAngle(i) = (val(i).steerAngle - 120) * 0.075; 
-end
+%% Steer Angle
+steerAngle = ([val.steerAngle] - 120) .* 0.075;
 
 %% Camera Orientation
 rotMatrix = zeros(l, 4, 4);

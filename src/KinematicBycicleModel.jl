@@ -29,7 +29,7 @@ function f(sₜ₋₁::State, uₜ::Input)
     Ψ = sₜ₋₁.Ψ + uₜ.δt*δΨ(uₜ.v, βₜ)
     x = sₜ₋₁.x + uₜ.δt*ẋ(uₜ.v, Ψ, βₜ)
     y = sₜ₋₁.y + uₜ.δt*ẏ(uₜ.v, Ψ, βₜ)
-    return State(Ψ, x, y)
+    return State(Ψ, x, y) # Have function to convert state to vector
 end
 
 # After linearization and discretization

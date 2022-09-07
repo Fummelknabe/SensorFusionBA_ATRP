@@ -68,7 +68,8 @@ function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool)
     return posData
 end
 
-function loadFromJSon(rotateCameraCoords::Bool)
+function loadDataFromJSon(;rotateCameraCoords::Bool=true)
+    @info "Loading raw data..."
     posData = StructArray(PositionalData[])
     filename = open_dialog("Select JSON to load")
     if filename == "" return posData end
@@ -81,7 +82,29 @@ function loadFromJSon(rotateCameraCoords::Bool)
     return posData
 end
 
-function loadFromJSon()
+function loadPosFromJSon()
+    @info "Loading pos data..."
+    posData = Matrix{Float32}(undef, 3, 0)
+    filename = open_dialog("Select JSON to load")
+    if filename == "" return posData end
+    try
+        posDataDicts = JSON.parsefile(filename, dicttype=Dict, inttype=Int64);
+
+        for dict in posDataDicts        
+            posData = hcat(posData, [dict["x"], dict["y"], dict["z"]]);
+        end
+    catch e
+        if e isa SystemError
+            @warn "The given file does not exist."
+        else
+            println(e)
+        end
+    end
+
+    return posData
+end
+
+function loadParamsFromJSon()
     settings = PredictionSettings(false, false, 5, false, 5, false, 0.075, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false)
     filename = open_dialog("Select JSON to load")
     if filename == "" 

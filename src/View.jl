@@ -30,6 +30,8 @@ estimation = StructArray(PositionalState[])
 estSettingWindow = false
 loadingSettingsJSON = false
 
+truePosData = Matrix{Float32}(undef, 3, 0)
+
 export setUpWindow
 """
 Set up a GLFW window, callbacks and render context.
@@ -179,7 +181,7 @@ end
 function handleShowDataWindow()
     CImGui.Begin("Load Positional Data as JSON", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     @cstatic check=false begin 
-        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadFromJSon(check)))
+        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadDataFromJSon(rotateCameraCoords=check)))
         CImGui.SameLine()    
         @c CImGui.Checkbox("Rotate Camera Coords", &check)
         CImGui.SameLine()
@@ -287,7 +289,7 @@ function estimationSettingsWindow()
         pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ, magInf)
     end 
 
-    if loadingSettingsJSON return loadFromJSon() end
+    if loadingSettingsJSON return loadParamsFromJSon() end
     return pred
 end
 
@@ -310,6 +312,12 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     CImGui.Button(estimating ? "Estimating..." : "Update Estimation") && global estimating = !estimating
     CImGui.SameLine()
     CImGui.Button(estSettingWindow ? "Close Settings" : "Open Settings") && global estSettingWindow = !estSettingWindow
+    CImGui.SameLine()
+    if CImGui.Button(length(truePosData) == 0 ? "Load True Pos Data" : "True Pos Data Loaded")
+        global truePosData = loadPosFromJSon()
+        # Project ground truth onto camera starting point
+        global truePosData = truePosData .- ((posData[1].cameraPos[1:3] + truePosData[:, 1]) .* ones(size(truePosData)))
+    end
     CImGui.SameLine()
     @cstatic showCameraPosC=false begin
     @c CImGui.Checkbox("Show Raw Camera Position", &showCameraPosC) 
@@ -335,6 +343,11 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
             xValues = float.(estimationMatrix[:, 1])
             yValues = float.(estimationMatrix[:, 2])
             ImPlot.PlotScatter("Predicted Pos", xValues, yValues, length(posData))
+        end
+        if length(truePosData) != 0
+            xValues = float.(truePosData[1, :])
+            yValues = float.(truePosData[2, :])
+            ImPlot.PlotScatter("Ground-Truth", xValues, yValues, Int(length(truePosData)/3))
         end
         ImPlot.EndPlot()
     end

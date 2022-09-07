@@ -8,7 +8,7 @@ imgui.ini
 data/predParams/*
 
 # Ignore recorded pos data
-data/pos_data.json
+data/*.json
 
 # Ignore helper executable
 *.bat
