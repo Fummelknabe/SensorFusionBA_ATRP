@@ -22,11 +22,4 @@ TODO:
     - Redo Camera Movement
 - Redo Sensorfusion
     - Look at literature
-- Test Backward motion with command recording
-
-## Arbitrary Information
-Installing cfclient on windows:
-    pip3 install cfclient (if python 3.7 > is avaiable)
-For crazyradio on windows:
-    https://www.bitcraze.io/documentation/repository/crazyradio-firmware/master/building/usbwindows/
-    - Installing of driver is necessary 
+- Measure IMU location again
