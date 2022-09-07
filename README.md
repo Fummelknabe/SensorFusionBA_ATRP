@@ -9,7 +9,7 @@ VEHICLE STATS:
 - Camera Height: 47cm
 - IMU Height: 39cm
 - IMU Offset: 10cm
-- IMU is vehilce reference point 
+- IMU is vehilce reference point REMEASURE THIS!!!
     - l_f = 59cm
     - l_r = 10cm
 - Correspondance between speedValue and m/s:
