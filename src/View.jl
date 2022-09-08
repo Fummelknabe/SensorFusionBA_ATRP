@@ -12,7 +12,7 @@ connectStatus = ""
 # time since last frame / data
 deltaTime = 0.0
 
-include("Sensorfusion.jl")
+include("Sensorfusion.jl") 
 include("Client.jl")
 include("InputHandler.jl")
 
@@ -31,6 +31,7 @@ estSettingWindow = false
 loadingSettingsJSON = false
 
 truePosData = Matrix{Float32}(undef, 3, 0)
+
 
 export setUpWindow
 """
@@ -218,14 +219,19 @@ end
 
 function estimationSettingsWindow()
     CImGui.Begin("Estimation Settings")
-    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, false)
+    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false)
 
-    CImGui.Button("Toggle use Parameters in JSON") && global loadingSettingsJSON = !loadingSettingsJSON        
+    if CImGui.Button("Toggle use Parameters in JSON")
+        global loadingSettingsJSON = !loadingSettingsJSON      
+        return loadingSettingsJSON ? loadParamsFromJSon() : -1
+    end  
 
-    @cstatic check=false check2=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(0.075) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) σ=Cfloat(1/3) begin 
+    @cstatic check=false check2=false check3=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) σ=Cfloat(1/3) begin 
         @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
         CImGui.SameLine()
         @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
+        CImGui.SameLine()
+        @c CImGui.Checkbox("Use Kinematic Bycicle Model", &check3)
 
         CImGui.Text("Camera Confidence Impact")
         @c CImGui.SliderFloat("##exponent", &exponent, 0.0, 40.0)
@@ -246,7 +252,7 @@ function estimationSettingsWindow()
         ShowHelpMarker("Use a Sinus for Camera Confidence on speed.")
 
         CImGui.Text("Factor to adjust steerangle")
-        @c CImGui.SliderFloat("##factor", &factor, 0.0, 0.25)
+        @c CImGui.SliderFloat("##factor", &factor, 0.0, 2.0)
         CImGui.SameLine()
         ShowHelpMarker("At 0, robot always goes straight.")
 
@@ -286,10 +292,10 @@ function estimationSettingsWindow()
 
         CImGui.End()
 
-        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ, magInf)
+        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ, magInf, check3)
     end 
 
-    if loadingSettingsJSON return loadParamsFromJSon() end
+    if loadingSettingsJSON return -1 end
     return pred
 end
 
@@ -316,7 +322,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     if CImGui.Button(length(truePosData) == 0 ? "Load True Pos Data" : "True Pos Data Loaded")
         global truePosData = loadPosFromJSon()
         # Project ground truth onto camera starting point
-        global truePosData = truePosData .- ((posData[1].cameraPos[1:3] + truePosData[:, 1]) .* ones(size(truePosData)))
+        global truePosData = truePosData .- ((truePosData[:, 1] - posData[1].cameraPos[1:3]) .* ones(size(truePosData)))
     end
     CImGui.SameLine()
     @cstatic showCameraPosC=false begin
@@ -422,7 +428,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
             end
         end
         if CImGui.CollapsingHeader("Steering Angle")
-            ImPlot.SetNextPlotLimits(0, length(posData), 107, 133)
+            ImPlot.SetNextPlotLimits(0, length(posData), -14, 14)
             if ImPlot.BeginPlot("Steering Angle", "Data Point", "Angle [°]")
                 values = Int64.(posData.steerAngle)  
                 ImPlot.PlotLine("", values, size(values, 1))

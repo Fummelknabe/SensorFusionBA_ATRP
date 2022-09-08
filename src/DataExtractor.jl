@@ -46,7 +46,7 @@ end
 function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool)
     posData = PositionalData()
         
-    posData.steerAngle = dict["steerAngle"]
+    posData.steerAngle = dict["steerAngle"] - 120
     posData.sensorAngle = dict["sensorAngle"]
     posData.maxSpeed = dict["maxSpeed"]
     posData.sensorSpeed = dict["sensorSpeed"]
@@ -105,7 +105,7 @@ function loadPosFromJSon()
 end
 
 function loadParamsFromJSon()
-    settings = PredictionSettings(false, false, 5, false, 5, false, 0.075, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false)
+    settings = PredictionSettings(false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false, false)
     filename = open_dialog("Select JSON to load")
     if filename == "" 
         @warn "No File was selected."

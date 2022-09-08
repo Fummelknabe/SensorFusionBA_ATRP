@@ -10,26 +10,13 @@ ẏ(v, Ψ, β) = v*sin(Ψ + β)
 δΨ(v, β) = v/lₕ*sin(β)
 β(δ) = atan(lₕ/(lᵥ+lₕ)*tan(δ))
 
-# Only inputs used are steer angle δ and velocity v
-# Constructing state space model with state
-mutable struct State
-    x::Float32
-    y::Float32
-    Ψ::Float32
-end
-
-mutable struct Input
-    v::Float32
-    δt::Float32
-    δ::Float32
-end
-
 function f(sₜ₋₁::State, uₜ::Input) 
     βₜ = β(uₜ.δ)
     Ψ = sₜ₋₁.Ψ + uₜ.δt*δΨ(uₜ.v, βₜ)
     x = sₜ₋₁.x + uₜ.δt*ẋ(uₜ.v, Ψ, βₜ)
     y = sₜ₋₁.y + uₜ.δt*ẏ(uₜ.v, Ψ, βₜ)
-    return State(Ψ, x, y) # Have function to convert state to vector
+
+    return Float32.([x, y, Ψ])
 end
 
 # After linearization and discretization

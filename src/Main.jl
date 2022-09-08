@@ -49,9 +49,12 @@ rawPositionalData = StructArray(PositionalData[])
 # Raw Data to save
 rawSavePosData = StructArray(PositionalData[])
 
-function mainLoop(window::GLFW.Window, ctx, program) 
-    models = [loadGLTFModelInBuffers(robotSource, robotData), loadGLTFModelInBuffers(plateSource, plateData)]
-    models[1].transform = Transform([0.0, 2.75, 0.0], [0.0, -π/8, π], [0.15, 0.15, 0.15])
+# initialize standard settings
+settings = PredictionSettings(false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false, false)
+
+models = Vector{Model}(undef, 0)
+
+function mainLoop(window::GLFW.Window, ctx, program)     
     saveDataLength = 0
 
     try
@@ -110,7 +113,15 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 CImGui.MenuItem("Connect Window") && global showConnectWindow = !showConnectWindow
                 if connected 
                     CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots 
-                    CImGui.MenuItem("Render Robot") && global renderRobot = !renderRobot
+                    if CImGui.MenuItem("Render Robot")
+                        # Load models when rendering
+                        if isempty(models)
+                            push!(models, loadGLTFModelInBuffers(robotSource, robotData))
+                            push!(models, loadGLTFModelInBuffers(plateSource, plateData))
+                            models[1].transform = Transform([0.0, 2.75, 0.0], [0.0, -π/8, π], [0.15, 0.15, 0.15])
+                        end
+                        global renderRobot = !renderRobot
+                    end
                     CImGui.MenuItem("Automatic Inputs") && global showAutomaticInputWindow = !showAutomaticInputWindow
                     CImGui.MenuItem("Record Data") && global recordDataWindow = !recordDataWindow
                 end
@@ -179,10 +190,10 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 end
             end
 
-            # initialize with standard settings
-            settings = PredictionSettings(false, false, 5, false, 5, false, 0.075, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false)
             if estSettingWindow
-                settings = estimationSettingsWindow()
+                let s = estimationSettingsWindow()
+                global settings = (s == -1) ? settings : s
+                end  
             end
 
             if showRecoredDataPlots
