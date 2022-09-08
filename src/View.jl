@@ -189,11 +189,17 @@ function handleShowDataWindow()
         ShowHelpMarker("Unnecessary if the correct initial transform is choosen for the camera.\n This transforms the camera data onto the predicted data.")
     end
     if showRecoredDataPlots
-        @cstatic  dispDataPoints=Cint(1) begin
+        @cstatic  dispDataPoints=Cint(1) play=false begin
             CImGui.Text("Display Datapoint: ")
             CImGui.SameLine()
             @c CImGui.SliderInt("", &dispDataPoints, 1, length(rawSavePosData), "%d")
-            global rawSaveDataLength = dispDataPoints
+            play || global rawSaveDataLength = dispDataPoints
+            CImGui.SameLine()
+            @c CImGui.Checkbox("Auto Play", &play)
+            if (play && length(rawSavePosData) > rawSaveDataLength) 
+                global rawSaveDataLength += 1 
+                dispDataPoints = Cint(rawSaveDataLength)
+            end
             CImGui.SameLine()
             ShowHelpMarker("Use Slider to display set amount of data points.")
         end
