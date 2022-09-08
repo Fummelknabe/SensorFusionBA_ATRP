@@ -1,16 +1,3 @@
-# This model cannot desribe change in z position
-# Just movement on 2D plane (horizontal plane)
-# Measure again!
-const lᵥ = 0.59
-const lₕ = 0.10
-
-# important equations (velocity is omitted as acceleration is not useful)
-ẋ(v, Ψ, β) = v*cos(Ψ + β)
-ẏ(v, Ψ, β) = v*sin(Ψ + β)
-#ż(v, Ψ, β) = 
-δΨ(v, β, δ) = v/(lₕ+lᵥ)*cos(β)*tan(δ)
-β(δ) = atan(lₕ/(lᵥ+lₕ)*tan(δ))
-
 function f(sₜ₋₁::PositionalState, uₜ::PositionalData, v::Float32) 
     βₜ = β(uₜ.steerAngle*π/180)
     Ψ = sₜ₋₁.Ψ + uₜ.deltaTime*δΨ(v, βₜ, uₜ.steerAngle*π/180)
@@ -22,7 +9,7 @@ function f(sₜ₋₁::PositionalState, uₜ::PositionalData, v::Float32)
 end
 
 function f(s::Vector{Float32}, u::Vector{Float32})
-
+    @info "WIP"
 end
 
 """
@@ -40,7 +27,7 @@ This performs the whole prediction step for the UKF.
 function UKF_prediction(μₜ₋₁::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vector{Float32}, Χₜ₋₁::Vector{Vector{Float32}}, uₜ::Vector{Float32}, Σₜ₋₁::Matrix{Float32}, p::PredictionSettings)
     μₜ̇ = sum(wₘ[i+1]*f(Χₜ₋₁[i+1], uₜ) for i ∈ 0:2*p.n)
 
-    Χₜ = generateSigmaPoints(μₜ₋₁, Σₜ₋₁, wₘ, p)
+    Χₜ = generateSigmaPoints(μₜ₋₁, Σₜ₋₁, p)
 
     Σₜ = sum(wₖ[i+1]*(f(Χₜ₋₁, uₜ) - μₜ̇)*(f(Χₜ₋₁, uₜ) - μₜ̇)' for i ∈ 0:2*n) + p.process_noise_s # not sure if this should be added inside of sum
 
@@ -72,11 +59,11 @@ Compute the weights for the unscented transform.
 - `mean::Bool`: If true computes weights for mean, if not for covariance.
 - `params::PredictionSettings`: Parameters to influence estimation.
 """
-function weights(mean::Bool, p::PredictionSettings)
+function computeWeights(mean::Bool, p::PredictionSettings)
     w = Vector{Float32}(undef, 0)
 
     if mean push!(w, p.λ/(p.n+p.λ))
-    else push!(w, p.λ/(p.n+p.λ) + (1-p.α^2+2))
+    else push!(w, p.λ/(p.n+p.λ) + (1-p.α^2+2)) end
 
     for i ∈ 1:2*n
         push!(w, 1/(2*(p.n+p.λ)))

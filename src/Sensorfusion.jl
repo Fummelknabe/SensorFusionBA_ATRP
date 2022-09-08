@@ -1,6 +1,8 @@
 using DSP
 using LinearAlgebra
 
+include("UKF.jl")
+
 predictedStates = StructArray(PositionalState[])
 
 rateCameraConfidence(cc, exponent, useSin::Bool) = Float32(useSin ? sin(π/2 * cc)^exponent : cc^exponent)
