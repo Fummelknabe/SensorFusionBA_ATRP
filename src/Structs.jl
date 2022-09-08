@@ -1,27 +1,12 @@
-#=
-mutable struct State
-    x::Float32
-    y::Float32
-    Ψ::Float32
-
-    State(s::Vector{Float32}) = new(s[1], s[2], s[3])
-    State(x, y, Ψ) = new(x, y, Ψ)
-end
-
-mutable struct Input
-    v::Float32
-    δt::Float32
-    δ::Float32
-end
-=#
-
 mutable struct PositionalState
     position::Vector{Float32}
-    v::Float32
-    P_c::Matrix{Float32}
-    P_g::Matrix{Float32}
+    v::Float32    
     Ψ::Float32
     θ::Float32
+    P_c::Matrix{Float32}
+    P_g::Matrix{Float32}
+    Σ::Matrix{Float32}
+    Χ::Vector{Vector{Float32}}
 end
 
 mutable struct PredictionSettings
@@ -39,8 +24,13 @@ mutable struct PredictionSettings
     measurementNoiseC::Float32
     processNoiseG::Float32
     measurementNoiseG::Float32
+    processNoiseS::Float32
+    measurementNoiseS::Float32
     σ_forSpeedKernel::Float32
     ΨₒmagInfluence::Bool
+    λ::Float32
+    n::Int
+    α::Float32
 end
 
 export PositionalData

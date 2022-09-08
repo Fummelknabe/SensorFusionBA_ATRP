@@ -225,7 +225,7 @@ end
 
 function estimationSettingsWindow()
     CImGui.Begin("Estimation Settings")
-    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, false)
+    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 1.0, 0, 1.0)
 
     if CImGui.Button("Toggle use Parameters in JSON")
         global loadingSettingsJSON = !loadingSettingsJSON      
@@ -296,7 +296,7 @@ function estimationSettingsWindow()
 
         CImGui.End()
 
-        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ, magInf)
+        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, 0, 0, σ, magInf, 1.0, 0, 1.0)
     end 
 
     if loadingSettingsJSON return -1 end

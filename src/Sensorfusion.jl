@@ -21,6 +21,12 @@ const H_c = [1 0 0 0 0;
              0 1 0 0 0;
              0 0 1 0 0]
 
+const Hₛ = [1 0 0 0 0;
+           0 1 0 0 0;
+           0 0 1 0 0;
+           0 0 0 1 0;
+           0 0 0 0 1]
+
 const lᵥ = 0.59
 const lₕ = 0.10
 
@@ -190,10 +196,12 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
 
       return PositionalState(newPosition,
                              v,
+                             Ψₒ, 
+                             (settings.odoSteerFactor*θ_acc(posState.θ, newData.deltaTime, newData.imuAcc)+settings.odoGyroFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)+settings.odoMagFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor),
                              P_c_update,
                              P_g_update,
-                             Ψₒ, 
-                             (settings.odoSteerFactor*θ_acc(posState.θ, newData.deltaTime, newData.imuAcc)+settings.odoGyroFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)+settings.odoMagFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
+                             posState.Σ,
+                             posState.Χ
                         )
 end
 
@@ -227,7 +235,7 @@ This function predicts position from recorded data.
 function predictFromRecordedData(posData::StructVector{PositionalData}, settings::PredictionSettings)
       # Set up predicted states and initialize first one
       estimatedStates = StructArray(PositionalState[])
-      push!(estimatedStates, PositionalState(posData[1].cameraPos[1:3], posData[1].sensorSpeed, Matrix(I, 5, 5), Matrix(I, 2, 2), convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc)))
+      push!(estimatedStates, PositionalState(posData[1].cameraPos[1:3], posData[1].sensorSpeed, convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc), Matrix(I, 5, 5), Matrix(I, 2, 2), Matrix(I, 5, 5), Vector{Vector{Float32}}(undef, 0)))
       # Predict for every coming positional value
       for i in 2:length(posData)
             push!(estimatedStates, predict(
@@ -250,7 +258,7 @@ Start sensor fusion with a continuous flow of data.
 function initializeSensorFusion(posData::StructVector{PositionalData}, settings::PredictionSettings)
       if length(predictedStates) == 0
             # Set first state
-            global predictedStates[1] = PositionalState(posData[1].cameraPos[1:3], posData[1].sensorSpeed, Matrix(I, 5, 5), Matrix(I, 2, 2), convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc))
+            global predictedStates[1] = PositionalState(posData[1].cameraPos[1:3], posData[1].sensorSpeed, convertMagToCompass(posData[1].imuMag), θ_acc(0.0, 1.0, posData[1].imuAcc), Matrix(I, 5, 5), Matrix(I, 2, 2), Matrix(I, 5, 5), Vector{Vector{Float32}}(undef, 0))
       end
 
       push!(predictedStates, predict(predictedStates[length(predictedStates)  - 1], posData, settings))
