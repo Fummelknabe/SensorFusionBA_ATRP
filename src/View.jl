@@ -225,17 +225,17 @@ end
 
 function estimationSettingsWindow()
     CImGui.Begin("Estimation Settings")
-    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 1.0, 0, 1.0)
+    pred = PredictionSettings(false, false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0, false, 1.0, 0, 1.0)
 
     if CImGui.Button("Toggle use Parameters in JSON")
         global loadingSettingsJSON = !loadingSettingsJSON      
         return loadingSettingsJSON ? loadParamsFromJSon() : -1
     end  
 
-    @cstatic check=false check2=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) σ=Cfloat(1/3) begin 
+    @cstatic check=false check2=false check3=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) r_s=Cfloat(0.1) q_s=Cfloat(0.1) σ=Cfloat(1/3) λ=Cfloat(1.0) n=Cint(1) α=Cfloat(1.0) begin 
         @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
-        CImGui.SameLine()
         @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
+        @c CImGui.Checkbox("UKF for Kinematic Model", &check3)
 
         CImGui.Text("Camera Confidence Impact")
         @c CImGui.SliderFloat("##exponent", &exponent, 0.0, 40.0)
@@ -294,9 +294,24 @@ function estimationSettingsWindow()
             end
         end
 
+        if check3 
+            if CImGui.CollapsingHeader("Kalman Filter Settings (Kinematic Model)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
+                CImGui.Text("Measurement Noise")
+                @c CImGui.SliderFloat("##measurement_noise_s", &r_s, 0.01, 100.0)
+                CImGui.Text("Process Noise")
+                @c CImGui.SliderFloat("##process_noise_s", &q_s, -0.1, 0.1)
+                CImGui.Text("Lamdba")
+                @c CImGui.SliderFloat("##lambda", &λ, -2.0, 2.0)
+                CImGui.Text("Number of Sigma Points")
+                @c CImGui.SliderInt("##n_sigma_points", &n, 0, 10)
+                CImGui.Text("Alpha")
+                @c CImGui.SliderFloat("##alpha", &α, -2.0, 2.0)
+            end
+        end
+
         CImGui.End()
 
-        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, 0, 0, σ, magInf, 1.0, 0, 1.0)
+        pred = PredictionSettings(check, check2, check3, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, q_s, r_s, σ, magInf, λ, n, α)
     end 
 
     if loadingSettingsJSON return -1 end

@@ -12,6 +12,7 @@ end
 mutable struct PredictionSettings
     kalmanFilterCamera::Bool
     kalmanFilterGyro::Bool
+    UKF::Bool
     exponentCC::Float32
     useSinCC::Bool
     speedExponentCC::Float32
