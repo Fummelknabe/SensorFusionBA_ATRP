@@ -225,19 +225,17 @@ end
 
 function estimationSettingsWindow()
     CImGui.Begin("Estimation Settings")
-    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false)
+    pred = PredictionSettings(false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, false)
 
     if CImGui.Button("Toggle use Parameters in JSON")
         global loadingSettingsJSON = !loadingSettingsJSON      
         return loadingSettingsJSON ? loadParamsFromJSon() : -1
     end  
 
-    @cstatic check=false check2=false check3=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) σ=Cfloat(1/3) begin 
+    @cstatic check=false check2=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) σ=Cfloat(1/3) begin 
         @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
         CImGui.SameLine()
         @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
-        CImGui.SameLine()
-        @c CImGui.Checkbox("Use Kinematic Bycicle Model", &check3)
 
         CImGui.Text("Camera Confidence Impact")
         @c CImGui.SliderFloat("##exponent", &exponent, 0.0, 40.0)
@@ -298,7 +296,7 @@ function estimationSettingsWindow()
 
         CImGui.End()
 
-        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ, magInf, check3)
+        pred = PredictionSettings(check, check2, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, σ, magInf)
     end 
 
     if loadingSettingsJSON return -1 end

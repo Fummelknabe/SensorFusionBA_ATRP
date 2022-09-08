@@ -1,3 +1,4 @@
+#=
 mutable struct State
     x::Float32
     y::Float32
@@ -12,6 +13,7 @@ mutable struct Input
     δt::Float32
     δ::Float32
 end
+=#
 
 mutable struct PositionalState
     position::Vector{Float32}
@@ -20,9 +22,6 @@ mutable struct PositionalState
     P_g::Matrix{Float32}
     Ψ::Float32
     θ::Float32
-
-    PositionalState(position, v, P_c, P_g, Ψ, θ) = new(position, v, P_c, P_g, Ψ, θ)
-    PositionalState(s::State, z, v, P_c, P_g, θ) = new([s.x, s.y, z], v, P_c, P_g, s.Ψ, θ)
 end
 
 mutable struct PredictionSettings
@@ -42,7 +41,6 @@ mutable struct PredictionSettings
     measurementNoiseG::Float32
     σ_forSpeedKernel::Float32
     ΨₒmagInfluence::Bool
-    useKinematicBM::Bool
 end
 
 export PositionalData

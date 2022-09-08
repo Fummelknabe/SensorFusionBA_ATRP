@@ -50,7 +50,7 @@ rawPositionalData = StructArray(PositionalData[])
 rawSavePosData = StructArray(PositionalData[])
 
 # initialize standard settings
-settings = PredictionSettings(false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false, false)
+settings = PredictionSettings(false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 1/3, false)
 
 models = Vector{Model}(undef, 0)
 

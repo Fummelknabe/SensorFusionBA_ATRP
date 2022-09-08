@@ -1,8 +1,6 @@
 using DSP
 using LinearAlgebra
 
-include("KinematicBycicleModel.jl")
-
 predictedStates = StructArray(PositionalState[])
 
 rateCameraConfidence(cc, exponent, useSin::Bool) = Float32(useSin ? sin(π/2 * cc)^exponent : cc^exponent)
@@ -22,6 +20,9 @@ const H_g = [0 1]
 const H_c = [1 0 0 0 0;
              0 1 0 0 0;
              0 0 1 0 0]
+
+const lᵥ = 0.59
+const lₕ = 0.10
 
 P(F, Q, oldP, size) = F*oldP*transpose(F) .+ Q*Matrix(I, size, size)
 K(P, H, R, size) = P*transpose(H)*(H*P*transpose(H) .+ R*Matrix(I, size, size))^-1
@@ -108,18 +109,19 @@ end
 θ_ang(oldθ, δt, ω::Vector{Float32}) = oldθ - δt*ω[2]
 
 # Calculate angles using steering angle δ and acceleration
-Ψ(oldΨ, δt, δ::Float32) = oldΨ + δt*δ
+Ψ(oldΨ, δt, δ::Float32, β::Float32, v::Float32) = Float32(oldΨ + δt*(v/(lₕ+lᵥ)*cos(β)*tan(δ)))
 θ_acc(oldθ, δt, a::Vector{Float32}) = oldθ + δt*acos(a[3]/norm(a))
+β(δ) = Float32(atan(lₕ/(lᵥ+lₕ)*tan(δ)))
 
-function changeInPosition(a::Vector{Float32}, v::Float32, Ψ::Float32, θ::Float32, δt::Float32)
+function changeInPosition(a::Vector{Float32}, v::Float32, Ψ::Float32, θ::Float32, δt::Float32; β::Float32=Float32(0.0))
       # Get Change in Position
-      x_dot = v * cos(Ψ)
-      y_dot = v * sin(Ψ)
+      ẋ = v * cos(Ψ + β)
+      ẏ = v * sin(Ψ + β)
 
       # Only when a significant deviation from z-Axis = 1g
-      z_dot = (abs(a[3] - 1) > 0.02) ? v * sin(θ) : 0
+      ż = (abs(a[3] - 1) > 0.02) ? v * sin(θ) : 0
 
-      return [x_dot*δt, y_dot*δt, z_dot*δt]
+      return [ẋ*δt, ẏ*δt, ż*δt]
 end
 
 """
@@ -141,13 +143,6 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       camPosMatrix = reduce(vcat, transpose.(dataPoints.cameraPos))   
       v = computeSpeed(camPosMatrix, dataPoints.deltaTime, newData.sensorSpeed, rateCameraConfidence(newData.cameraConfidence, settings.speedExponentCC, settings.speedUseSinCC), settings.σ_forSpeedKernel, newData.command, posState.v < 0)
 
-      if settings.useKinematicBM
-            let sₜ₋₁ = State([posState.position[1], posState.position[2], posState.Ψ])
-                  sₜ = State(f(sₜ₋₁, Input(v, newData.deltaTime, newData.steerAngle*π/180)))
-                  return PositionalState([sₜ.x, sₜ.y, posState.position[3]], v, posState.P_c, posState.P_g, sₜ.Ψ, posState.θ)
-            end
-      end
-
       # Apply Kalman Filter to angular velocity data if wanted
       P_g_update = Matrix(I, 2, 2)
       if settings.kalmanFilterGyro
@@ -160,9 +155,10 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       # Calculate delta position with different information
       δOdoSteeringAngle = changeInPosition(newData.imuAcc, 
                                            v, 
-                                           Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle*π/180))),
+                                           Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle*π/180)), β(newData.steerAngle*π/180), v),
                                            θ_acc(posState.θ, newData.deltaTime, newData.imuAcc),
-                                           newData.deltaTime)
+                                           newData.deltaTime,
+                                           β=Float32(newData.steerAngle*π/180))
 
       δOdoAngularVelocity = changeInPosition(newData.imuAcc, 
                                              v, 
@@ -190,7 +186,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
             newPosition = posState.position + δodometryPos + kalmanGain[1:3, 1:3] * (dataPoints[amountDataPoints].cameraPos[1:3] - (posState.position + δodometryPos))
       end
 
-      Ψₒ = (settings.odoSteerFactor*Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle*π/180)))+settings.odoGyroFactor*(settings.kalmanFilterGyro ? Float32(Ψ_ang) : Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))+(settings.ΨₒmagInfluence ? settings.odoMagFactor*convertMagToCompass(newData.imuMag) : 0)) / (settings.odoGyroFactor + (settings.ΨₒmagInfluence ? settings.odoMagFactor : 0) + settings.odoSteerFactor)
+      Ψₒ = (settings.odoSteerFactor*Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle*π/180)), β(newData.steerAngle*π/180), v)+settings.odoGyroFactor*(settings.kalmanFilterGyro ? Float32(Ψ_ang) : Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))+(settings.ΨₒmagInfluence ? settings.odoMagFactor*convertMagToCompass(newData.imuMag) : 0)) / (settings.odoGyroFactor + (settings.ΨₒmagInfluence ? settings.odoMagFactor : 0) + settings.odoSteerFactor)
 
       return PositionalState(newPosition,
                              v,
