@@ -30,6 +30,9 @@ const Hₛ = [1 0 0 0 0;
 const lᵥ = 0.59
 const lₕ = 0.10
 
+# Dimension of state for UKF
+const n = 5
+
 # Calculate angles using angular Velocity ω
 Ψ(oldΨ, δt, ω::Vector{Float32}) = oldΨ - δt*ω[3]
 θ_ang(oldθ, δt, ω::Vector{Float32}) = oldθ - δt*ω[2]
@@ -169,23 +172,30 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                                                 newData.deltaTime,
                                                 β=Float32(newData.steerAngle*π/180))
       else
-            wₘ = computeWeights(true, settings)
-            wₖ = computeWeights(false, settings)
-            μₜ̇, Χₜ, Σₜ̇ = UKF_prediction(Float32.([posState.position[1], posState.position[2], posState.position[3], posState.Ψ, posState.θ]),
-                                    wₘ,
-                                    wₖ,
-                                    posState.Χ,
-                                    Float32.([newData.imuAcc[1], newData.imuAcc[2], newData.imuAcc[3], v, newData.deltaTime, newData.steerAngle]),
-                                    posState.Σ,
-                                    settings)
+            try   # JUST DEBUGGING
+                  wₘ = computeWeights(true, settings)
+                  wₖ = computeWeights(false, settings)
+                  μₜ̇, Χₜ, Σₜ̇ = UKF_prediction(Float32.([posState.position[1], posState.position[2], posState.position[3], posState.Ψ, posState.θ]),
+                                          wₘ,
+                                          wₖ,
+                                          posState.Χ,
+                                          Float32.([newData.imuAcc[1], newData.imuAcc[2], newData.imuAcc[3], v, newData.deltaTime, newData.steerAngle]),
+                                          posState.Σ,
+                                          settings)
+                      
+                  # FOR DEBUG PURPOSES COMMENTED OUT!
+                  μₜ, Σₜ = UKF_update(μₜ̇, wₘ, wₖ, Χₜ, Σₜ̇, settings, [newData.cameraPos[1], newData.cameraPos[2], newData.cameraPos[3], convertMagToCompass(newData.imuMag), θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)])
 
-            μₜ, Σₜ = UKF_update(μₜ̇, wₘ, wₖ, Χₜ, Σₜ̇, settings, [newData.cameraPos[1], newData.cameraPos[2], newData.cameraPos[3], convertMagToCompass(newData.imuMag), θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)])
+                  δOdoSteeringAngle = μₜ[1:3] - posState.position
 
-            δOdoSteeringAngle = μₜ[1:3] - posState.position
-
-            # Update state
-            posState.Σ = Σₜ
-            posState.Χ = Χₜ
+                  # Update state
+                  posState.Σ = Σₜ
+                  posState.Χ = Χₜ
+            catch e     
+                  @error "Error occured with: $(settings)."
+                  println("Sigma Points: $(posState.Χ), covariance $(posState.Σ)")
+                  throw(e)
+            end  
       end
 
       δOdoAngularVelocity = changeInPosition(newData.imuAcc, 
@@ -259,7 +269,7 @@ function predictFromRecordedData(posData::StructVector{PositionalData}, settings
       estimatedStates = StructArray(PositionalState[])
       Ψᵢₙᵢₜ = convertMagToCompass(posData[1].imuMag)
       θᵢₙᵢₜ = θ_acc(0.0, 1.0, posData[1].imuAcc)
-      Σᵢₙᵢₜ = Float32.(Matrix(I, 5, 5))
+      Σᵢₙᵢₜ = Float32.(Matrix(I, n, n))
       Χᵢₙᵢₜ = settings.UKF ? generateSigmaPoints(Float32.([posData[1].cameraPos[1], posData[1].cameraPos[2], posData[1].cameraPos[3], Ψᵢₙᵢₜ, θᵢₙᵢₜ]), Σᵢₙᵢₜ, settings) : Vector{Vector{Float32}}(undef, 0)
       push!(estimatedStates, PositionalState(posData[1].cameraPos[1:3], posData[1].sensorSpeed, Ψᵢₙᵢₜ, θᵢₙᵢₜ, Matrix(I, 5, 5), Matrix(I, 2, 2), Σᵢₙᵢₜ, Χᵢₙᵢₜ))
       # Predict for every coming positional value
@@ -286,7 +296,7 @@ function initializeSensorFusion(posData::StructVector{PositionalData}, settings:
             # Set first state
             Ψᵢₙᵢₜ = convertMagToCompass(posData[1].imuMag)
             θᵢₙᵢₜ = θ_acc(0.0, 1.0, posData[1].imuAcc)
-            Σᵢₙᵢₜ = Float32.(Matrix(I, 5, 5))
+            Σᵢₙᵢₜ = Float32.(Matrix(I, n, n))
             Χᵢₙᵢₜ = settings.UKF ? generateSigmaPoints(Float32.([posData[1].cameraPos[1], posData[1].cameraPos[2], posData[1].cameraPos[3], Ψᵢₙᵢₜ, θᵢₙᵢₜ]), Σᵢₙᵢₜ, settings) : Vector{Vector{Float32}}(undef, 0)
             global predictedStates[1] = PositionalState(posData[1].cameraPos[1:3], posData[1].sensorSpeed, Ψᵢₙᵢₜ, θᵢₙᵢₜ, Matrix(I, 5, 5), Matrix(I, 2, 2), Σᵢₙᵢₜ, Χᵢₙᵢₜ)
       end

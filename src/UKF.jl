@@ -31,16 +31,17 @@ This performs the whole prediction step for the UKF.
 """
 function UKF_prediction(μₜ₋₁::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vector{Float32}, Χₜ₋₁::Vector{Vector{Float32}}, uₜ::Vector{Float32}, Σₜ₋₁::Matrix{Float32}, p::PredictionSettings)
     #println("DEBUG - dimensions: mean: $(size(μₜ₋₁)), weight m: $(size(wₘ)), weight k: $(size(wₖ)), sigma points: $(size(Χₜ₋₁)), u: $(size(uₜ)), sigma: $(size(Σₜ₋₁))")
-    μₜ̇ = sum(wₘ[i+1]*f(Χₜ₋₁[i+1], uₜ) for i ∈ 0:2*p.n)
+    μₜ̇ = sum(wₘ[i+1]*f(Χₜ₋₁[i+1], uₜ) for i ∈ 0:2*n)
     #println("DEBUG - mean: $(μₜ̇)")
 
     Χₜ = generateSigmaPoints(μₜ₋₁, Σₜ₋₁, p)
     #println("DEBUG - sigma points: $(Χₜ)")
 
-    Σₜ = sum(wₖ[i+1]*(f(Χₜ₋₁[i+1], uₜ) - μₜ̇)*(f(Χₜ₋₁[i+1], uₜ) - μₜ̇)' for i ∈ 0:2*p.n) + p.processNoiseS*Matrix(I, size(Σₜ₋₁)) # not sure if this should be added inside of sum
+    Σₜ = sum(wₖ[i+1]*(f(Χₜ₋₁[i+1], uₜ) - μₜ̇)*transpose(f(Χₜ₋₁[i+1], uₜ) - μₜ̇) for i ∈ 0:2*n) + p.processNoiseS*Matrix(I, size(Σₜ₋₁)) # not sure if this should be added inside of sum
     #println("DEBUG - covariance: $(Σₜ)")
     #println("DEBUG - weights m: $(wₘ)")
     #println("DEBUG - weight k: $(wₖ)")
+    if !ishermitian(Σₜ) @warn "Sigma from Prediction not hermitian!" end
 
     return μₜ̇, Χₜ, Σₜ
 end
@@ -59,22 +60,23 @@ function UKF_update(μₜ̇::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vecto
     for i ∈ 1:length(Χₜ)
         Zₜ = hcat(Zₜ, Hₛ*Χₜ[i])
     end
-    Zₜ[isnan.(Zₜ)] .= 0.0
+    #Zₜ[isnan.(Zₜ)] .= 0.0
 
-    zₜ = sum(wₘ[i+1]*Zₜ[:, i+1] for i ∈ 0:2*p.n)
-    zₜ[isnan.(zₜ)] .= 0.0
+    zₜ = sum(wₘ[i+1]*Zₜ[:, i+1] for i ∈ 0:2*n)
+    #zₜ[isnan.(zₜ)] .= 0.0
 
-    Sₜ = sum(wₖ[i+1]*(Zₜ[:, i+1] - zₜ)*(Zₜ[:, i+1] - zₜ)' for i ∈ 0:2*p.n) + p.measurementNoiseS*Matrix(I, l, l)
-    Sₜ[isnan.(Sₜ)] .= 0.0
-    println("DEBUG - S: $(Sₜ)")
-    println("DEBUG - Z: $(Zₜ)")
-    println("DEBUG - z: $(zₜ)")
+    Sₜ = sum(wₖ[i+1]*(Zₜ[:, i+1] - zₜ)*transpose(Zₜ[:, i+1] - zₜ) for i ∈ 0:2*n) + p.measurementNoiseS*Matrix(I, l, l)
+    #Sₜ[isnan.(Sₜ)] .= 0.0
+    #println("DEBUG - S: $(Sₜ)")
+    #println("DEBUG - Z: $(Zₜ)")
+    #println("DEBUG - z: $(zₜ)")
 
     # calculate Kalman gain
-    Kₜ = sum(wₖ[i+1]*(Χₜ[i+1] - μₜ̇)*(Zₜ[:, i+1] - zₜ)' for i ∈ 0:2*p.n) * Sₜ^-1
+    Kₜ = sum(wₖ[i+1]*(Χₜ[i+1] - μₜ̇)*transpose(Zₜ[:, i+1] - zₜ) for i ∈ 0:2*n) * Sₜ^-1
 
     μₜ = μₜ̇ + Kₜ*(measurement - zₜ)
-    Σₜ = abs.(Σₜ̇ - Kₜ*Sₜ*Kₜ')
+    Σₜ = Σₜ̇ - Kₜ*Sₜ*transpose(Kₜ)
+    if !ishermitian(Σₜ) @warn "Sigma from update not hermitian!" end
     #println("DEBUG - new mean: $(μₜ)")
     #println("DEBUG - new covariance: $(Σₜ)")
     return μₜ, Σₜ
@@ -89,12 +91,13 @@ Compute the weights for the unscented transform.
 """
 function computeWeights(mean::Bool, p::PredictionSettings)
     w = Vector{Float32}(undef, 0)
+    λ = p.α^2*(n + p.κ) - n
 
-    if mean push!(w, p.λ/(p.n+p.λ))
-    else push!(w, p.λ/(p.n+p.λ) + (1-p.α^2+2)) end
+    if mean push!(w, λ/(n+λ))
+    else push!(w, λ/(n+λ) + (1-p.α^2+2)) end
 
-    for i ∈ 1:2*p.n
-        push!(w, 1/(2*(p.n+p.λ)))
+    for i ∈ 1:2*n
+        push!(w, 1/(2*(n+λ)))
     end 
     return w
 end
@@ -113,14 +116,15 @@ function generateSigmaPoints(μₜ₋₁::Vector{Float32}, Σₜ₋₁::Matrix{F
 
     # Add the last mean
     push!(Χ, μₜ₋₁)
+    λ = p.α^2*(n + p.κ) - n
 
     # Add the remaining sigma points spread around mean
-    for i ∈ 1:p.n
-        push!(Χ, μₜ₋₁ + sqrt((p.n + p.λ) * Σₜ₋₁)[:, i])
+    for i ∈ 1:n
+        push!(Χ, μₜ₋₁ + cholesky((n + λ) * Σₜ₋₁).U[:, i])
     end
 
-    for i ∈ (p.n+1):2*p.n
-        push!(Χ, μₜ₋₁ - sqrt((p.n + p.λ) * Σₜ₋₁)[:, i])
+    for i ∈ 1:n
+        push!(Χ, μₜ₋₁ - cholesky((n + λ) * Σₜ₋₁).U[:, i])
     end
     return Χ
 end

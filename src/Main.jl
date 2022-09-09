@@ -50,7 +50,7 @@ rawPositionalData = StructArray(PositionalData[])
 rawSavePosData = StructArray(PositionalData[])
 
 # initialize standard settings
-settings = PredictionSettings(false, false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 0.1, 0.1, 1/3, false, 1.0, 2, 1.0)
+settings = PredictionSettings(false, false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 0.1, 0.1, 1/3, false, 1.0, 1.0)
 
 models = Vector{Model}(undef, 0)
 
@@ -110,7 +110,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
             begin 
                 CImGui.BeginMainMenuBar()
                 CImGui.MenuItem("Help") && global showHelperWindow = !showHelperWindow
-                CImGui.MenuItem("Connect Window") && global showConnectWindow = !showConnectWindow
+                CImGui.MenuItem("Connect") && global showConnectWindow = !showConnectWindow
                 if connected 
                     CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots 
                     if CImGui.MenuItem("Render Robot")

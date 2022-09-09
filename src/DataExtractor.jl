@@ -68,26 +68,31 @@ function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool)
     return posData
 end
 
-function loadDataFromJSon(;rotateCameraCoords::Bool=true)
-    @info "Loading raw data..."
+function loadDataFromJSon(;rotateCameraCoords::Bool=true)   
     posData = StructArray(PositionalData[])
     filename = open_dialog("Select JSON to load")
     if filename == "" return posData end
+    @info "Loading raw data..."
     posDataDicts = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
-
-    for dict in posDataDicts        
-        push!(posData, convertDictToPosData(dict, rotateCameraCoords))
-    end
+    try        
+        for dict in posDataDicts        
+            push!(posData, convertDictToPosData(dict, rotateCameraCoords))
+        end
+    catch e
+        if e isa LoadError
+            @warn "Wrong file type. Please select the right file. Reload file."
+        end
+    end    
     
     return posData
 end
 
-function loadPosFromJSon()
-    @info "Loading pos data..."
+function loadPosFromJSon()    
     posData = Matrix{Float32}(undef, 3, 0)
     filename = open_dialog("Select JSON to load")
     if filename == "" return posData end
     try
+        @info "Loading pos data..."
         posDataDicts = JSON.parsefile(filename, dicttype=Dict, inttype=Int64);
 
         for dict in posDataDicts        
@@ -105,7 +110,7 @@ function loadPosFromJSon()
 end
 
 function loadParamsFromJSon()
-    settings = PredictionSettings(false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 0, 0, 1/3, false, 1.0, 0, 1.0)
+    settings = PredictionSettings(false, false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 0, 0, 1/3, false, 1.0, 1.0)
     filename = open_dialog("Select JSON to load")
     if filename == "" 
         @warn "No File was selected."
