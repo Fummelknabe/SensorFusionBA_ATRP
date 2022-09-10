@@ -196,6 +196,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                   @error "Error occured with: $(settings)."
                   println("Sigma Points: $(posState.Χ)")
                   println("covariance $(posState.Σ)")
+                  println("lambda: $(settings.α^2*(n + settings.κ) - n)")
                   throw(e)
             end  
       end
