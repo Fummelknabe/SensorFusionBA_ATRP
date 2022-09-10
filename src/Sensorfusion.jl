@@ -145,7 +145,7 @@ This function predicts the next position from given datapoints and the last posi
 # Returns
 - `PositionalState`: The new positional state of the robot.
 """
-function predict(posState::PositionalState, dataPoints::StructVector{PositionalData}, settings::PredictionSettings)
+function predict(posState::PositionalState, dataPoints::StructVector{PositionalData}, settings::PredictionSettings; #=onyl for debugging:=#iteration::Int=0)
       # Get data from data point
       amountDataPoints = length(dataPoints)
       amountDataPoints > 1 || throw("More than $(amountDataPoints) Data Points need to be given to predict position.")
@@ -172,6 +172,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                                                 newData.deltaTime,
                                                 β=Float32(newData.steerAngle*π/180))
       else
+            #@info "Iteration: $(iteration)"
             try   # JUST DEBUGGING
                   wₘ = computeWeights(true, settings)
                   wₖ = computeWeights(false, settings)
@@ -193,7 +194,8 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                   posState.Χ = Χₜ
             catch e     
                   @error "Error occured with: $(settings)."
-                  println("Sigma Points: $(posState.Χ), covariance $(posState.Σ)")
+                  println("Sigma Points: $(posState.Χ)")
+                  println("covariance $(posState.Σ)")
                   throw(e)
             end  
       end
@@ -278,7 +280,7 @@ function predictFromRecordedData(posData::StructVector{PositionalData}, settings
                   estimatedStates[i-1],
                   # give mutiple positional data points if possible
                   (i > 9) ? posData[(i-9):i] : posData[(i-1):i],
-                  settings
+                  settings, iteration=i
             ))
       end
 

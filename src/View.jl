@@ -232,7 +232,7 @@ function estimationSettingsWindow()
         return loadingSettingsJSON ? loadParamsFromJSon() : -1
     end  
 
-    @cstatic check=false check2=false check3=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) r_s=Cfloat(0.1) q_s=Cfloat(0.1) σ=Cfloat(1/3) κ=Cfloat(1.0) α=Cfloat(1.0) begin 
+    @cstatic check=false check2=false check3=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) r_s=Cfloat(0.1) q_s=Cfloat(0.1) σ=Cfloat(1/3) κ=Cfloat(1.0) α=Cfloat(1e-3) begin 
         @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
         @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
         @c CImGui.Checkbox("UKF for Kinematic Model", &check3)
@@ -300,10 +300,10 @@ function estimationSettingsWindow()
                 @c CImGui.SliderFloat("##measurement_noise_s", &r_s, 0.01, 100.0)
                 CImGui.Text("Process Noise")
                 @c CImGui.SliderFloat("##process_noise_s", &q_s, 0.0, 1.0)
-                CImGui.Text("Lamdba")
-                @c CImGui.SliderFloat("##lambda", &κ, 0.0, 10.0)
+                CImGui.Text("Kappa")
+                @c CImGui.SliderFloat("##kappa", &κ, 0.0, 10.0)
                 CImGui.Text("Alpha")
-                @c CImGui.SliderFloat("##alpha", &α, 0.001, 1.0)
+                @c CImGui.SliderFloat("##alpha", &α, 0.00001, 0.01)
             end
         end
 

@@ -10,6 +10,9 @@ data/predParams/*
 # Ignore recorded pos data
 data/*.json
 
+# Ignore matlab script
+data/ukf_test.m
+
 # Ignore helper executable
 *.bat
 *.sh
