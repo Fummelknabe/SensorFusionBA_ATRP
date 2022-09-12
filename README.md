@@ -16,6 +16,9 @@ VEHICLE STATS:
     - speedValue = round(19 + v*2.1) with 36 km/h top speed
 - Battery Width: 15.5cm
 
+BA-NOTES:
+- Mention: Design of Software, Degrees of Freedom, Ackerman
+
 TODO:
 - Maybe:
     - Redo Camera Movement
