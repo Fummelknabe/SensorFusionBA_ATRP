@@ -27,8 +27,8 @@ const Hₛ = [1 0 0 0 0;
            0 0 0 1 0;
            0 0 0 0 1]
 
-const lᵥ = 0.59
-const lₕ = 0.10
+const lᵥ = 0.18
+const lₕ = 0.50
 
 # Dimension of state for UKF
 const n = 5
