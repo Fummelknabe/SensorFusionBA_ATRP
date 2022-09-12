@@ -9,17 +9,14 @@ VEHICLE STATS:
 - Camera Height: 47cm
 - IMU Height: 39cm
 - IMU Offset: 10cm
-- IMU is vehilce reference point REMEASURE THIS!!!
-    - l_f = 59cm
-    - l_r = 10cm
+- IMU is vehilce reference point 
+    - l_f = 18cm
+    - l_r = 50cm
 - Correspondance between speedValue and m/s:
     - speedValue = round(19 + v*2.1) with 36 km/h top speed
 - Battery Width: 15.5cm
 
 TODO:
 - Maybe:
-    - Seperate code in different modules
     - Redo Camera Movement
-- Redo Sensorfusion
-    - Look at literature
-- Measure IMU location again
+- Close appropriate windows on disconnect
