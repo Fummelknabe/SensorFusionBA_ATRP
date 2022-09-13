@@ -160,7 +160,8 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
             P_predict = P(F_g(newData.deltaTime), settings.processNoiseG, posState.P_g, 2)
             kalmanGain = K(P_predict, H_g, settings.measurementNoiseG, 1)
             P_g_update = P_predict .- kalmanGain*H_g*P_predict
-            Ψ_ang = posState.Ψ + kalmanGain[2,1] * (settings.steerAngleFactor*(newData.steerAngle*π/180) - newData.imuGyro[3])
+            current_δ = settings.steerAngleFactor*(newData.steerAngle*π/180)            
+            Ψ_ang = posState.Ψ + kalmanGain[2,1] * (newData.deltaTime*(v/(lₕ+lᵥ)*cos(β(current_δ))*tan(current_δ)) - newData.imuGyro[3])
       end
 
       # Calculate delta position with different information
