@@ -183,7 +183,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                                           wₘ,
                                           wₖ,
                                           posState.Χ,
-                                          Float32.([newData.imuAcc[1], newData.imuAcc[2], newData.imuAcc[3], v, newData.deltaTime, newData.steerAngle]),
+                                          Float32.([newData.imuGyro[1], newData.imuGyro[2], newData.imuGyro[3], v, newData.deltaTime, newData.steerAngle]),
                                           posState.Σ,
                                           settings)
                       

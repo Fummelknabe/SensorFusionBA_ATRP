@@ -2,11 +2,11 @@
     x = [p_x, p_y, p_z, Ψ, Θ]
     # The Roll angle is not used here as it is not relevant for position change
    Use as Input:
-    u = [a_x, a_y, a_z, v, dt, steerAngle]
+    u = [w_x, w_y, w_z, v, dt, steerAngle]
 =#
 function f(s::Vector{Float32}, u::Vector{Float32})
     Ψₜ = Ψ(s[4], u[5], u[6], β(u[6]), u[4])
-    θₜ = θ_acc(s[5], u[5], [u[1], u[2], u[3]])
+    θₜ = θ_ang(s[5], u[5], [u[1], u[2], u[3]])
     ṡ = changeInPosition([u[1], u[2], u[3]], u[4], Ψₜ, θₜ, u[5], β=β(u[6]))
     p = s[1:3] + u[5]*ṡ
 
