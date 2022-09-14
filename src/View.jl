@@ -232,7 +232,7 @@ function estimationSettingsWindow()
         return loadingSettingsJSON ? loadParamsFromJSon() : -1
     end  
 
-    @cstatic check=false check2=false check3=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) r_s=Cfloat(0.1) q_s=Cfloat(0.1) σ=Cfloat(1/3) κ=Cfloat(1.0) α=Cfloat(1e-3) begin 
+    @cstatic check=false check2=false check3=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) r_s=Cfloat(1.0) q_s=Cfloat(0.1) σ=Cfloat(1/3) κ=Cfloat(1.0) α=Cfloat(1e-3) begin 
         @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
         @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
         @c CImGui.Checkbox("UKF for Kinematic Model", &check3)
@@ -256,7 +256,7 @@ function estimationSettingsWindow()
         ShowHelpMarker("Use a Sinus for Camera Confidence on speed.")
 
         CImGui.Text("Factor to adjust steerangle")
-        @c CImGui.SliderFloat("##factor", &factor, 0.0, 2.0)
+        @c CImGui.SliderFloat("##factor", &factor, 0.0, 10.0)
         CImGui.SameLine()
         ShowHelpMarker("At 0, robot always goes straight.")
 
@@ -390,17 +390,25 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
             end
         end
 
-        if CImGui.CollapsingHeader("Estimated Ψ") && estimating
+        if CImGui.CollapsingHeader("Estimated Orientation") && estimating
             ImPlot.SetNextPlotLimits(0, length(rawSavePosData), 0, 360)
             if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
                 # Converting Ψ to compass course in degrees             
                 for i in 1:length(estimation.Ψ)
                     estimation.Ψ[i] = estimation.Ψ[i] * 180/π
                     estimation.Ψ[i] = (estimation.Ψ[i] < 0) ? estimation.Ψ[i] + 360 : estimation.Ψ[i]
+                    estimation.θ[i] = estimation.θ[i] * 180/π
+                    estimation.θ[i] = (estimation.θ[i] < 0) ? estimation.θ[i] + 360 : estimation.θ[i]
+                    estimation.ϕ[i] = estimation.ϕ[i] * 180/π
+                    estimation.ϕ[i] = (estimation.ϕ[i] < 0) ? estimation.ϕ[i] + 360 : estimation.ϕ[i]
                 end
                 
                 values = float.(estimation.Ψ) 
-                ImPlot.PlotLine("Ψ", values, size(values, 1))
+                ImPlot.PlotLine("Yaw Angle", values, size(values, 1))
+                values = float.(estimation.θ) 
+                ImPlot.PlotLine("Pitch Angle", values, size(values, 1))
+                values = float.(estimation.ϕ) 
+                ImPlot.PlotLine("Roll Angle", values, size(values, 1))
                 ImPlot.EndPlot()
             end
         end
@@ -423,6 +431,24 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
                 ImPlot.PlotLine("y", yValues, size(yValues, 1))
                 yValues = float.(cameraPosMatrix[:, 3]) 
                 ImPlot.PlotLine("z", yValues, size(yValues, 1))
+                ImPlot.EndPlot()
+            end
+        end
+
+        if CImGui.CollapsingHeader("Camera Orientation")
+            cameraOriMatrix = reduce(vcat, transpose.(posData.cameraOri))
+            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), minimum(cameraOriMatrix), maximum(cameraOriMatrix))
+            if ImPlot.BeginPlot("Relative Camera Orientation", "Data Point", "Degrees [°]") 
+                eulerAngles = Matrix{Float32}(undef, 3, 0)
+                for i ∈ 1:size(cameraOriMatrix)[1]
+                    eulerAngles = hcat(eulerAngles, convertQuaternionToEuler([cameraOriMatrix[i, 1], cameraOriMatrix[i, 2], cameraOriMatrix[i, 3], cameraOriMatrix[i, 4]]))
+                end
+                yValues = float.(eulerAngles[1, :]) 
+                ImPlot.PlotLine("Yaw", yValues, size(yValues, 1))
+                yValues = float.(eulerAngles[2, :]) 
+                ImPlot.PlotLine("Pitch", yValues, size(yValues, 1))
+                yValues = float.(eulerAngles[3, :]) 
+                ImPlot.PlotLine("Roll", yValues, size(yValues, 1))
                 ImPlot.EndPlot()
             end
         end

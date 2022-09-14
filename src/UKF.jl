@@ -1,5 +1,6 @@
 #= Use as State: 
     x = [p_x, p_y, p_z, Ψ, Θ]
+    # The Roll angle is not used here as it is not relevant for position change
    Use as Input:
     u = [a_x, a_y, a_z, v, dt, steerAngle]
 =#
@@ -89,6 +90,7 @@ function UKF_update(μₜ̇::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vecto
     μₜ = μₜ̇ + Kₜ*(measurement - zₜ)
     Σₜ = Σₜ̇ - Kₜ*Sₜ*transpose(Kₜ)
     Σₜ[isnan.(Σₜ)] .= 0.0
+    Σₜ[isinf.(Σₜ)] .= 1e10
     #Σₜ = round.(Σₜ, digits=4)
     #if !ishermitian(Σₜ) @warn "Sigma from update not hermitian!" end
     #println("DEBUG - new mean: $(μₜ)")

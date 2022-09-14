@@ -3,6 +3,7 @@ mutable struct PositionalState
     v::Float32    
     Ψ::Float32
     θ::Float32
+    ϕ::Float32
     P_c::Matrix{Float32}
     P_g::Matrix{Float32}
     Σ::Matrix{Float32}
