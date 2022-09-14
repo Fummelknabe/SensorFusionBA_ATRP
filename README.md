@@ -22,4 +22,7 @@ BA-NOTES:
 TODO:
 - Maybe:
     - Redo Camera Movement
+    - Detect Wheel Slippage (two solutions plausible:
+        1. If camera position change is under 90° but orientation is way smaller
+        2. If camera position change is under 90° but angular vel is small)
 - Close appropriate windows on disconnect
