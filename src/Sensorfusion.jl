@@ -107,10 +107,13 @@ end
 """
 This function computes the speed from measured speed and camera position.
 """
-function computeSpeed(cameraMatrix::Matrix{Float32}, δt::Vector{Float32}, v::Float32, ratedCamConfidence::Float32, σ::Float32, command::String, pastBackwards::Bool)
+function computeSpeed(cameraMatrix::Matrix{Float32}, δt::Vector{Float32}, v::Float32, ratedCamConfidence::Float32, σ::Float32, command::String, pastBackwards::Bool, δ::Float32)
       cameraChange = cameraMatrix[:, 4]
       length(cameraChange) == length(δt) || throw("Computing Speed failed, as $(cameraChange) and $(δt) were not the same length.")
       sign = pastBackwards ? -1 : 1
+
+      # Wheel slippage
+      ws = false
 
       if length(cameraChange) > 2 && ratedCamConfidence > 0.6
             # get direction of robot from camera
@@ -118,6 +121,9 @@ function computeSpeed(cameraMatrix::Matrix{Float32}, δt::Vector{Float32}, v::Fl
             prevPosChange = cameraMatrix[end-1, 1:2] - cameraMatrix[end-2, 1:2]
             α = acos(round(dot(posChange, prevPosChange) / (norm(posChange) * norm(prevPosChange)); digits=4))
             if α > 3/4*π  sign *= -1 end
+
+            # check wheel slippage
+            ws = α < π/2 && 2*α > δ
       else
             # get direction of robot from command
             if occursin("backward", command)
@@ -134,7 +140,7 @@ function computeSpeed(cameraMatrix::Matrix{Float32}, δt::Vector{Float32}, v::Fl
       cameraSpeed = conv(cameraChange ./ δt, kernel)
       
       # Combine with wheel odometry speed value
-      return sign*(Float32((1-ratedCamConfidence) * v + ratedCamConfidence * cameraSpeed[l]))
+      return sign*(ws ? Float32(cameraSpeed[l]) : (Float32((1-ratedCamConfidence) * v + ratedCamConfidence * cameraSpeed[l]))), ws
 end
 
 """
@@ -154,7 +160,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       newData = dataPoints[amountDataPoints]
 
       camPosMatrix = reduce(vcat, transpose.(dataPoints.cameraPos))   
-      v = computeSpeed(camPosMatrix, dataPoints.deltaTime, newData.sensorSpeed, rateCameraConfidence(newData.cameraConfidence, settings.speedExponentCC, settings.speedUseSinCC), settings.σ_forSpeedKernel, newData.command, posState.v < 0)
+      v, ws = computeSpeed(camPosMatrix, dataPoints.deltaTime, newData.sensorSpeed, rateCameraConfidence(newData.cameraConfidence, settings.speedExponentCC, settings.speedUseSinCC), settings.σ_forSpeedKernel, newData.command, posState.v < 0, Float32(newData.steerAngle*π/180))
 
       # Apply Kalman Filter to angular velocity data if wanted
       P_g_update = Matrix(I, 2, 2)
@@ -221,7 +227,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       ratedCC = rateCameraConfidence(newData.cameraConfidence, settings.exponentCC, settings.useSinCC)
       δodometryPos = (settings.odoGyroFactor.*δOdoAngularVelocity .+ settings.odoSteerFactor.*δOdoSteeringAngle .+ settings.odoMagFactor.*δOdoCompassCourse) ./ (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
 
-      newPosition = posState.position + (1-ratedCC)*δodometryPos + ratedCC*δCamPos
+      newPosition = posState.position + ((ws) ? δCamPos : (1-ratedCC)*δodometryPos + ratedCC*δCamPos)
       P_c_update = Matrix(I, 5, 5)
       if settings.kalmanFilterCamera
             P_predict = P(F_c(posState, dataPoints[amountDataPoints]), settings.processNoiseC, posState.P_c, 5)
