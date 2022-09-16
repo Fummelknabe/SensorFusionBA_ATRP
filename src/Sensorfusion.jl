@@ -188,7 +188,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                                           settings)
                       
                   # FOR DEBUG PURPOSES COMMENTED OUT!
-                  μₜ, Σₜ = UKF_update(μₜ̇, wₘ, wₖ, Χₜ, Σₜ̇, settings, [newData.cameraPos[1], newData.cameraPos[2], newData.cameraPos[3], convertMagToCompass(newData.imuMag), θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)])
+                  μₜ, Σₜ = UKF_update(μₜ̇, wₘ, wₖ, Χₜ, Σₜ̇, settings, [newData.cameraPos[1], newData.cameraPos[2], newData.cameraPos[3], convertMagToCompass(newData.imuMag), θ_acc(posState.θ, newData.deltaTime, newData.imuGyro, newData.imuAcc)])
 
                   δOdoSteeringAngle = μₜ[1:3] - posState.position
 
