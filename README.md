@@ -25,6 +25,5 @@ TODO:
     - Detect Wheel Slippage (two solutions plausible:
         1. If camera position change is under 90° but orientation is way smaller
         2. If camera position change is under 90° but angular vel is small)
-- Close appropriate windows on disconnect
 - Calculate Psi, Theta and Phi from camera orientation and influence state
 - What about the mag to influence state? I should rework that

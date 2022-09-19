@@ -101,6 +101,11 @@ function disconnect()
         global connectStatus = ""
         pysocket.close()
         GC.gc()
+
+        # close appropriate windows
+        global renderRobot = false
+        global showDataPlots = false
+        global showAutomaticInputWindow = false
         return
     end
 end
