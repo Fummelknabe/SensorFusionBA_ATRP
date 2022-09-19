@@ -29,7 +29,7 @@ mutable struct PredictionSettings
     processNoiseS::Float32
     measurementNoiseS::Float32
     σ_forSpeedKernel::Float32
-    ΨₒmagInfluence::Bool
+    ΨₒmagInfluence::Bool    #This is actually bullshit
     κ::Float32
     α::Float32
 end
