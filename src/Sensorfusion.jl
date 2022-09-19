@@ -267,9 +267,10 @@ function convertMagToCompass(magnetometerVector::Vector{Float32}; accelerometerV
             downVector = [accelerometerVector[1], -accelerometerVector[2], accelerometerVector[3]]
             northVector = magnetometerVector - (downVector * (dot(magnetometerVector, downVector) / dot(downVector, downVector)))
       end
-      angle = atan(northVector[1], northVector[2])
 
-      return Float32(abs((angle > 0) ? angle : angle + 2*π) - 2*π)
+      angle = ((northVector[2] > 0) ? π/2 : 3*π/2) - atan(northVector[1], northVector[2])
+
+      return Float32(abs((angle > 0) ? angle : angle + 2*π))
 end
 
 """
