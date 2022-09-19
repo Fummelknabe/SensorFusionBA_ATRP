@@ -218,7 +218,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
 
       δOdoCompassCourse = changeInPosition(newData.imuAcc,
                                            v,
-                                           convertMagToCompass(newData.imuMag),
+                                           convertMagToCompass(newData.imuMag, accelerometerVector=newData.imuAcc),
                                            θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
                                            newData.deltaTime)
 
