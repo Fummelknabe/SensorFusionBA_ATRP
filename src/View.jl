@@ -443,9 +443,9 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
                 for i ∈ 1:size(cameraOriMatrix)[1]
                     eulerAngles = hcat(eulerAngles, convertQuaternionToEuler([cameraOriMatrix[i, 1], cameraOriMatrix[i, 2], cameraOriMatrix[i, 3], cameraOriMatrix[i, 4]]))
                 end
-                yValues = float.(eulerAngles[1, :]) 
-                ImPlot.PlotLine("Yaw", yValues, size(yValues, 1))
                 yValues = float.(eulerAngles[2, :]) 
+                ImPlot.PlotLine("Yaw", yValues, size(yValues, 1))
+                yValues = float.(eulerAngles[1, :]) 
                 ImPlot.PlotLine("Pitch", yValues, size(yValues, 1))
                 yValues = float.(eulerAngles[3, :]) 
                 ImPlot.PlotLine("Roll", yValues, size(yValues, 1))

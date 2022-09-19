@@ -143,6 +143,17 @@ function computeSpeed(cameraMatrix::Matrix{Float32}, δt::Vector{Float32}, v::Fl
       return sign*(ws ? Float32(cameraSpeed[l]) : (Float32((1-ratedCamConfidence) * v + ratedCamConfidence * cameraSpeed[l]))), ws
 end
 
+function extractTaitbryanFromOrientation(state::PositionalState, dataPoints::StructVector{PositionalData})
+      cameraOrientation = (dataPoints[end].cameraOri, dataPoints[end-1].cameraOri)
+
+      δt = dataPoints[end].deltaTime
+      Ψᵥₒ = state.Ψ + δt*(cameraOrientation[1][2] - cameraOrientation[2][2])
+      θᵥₒ = state.θ + δt*(cameraOrientation[1][1] - cameraOrientation[2][1])
+      ϕᵥₒ = state.ϕ + δt*(cameraOrientation[1][3] - cameraOrientation[2][3])
+
+      return Ψᵥₒ, θᵥₒ, ϕᵥₒ
+end
+
 """
 This function predicts the next position from given datapoints and the last positinal state.
 
@@ -236,15 +247,16 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
             newPosition = posState.position + δodometryPos + kalmanGain[1:3, 1:3] * (dataPoints[amountDataPoints].cameraPos[1:3] - (posState.position + δodometryPos))
       end
 
+      Ψᵥₒ, θᵥₒ, ϕᵥₒ = extractTaitbryanFromOrientation(posState, dataPoints)
       Ψₒ = (settings.odoSteerFactor*Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle*π/180)), β(newData.steerAngle*π/180), v)+settings.odoGyroFactor*(settings.kalmanFilterGyro ? Float32(Ψ_ang) : Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))+(settings.ΨₒmagInfluence ? settings.odoMagFactor*convertMagToCompass(newData.imuMag) : 0)) / (settings.odoGyroFactor + (settings.ΨₒmagInfluence ? settings.odoMagFactor : 0) + settings.odoSteerFactor)
       θ₀ = (settings.odoSteerFactor*θ_acc(posState.θ, newData.deltaTime, newData.imuGyro, newData.imuAcc)+settings.odoGyroFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)+settings.odoMagFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
       ϕ₀ = (settings.odoSteerFactor*ϕ_acc(posState.ϕ, newData.deltaTime, newData.imuGyro, newData.imuAcc)+settings.odoGyroFactor*ϕ_ang(posState.ϕ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoSteerFactor)
 
       return PositionalState(newPosition,
                              v,
-                             Ψₒ, 
-                             θ₀,
-                             ϕ₀,
+                             (ws) ? Ψᵥₒ : (1-ratedCC)*Ψₒ + ratedCC*Ψᵥₒ, 
+                             (ws) ? θᵥₒ : (1-ratedCC)*θ₀ + ratedCC*θᵥₒ,
+                             (ws) ? ϕᵥₒ : (1-ratedCC)*ϕ₀ + ratedCC*ϕᵥₒ,
                              P_c_update,
                              P_g_update,
                              posState.Σ,
