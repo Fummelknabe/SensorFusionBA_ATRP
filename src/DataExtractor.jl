@@ -110,30 +110,35 @@ function loadPosFromJSon()
 end
 
 function loadParamsFromJSon()
-    settings = PredictionSettings(false, false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 0, 0, 1/3, false, 1.0, 1.0)
+    params = PredictionSettings(false, false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 0, 0, 1/3, false, 1.0, 1.0)
     filename = open_dialog("Select JSON to load")
     if filename == "" 
         @warn "No File was selected."
-        return settings 
+        return params 
     end
-    settingsDict = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
+    paramsDict = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
 
-    settings.exponentCC = settingsDict["exponentCC"]
-    settings.speedExponentCC = settingsDict["speedExponentCC"]
-    settings.kalmanFilterCamera = settingsDict["kalmanFilterCamera"]
-    settings.kalmanFilterGyro = settingsDict["kalmanFilterGyro"]
-    settings.measurementNoiseC = settingsDict["measurementNoiseC"]
-    settings.measurementNoiseG = settingsDict["measurementNoiseG"]
-    settings.processNoiseC = settingsDict["processNoiseC"]
-    settings.processNoiseG = settingsDict["processNoiseG"]
-    settings.odoGyroFactor = settingsDict["odoGyroFactor"]
-    settings.odoMagFactor = settingsDict["odoMagFactor"]
-    settings.odoSteerFactor = settingsDict["odoSteerFactor"]
-    settings.steerAngleFactor = settingsDict["steerAngleFactor"]
-    settings.speedUseSinCC = settingsDict["speedSinCC"]
-    settings.useSinCC = settingsDict["useSinCC"]
-    settings.σ_forSpeedKernel = settingsDict["σ_forSpeedKernel"]
-    settings.ΨₒmagInfluence = settingsDict["ΨₒmagInfluence"]
+    params.exponentCC = paramsDict["exponentCC"]
+    params.speedExponentCC = paramsDict["speedExponentCC"]
+    params.kalmanFilterCamera = paramsDict["kalmanFilterCamera"]
+    params.kalmanFilterGyro = paramsDict["kalmanFilterGyro"]
+    params.UKF = paramsDict["UKF"]
+    params.measurementNoiseC = paramsDict["measurementNoiseC"]
+    params.measurementNoiseG = paramsDict["measurementNoiseG"]
+    params.measurementNoiseS = paramsDict["measurementNoiseS"]
+    params.processNoiseC = paramsDict["processNoiseC"]
+    params.processNoiseG = paramsDict["processNoiseG"]
+    params.processNoiseS = paramsDict["processNoiseS"]
+    params.odoGyroFactor = paramsDict["odoGyroFactor"]
+    params.odoMagFactor = paramsDict["odoMagFactor"]
+    params.odoSteerFactor = paramsDict["odoSteerFactor"]
+    params.steerAngleFactor = paramsDict["steerAngleFactor"]
+    params.speedUseSinCC = paramsDict["speedUseSinCC"]
+    params.useSinCC = paramsDict["useSinCC"]
+    params.σ_forSpeedKernel = paramsDict["σ_forSpeedKernel"]
+    params.ΨₒmagInfluence = paramsDict["ΨₒmagInfluence"]
+    params.κ = paramsDict["κ"]
+    params.α = paramsDict["α"]
 
-    return settings
+    return params
 end
