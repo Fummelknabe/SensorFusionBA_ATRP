@@ -9,7 +9,7 @@ Start the program from REPL:
 3. Activate project environment `activate .`
 4. Download and compile dependencies `instantiate`
 5. Leave package manager
-6. Run `julia --project src/Main`
+6. Run `julia --project src/Main.jl`
 
 ## How to use the software
 The menu bar on the top of the GUI is the main interaction point with the software. Here the __Help__ button
