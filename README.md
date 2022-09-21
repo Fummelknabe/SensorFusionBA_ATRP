@@ -4,12 +4,12 @@
 To use this software, Julia V1.7 or newer is required. 
 
 Start the program from REPL: 
-    1. Start Julia REPL in folder containing the repository
-    2. Go into package manager by pressing ']'
-    3. Activate project environment 'activate .'
-    4. Download and compile dependencies 'instantiate'
-    5. Leave package manager
-    6. Run 'julia --project src/Main'
+1. Start Julia REPL in folder containing the repository
+2. Go into package manager by pressing ']'
+3. Activate project environment 'activate .'
+4. Download and compile dependencies 'instantiate'
+5. Leave package manager
+6. Run 'julia --project src/Main'
 
 ## How to use the software
 The menu bar on the top of the GUI is the main interaction point with the software. Here the 'Help' button
