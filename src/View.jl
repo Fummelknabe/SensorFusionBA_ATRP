@@ -564,6 +564,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     if CImGui.CollapsingHeader("Estimation Settings")
         CImGui.Text("Use Kalman Filter Camera: $(settings.kalmanFilterCamera)")
         CImGui.Text("Use Kalman Filter Gyro: $(settings.kalmanFilterGyro)")
+        CImGui.Text("Use UKF: $(settings.UKF)")
         CImGui.Text("Camera Confidence Impact: $(settings.exponentCC)")
         CImGui.Text("Use Sin for Camera: $(settings.useSinCC)")
         CImGui.Text("Camera Confidence Impact on Speed: $(settings.speedExponentCC)")
@@ -573,10 +574,15 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         CImGui.Text("Factor to influence gyroscope part: $(settings.odoGyroFactor)")
         CImGui.Text("Factor to influence compass course part: $(settings.odoMagFactor)")
         CImGui.Text("Modify Kernel to smooth speed value: $(settings.σ_forSpeedKernel)")
+        CImGui.Text("Influence of magnetometer values on next State: $(settings.ΨₒmagInfluence)")
         CImGui.Text("Measurement Noise Camera: $(settings.measurementNoiseC)")
         CImGui.Text("Process Noise Camera: $(settings.processNoiseC)")
         CImGui.Text("Measurement Noise Gyro: $(settings.measurementNoiseG)")
-        CImGui.Text("Process Noise Gyro: $(settings.processNoiseG)")        
+        CImGui.Text("Process Noise Gyro: $(settings.processNoiseG)")      
+        CImGui.Text("Measurement Noise UKF: $(settings.measurementNoiseS)")
+        CImGui.Text("Process Noise UKF: $(settings.processNoiseS)")     
+        CImGui.Text("UKF parameter kappa: $(settings.κ)") 
+        CImGui.Text("UKF parameter alpha: $(settings.α)")
     end
 end
 
