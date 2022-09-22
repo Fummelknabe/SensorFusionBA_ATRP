@@ -60,7 +60,7 @@ Update step of the unscented Kalman Filter.
 - `μₜ`: The new mean state.
 - `Σₜ`: The new covariance.
 """
-function UKF_update(μₜ̇::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vector{Float32}, Χₜ::Vector{Vector{Float32}}, Σₜ̇::Matrix{Float32}, p::PredictionSettings, measurement::Vector{Float32})
+function UKF_update(μₜ̇::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vector{Float32}, Χₜ::Vector{Vector{Float32}}, Σₜ̇::Matrix{Float32}, p::PredictionSettings, measurement::Vector{Float32}, ratedCC::Float32)
     Zₜ = Matrix{Float32}(undef, n, 0)
     for i ∈ 1:2*n+1
         Zₜ = hcat(Zₜ, Χₜ[i])# normally: Hₛ*Χₜ[i]
@@ -70,7 +70,7 @@ function UKF_update(μₜ̇::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vecto
     zₜ = sum(wₘ[i+1]*Zₜ[:, i+1] for i ∈ 0:2*n)
     #zₜ[isnan.(zₜ)] .= 0.0
 
-    Sₜ = sum(wₖ[i+1]*(Zₜ[:, i+1] - zₜ)*transpose(Zₜ[:, i+1] - zₜ) for i ∈ 0:2*n) + p.measurementNoiseS*Matrix(I, n, n)
+    Sₜ = sum(wₖ[i+1]*(Zₜ[:, i+1] - zₜ)*transpose(Zₜ[:, i+1] - zₜ) for i ∈ 0:2*n) + (ratedCC*p.measurementNoiseS+1)*Matrix(I, n, n)
     #Sₜ[isnan.(Sₜ)] .= 0.0
     #Sₜ = round.(Sₜ, digits=4)
     #Sₜ[abs.(Sₜ) .< 10^-4] .= 0.0
