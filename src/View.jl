@@ -391,16 +391,16 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         end
 
         if CImGui.CollapsingHeader("Estimated Orientation") && estimating
-            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), 0, 360)
+            ImPlot.SetNextPlotLimits(0, length(rawSavePosData), -180, 180)
             if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
                 # Converting Ψ to compass course in degrees             
                 for i in 1:length(estimation.Ψ)
                     estimation.Ψ[i] = estimation.Ψ[i] * 180/π
-                    estimation.Ψ[i] = (estimation.Ψ[i] < 0) ? estimation.Ψ[i] + 360 : estimation.Ψ[i]
+                    #estimation.Ψ[i] = (estimation.Ψ[i] < 0) ? estimation.Ψ[i] + 360 : estimation.Ψ[i]
                     estimation.θ[i] = estimation.θ[i] * 180/π
-                    estimation.θ[i] = (estimation.θ[i] < 0) ? estimation.θ[i] + 360 : estimation.θ[i]
+                    #estimation.θ[i] = (estimation.θ[i] < 0) ? estimation.θ[i] + 360 : estimation.θ[i]
                     estimation.ϕ[i] = estimation.ϕ[i] * 180/π
-                    estimation.ϕ[i] = (estimation.ϕ[i] < 0) ? estimation.ϕ[i] + 360 : estimation.ϕ[i]
+                    #estimation.ϕ[i] = (estimation.ϕ[i] < 0) ? estimation.ϕ[i] + 360 : estimation.ϕ[i]
                 end
                 
                 values = float.(estimation.Ψ) 
