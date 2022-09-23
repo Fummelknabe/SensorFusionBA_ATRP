@@ -17,7 +17,7 @@ opens a small window to show basic controls of _Dear ImGui_ and for controlling 
 
 The __Load Data__ button lets you load raw positional data to analyze. A _.json_ file has to be choosen that contains the
 correct data to load. After loading an appropriate file a new window opens that display the data. The amount of data points can be adjusted by the use of the slider. The pose estimation and with that the sensorfusion will be enabled if
-the button __Update Estimation__ is toggled. The parameters of the estimation can be adjusten by pressing the __Open Settings__
+the button __Update Estimation__ is toggled. The parameters of the estimation can be adjusted by pressing the __Open Settings__
 button. __Load True Pos Data__ lets you load another _.json_ file containing the true information data which will be overlayed
 in the display. 
 
