@@ -40,8 +40,19 @@ const n = 5
 
 # Calculate angles using steering angle δ and acceleration
 Ψ(oldΨ, δt, δ::Float32, β::Float32, v::Float32) = Float32(oldΨ + δt*(v/(lₕ+lᵥ)*cos(β)*tan(δ)))
-θ_acc(a::Vector{Float32}) = -sign(a[1])*Float32(π/2 - acos(a[1]/norm(a)))
-ϕ_acc(a::Vector{Float32}) = -sign(a[2])*Float32(π/2 - acos(a[2]/norm(a)))
+function θ_ϕ_acc(a::Vector{Float32}, Ψ::Float32)
+      # rotate horizontal axis by yaw angle
+      x_plane = [cos(Ψ), sin(Ψ), 0]
+
+      y_v = cross(a, x_plane)
+      x_v = cross(y_v, a)
+
+      θ = sign(x_v[3])*Float32(acos(dot(x_v, x_plane)/(norm(x_v)*norm(x_plane))))
+      ϕ = sign(y_v[3])*Float32(acos(dot(y_v, [y_v[1], y_v[2], 0])/(norm(y_v)*norm([y_v[1], y_v[2], 0]))))
+
+      return θ, ϕ
+end
+
 β(δ) = Float32(atan(lₕ/(lᵥ+lₕ)*tan(δ)))
 
 P(F, Q, oldP, size) = F*oldP*transpose(F) .+ Q*Matrix(I, size, size)
@@ -187,14 +198,18 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
 
       ratedCC = rateCameraConfidence(newData.cameraConfidence, settings.exponentCC, settings.useSinCC)
 
+      # Calculate orientation 
+      Ψ_acc = Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle*π/180)), β(newData.steerAngle*π/180), v)
+      θ_acc, ϕ_acc = θ_ϕ_acc(newData.imuAcc, Ψ_acc)
+
       # Calculate delta position with different information
       if !settings.UKF
             δOdoSteeringAngle = changeInPosition(newData.imuAcc, 
                                                 v, 
-                                                Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle*π/180)), β(newData.steerAngle*π/180), v),
-                                                θ_acc(newData.imuAcc),
+                                                Ψ_acc,
+                                                θ_acc,
                                                 newData.deltaTime,
-                                                β=Float32(newData.steerAngle*π/180))
+                                                β=Float32(β(newData.steerAngle*π/180)))
       else
             #@info "Iteration: $(iteration)"
             try   # JUST DEBUGGING
@@ -250,9 +265,9 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       end
 
       Ψᵥₒ, θᵥₒ, ϕᵥₒ = extractTaitbryanFromOrientation(posState, dataPoints)
-      Ψₒ = (settings.odoSteerFactor*Ψ(posState.Ψ, newData.deltaTime, Float32(settings.steerAngleFactor*(newData.steerAngle*π/180)), β(newData.steerAngle*π/180), v)+settings.odoGyroFactor*(settings.kalmanFilterGyro ? Float32(Ψ_ang) : Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))+(settings.ΨₒmagInfluence ? settings.odoMagFactor*convertMagToCompass(newData.imuMag) : 0)) / (settings.odoGyroFactor + (settings.ΨₒmagInfluence ? settings.odoMagFactor : 0) + settings.odoSteerFactor)
-      θ₀ = (settings.odoSteerFactor*θ_acc(newData.imuAcc)+settings.odoGyroFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)+settings.odoMagFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
-      ϕ₀ = (settings.odoSteerFactor*ϕ_acc(newData.imuAcc)+settings.odoGyroFactor*ϕ_ang(posState.ϕ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoSteerFactor)
+      Ψₒ = (settings.odoSteerFactor*Ψ_acc+settings.odoGyroFactor*(settings.kalmanFilterGyro ? Float32(Ψ_ang) : Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))+(settings.ΨₒmagInfluence ? settings.odoMagFactor*convertMagToCompass(newData.imuMag) : 0)) / (settings.odoGyroFactor + (settings.ΨₒmagInfluence ? settings.odoMagFactor : 0) + settings.odoSteerFactor)
+      θ₀ = (settings.odoSteerFactor*θ_acc+settings.odoGyroFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)+settings.odoMagFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
+      ϕ₀ = (settings.odoSteerFactor*ϕ_acc+settings.odoGyroFactor*ϕ_ang(posState.ϕ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoSteerFactor)
 
       return PositionalState(newPosition,
                              v,
