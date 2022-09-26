@@ -45,7 +45,6 @@ function connectToJetson(ip::String=HOST, port::Integer=PORT)
 
     # Connected to something -----
     data = pysocket.recv(1024)
-    println(data)
 
     pysocket.send(b"atsv_controller")
 
