@@ -351,6 +351,10 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     # Atleast 3 data points are required to predict accurately
     if estimating
         global estimation = predictFromRecordedData(posData, settings)
+        @cstatic smoothing=false begin
+            @c CImGui.Checkbox("Smooth", &smoothing) 
+            if smoothing global estimation = smoothPoseEstimation(estimation, 0.05, 10.0) end
+        end
         estimationMatrix = reduce(vcat, transpose.(estimation.position))  
     end
 

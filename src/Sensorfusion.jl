@@ -303,6 +303,25 @@ function convertMagToCompass(magnetometerVector::Vector{Float32}; accelerometerV
 end
 
 """
+This method is a part of postprocessing.
+"""
+function smoothPoseEstimation(poses::StructVector{PositionalState}, σ::Float64, lengthInfluence::Float64)
+      result = poses
+
+      l = round(Int64, length(poses)/lengthInfluence)
+      kernel = gaussian(l, σ)
+      kernel = kernel ./ sum(kernel)
+
+      posMatrix = reduce(vcat, transpose.(poses.position))
+
+      for i ∈ ceil(l/2):length(poses)-floor(l/2)
+            result.position[Int.(i+1-ceil(l/2):i+floor(l/2))] .= conv(posMatrix[Int.(i+1-ceil(l/2):i+floor(l/2))], kernel)
+      end
+      
+      return result
+end
+
+"""
 This function predicts position from recorded data.
 
 # Arguments
