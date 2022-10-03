@@ -8,6 +8,20 @@ mutable struct PositionalState
     P_g::Matrix{Float32}
     Σ::Matrix{Float32}
     Χ::Vector{Vector{Float32}}
+
+    PositionalState(position, v, Ψ, θ, ϕ, P_c, P_g, Σ, Χ) = new(position, v, Ψ, θ, ϕ, P_c, P_g, Σ, Χ)
+
+    PositionalState(posState::PositionalState) = new(
+        posState.position,
+        posState.v,
+        posState.Ψ,
+        posState.θ,
+        posState.ϕ,
+        posState.P_c,
+        posState.P_g,
+        posState.Σ,
+        posState.Χ
+    )
 end
 
 mutable struct PredictionSettings

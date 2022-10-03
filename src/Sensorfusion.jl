@@ -312,12 +312,17 @@ function smoothPoseEstimation(poses::StructVector{PositionalState}, σ::Float64,
       kernel = gaussian(l, σ)
       kernel = kernel ./ sum(kernel)
 
+      # convolute position with gauss kernel
       posMatrix = reduce(vcat, transpose.(poses.position))
-
-      for i ∈ ceil(l/2):length(poses)-floor(l/2)
-            result.position[Int.(i+1-ceil(l/2):i+floor(l/2))] .= conv(posMatrix[Int.(i+1-ceil(l/2):i+floor(l/2))], kernel)
-      end
+      posMatrix = conv(posMatrix, kernel)[Int.(l:end-l+1), :]
       
+      for i ∈ Int.(ceil(l/2):length(poses)-floor(l/2))
+            newState = PositionalState(result[i])
+
+            newState.position = posMatrix[Int.(i-ceil(l/2)+1), :]
+            global result[i] = newState
+      end
+
       return result
 end
 
