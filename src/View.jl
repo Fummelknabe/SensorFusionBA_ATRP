@@ -26,6 +26,7 @@ const vertShaderScript = read("shader/shader.vert", String)
 const fragShaderScript = read("shader/shader.frag", String)
 estimating = false
 estimation = StructArray(PositionalState[])
+updateEstimation = false
 
 estSettingWindow = false
 loadingSettingsJSON = false
@@ -192,7 +193,7 @@ function handleShowDataWindow()
         @cstatic  dispDataPoints=Cint(1) play=false begin
             CImGui.Text("Display Datapoint: ")
             CImGui.SameLine()
-            @c CImGui.SliderInt("", &dispDataPoints, 1, length(rawSavePosData), "%d")
+            global updateEstimation = @c CImGui.SliderInt("", &dispDataPoints, 1, length(rawSavePosData), "%d")
             play || global rawSaveDataLength = dispDataPoints
             CImGui.SameLine()
             @c CImGui.Checkbox("Auto Play", &play)
@@ -233,82 +234,84 @@ function estimationSettingsWindow()
     end  
 
     @cstatic check=false check2=false check3=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) r_s=Cfloat(1.0) q_s=Cfloat(0.1) σ=Cfloat(1/3) κ=Cfloat(1.0) α=Cfloat(1e-3) begin 
-        @c CImGui.Checkbox("Kalman Filter for Camera Data", &check)
-        @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2)
-        @c CImGui.Checkbox("UKF for Kinematic Model", &check3)
+        updateVector = Vector{Bool}(undef, 0)
+        push!(updateVector, @c CImGui.Checkbox("Kalman Filter for Camera Data", &check))
+        push!(updateVector, @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2))
+        push!(updateVector, @c CImGui.Checkbox("UKF for Kinematic Model", &check3))
 
         CImGui.Text("Camera Confidence Impact")
-        @c CImGui.SliderFloat("##exponent", &exponent, 0.0, 40.0)
+        push!(updateVector, @c CImGui.SliderFloat("##exponent", &exponent, 0.0, 40.0))
         CImGui.SameLine()
         ShowHelpMarker("At 0, camera is fully trusted.")
         CImGui.SameLine()
-        @c CImGui.Checkbox("##use_sin", &useSin)
+        push!(updateVector, @c CImGui.Checkbox("##use_sin", &useSin))
         CImGui.SameLine()
         ShowHelpMarker("Use a Sinus for Camera Confidence.")
 
         CImGui.Text("Camera Confidence Impact on Speed")
-        @c CImGui.SliderFloat("##exponent_speed", &speedExponent, 0.0, 40.0)
+        push!(updateVector, @c CImGui.SliderFloat("##exponent_speed", &speedExponent, 0.0, 40.0))
         CImGui.SameLine()
         ShowHelpMarker("At 0, camera is fully trusted.")
         CImGui.SameLine()
-        @c CImGui.Checkbox("##use_sin_speed", &useSinSpeed)
+        push!(updateVector, @c CImGui.Checkbox("##use_sin_speed", &useSinSpeed))
         CImGui.SameLine()
         ShowHelpMarker("Use a Sinus for Camera Confidence on speed.")
 
         CImGui.Text("Factor to adjust steerangle")
-        @c CImGui.SliderFloat("##factor", &factor, 0.0, 10.0)
+        push!(updateVector, @c CImGui.SliderFloat("##factor", &factor, 0.0, 10.0))
         CImGui.SameLine()
         ShowHelpMarker("At 0, robot always goes straight.")
 
         CImGui.Text("Factor to influence steering angle part.")
-        @c CImGui.SliderFloat("##steer_factor", &steerFactor, 0.0, 1.0)
+        push!(updateVector, @c CImGui.SliderFloat("##steer_factor", &steerFactor, 0.0, 1.0))
 
         CImGui.Text("Factor to influence gyroscope part.")
-        @c CImGui.SliderFloat("##gyro_factor", &gyroFactor, 0.0, 1.0)
+        push!(updateVector, @c CImGui.SliderFloat("##gyro_factor", &gyroFactor, 0.0, 1.0))
 
         CImGui.Text("Factor to influence compass course part.")
-        @c CImGui.SliderFloat("##mag_factor", &magFactor, 0.0, 1.0)
+        push!(updateVector, @c CImGui.SliderFloat("##mag_factor", &magFactor, 0.0, 1.0))
         CImGui.SameLine()
-        @c CImGui.Checkbox("##mag_influence", &magInf)
+        push!(updateVector, @c CImGui.Checkbox("##mag_influence", &magInf))
         CImGui.SameLine()
         ShowHelpMarker("Should magnetometer data influence previous state.")
 
         CImGui.Text("Modify Kernel to smooth speed value.")
-        @c CImGui.SliderFloat("##variance", &σ, 0.01, 1.0)
+        push!(updateVector, @c CImGui.SliderFloat("##variance", &σ, 0.01, 1.0))
 
         if check
             if CImGui.CollapsingHeader("Kalman Filter Settings (Camera)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
                 CImGui.Text("Measurement Noise")
-                @c CImGui.SliderFloat("##measurement_noise_c", &r_c, 0.01, 100.0)
+                push!(updateVector, @c CImGui.SliderFloat("##measurement_noise_c", &r_c, 0.01, 100.0))
                 CImGui.Text("Process Noise")
-                @c CImGui.SliderFloat("##process_noise_c", &q_c, 0.0, 0.1)
+                push!(updateVector, @c CImGui.SliderFloat("##process_noise_c", &q_c, 0.0, 0.1))
             end
         end
 
         if check2
             if CImGui.CollapsingHeader("Kalman Filter Settings (Gyroscope)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
                 CImGui.Text("Measurement Noise")
-                @c CImGui.SliderFloat("##measurement_noise_g", &r_g, 0.01, 100.0)
+                push!(updateVector, @c CImGui.SliderFloat("##measurement_noise_g", &r_g, 0.01, 100.0))
                 CImGui.Text("Process Noise")
-                @c CImGui.SliderFloat("##process_noise_g", &q_g, -0.1, 0.1)
+                push!(updateVector, @c CImGui.SliderFloat("##process_noise_g", &q_g, -0.1, 0.1))
             end
         end
 
         if check3 
             if CImGui.CollapsingHeader("Kalman Filter Settings (Kinematic Model)", C_NULL, CImGui.ImGuiTreeNodeFlags_DefaultOpen)
                 CImGui.Text("Measurement Noise")
-                @c CImGui.SliderFloat("##measurement_noise_s", &r_s, 0.01, 1000.0)
+                push!(updateVector, @c CImGui.SliderFloat("##measurement_noise_s", &r_s, 0.01, 1000.0))
                 CImGui.Text("Process Noise")
-                @c CImGui.SliderFloat("##process_noise_s", &q_s, 0.0, 10.0)
+                push!(updateVector, @c CImGui.SliderFloat("##process_noise_s", &q_s, 0.0, 10.0))
                 CImGui.Text("Kappa")
-                @c CImGui.SliderFloat("##kappa", &κ, 0.0, 10.0)
+                push!(updateVector, @c CImGui.SliderFloat("##kappa", &κ, 0.0, 10.0))
                 CImGui.Text("Alpha")
-                @c CImGui.SliderFloat("##alpha", &α, 0.00001, 0.01)
+                push!(updateVector, @c CImGui.SliderFloat("##alpha", &α, 0.00001, 0.01))
             end
         end
 
         CImGui.End()
 
+        global updateEstimation = sum(updateVector) > 0 || updateEstimation
         pred = PredictionSettings(check, check2, check3, exponent, useSin, speedExponent, useSinSpeed, factor, steerFactor, gyroFactor, magFactor, q_c, r_c, q_g, r_g, q_s, r_s, σ, magInf, κ, α)
     end 
 
@@ -332,7 +335,10 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     showCameraPos = false
 
     # Draw the estimation button under map    
-    CImGui.Button(estimating ? "Estimating..." : "Update Estimation") && global estimating = !estimating
+    if CImGui.Button(estimating ? "Estimating..." : "Update Estimation")
+        global estimating = !estimating
+        global updateEstimation = true
+    end
     CImGui.SameLine()
     CImGui.Button(estSettingWindow ? "Close Settings" : "Open Settings") && global estSettingWindow = !estSettingWindow
     CImGui.SameLine()
@@ -350,15 +356,19 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
 
     # Atleast 3 data points are required to predict accurately
     if estimating
-        global estimation = predictFromRecordedData(posData, settings)
-        @cstatic smoothing=false σ=Cfloat(0.5) l=Cfloat(10.0) begin
+        updateVector = Vector{Bool}(undef, 0)
+        if updateEstimation
+            global estimation = predictFromRecordedData(posData, settings)
+            push!(updateVector, updateEstimation)
+            global updateEstimation = false
+        end
+        @cstatic smoothing=false σ=Cfloat(0.5) l=Cfloat(10.0) begin            
             CImGui.SameLine()
-            @c CImGui.Checkbox("Smooth", &smoothing)             
-            
-            if smoothing                 
-                @c CImGui.SliderFloat("Sigma", &σ, 0.001, 20.0)
-                @c CImGui.SliderFloat("Length", &l, 1.0, 100.0)
-                global estimation = smoothPoseEstimation(estimation, Float64(σ), Float64(l))
+            push!(updateVector, @c CImGui.Checkbox("Smooth", &smoothing))                     
+            if smoothing            
+                push!(updateVector, @c CImGui.SliderFloat("Sigma", &σ, 0.001, 20.0))
+                push!(updateVector, @c CImGui.SliderFloat("Length", &l, 1.0, 100.0))
+                sum(updateVector) > 0 && global estimation = smoothPoseEstimation(estimation, Float64(σ), Float64(l))
             end
         end
         estimationMatrix = reduce(vcat, transpose.(estimation.position))  
