@@ -368,7 +368,8 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
             if smoothing            
                 push!(updateVector, @c CImGui.SliderFloat("Sigma", &σ, 0.001, 20.0))
                 push!(updateVector, @c CImGui.SliderFloat("Length", &l, 1.0, 100.0))
-                sum(updateVector) > 0 && global estimation = smoothPoseEstimation(estimation, Float64(σ), Float64(l))
+                global estimation = smoothPoseEstimation(estimation, Float64(σ), Float64(l))
+                updateEstimation = sum(updateVector) > 0
             end
         end
         estimationMatrix = reduce(vcat, transpose.(estimation.position))  
