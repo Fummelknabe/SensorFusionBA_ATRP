@@ -142,3 +142,30 @@ function loadParamsFromJSon()
 
     return params
 end
+
+function saveStateToDataFile(states::StructVector{PositionalState})
+    open("pos_state.data", "w") do file 
+        for i ∈ eachindex(states)
+            if i == 1
+                s = String("i positionX positionY positionZ v Psi Theta Phi")
+                write(file, s*"\n");
+            end
+            
+            s = String("")
+
+            state = states[i]
+            s = s*string(i)*" "
+            s = s*string(state.position[1])*" "
+            s = s*string(state.position[2])*" "
+            s = s*string(state.position[3])*" "
+            s = s*string(state.v)*" "
+            s = s*string(state.Ψ)*" "
+            s = s*string(state.θ)*" "
+            s = s*string(state.ϕ)*" "
+
+            write(file, s*"\n")
+        end
+    end
+end
+
+

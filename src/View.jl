@@ -229,7 +229,8 @@ function estimationSettingsWindow()
     pred = PredictionSettings(false, false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0, false, 1.0, 1.0)
 
     if CImGui.Button("Toggle use Parameters in JSON")
-        global loadingSettingsJSON = !loadingSettingsJSON      
+        global loadingSettingsJSON = !loadingSettingsJSON    
+        global updateEstimation = true  
         return loadingSettingsJSON ? loadParamsFromJSon() : -1
     end  
 
@@ -364,13 +365,17 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         end
         @cstatic smoothing=false σ=Cfloat(0.5) l=Cfloat(10.0) begin            
             CImGui.SameLine()
-            push!(updateVector, @c CImGui.Checkbox("Smooth", &smoothing))                     
+            push!(updateVector, @c CImGui.Checkbox("Smooth", &smoothing))      
             if smoothing            
                 push!(updateVector, @c CImGui.SliderFloat("Sigma", &σ, 0.001, 20.0))
                 push!(updateVector, @c CImGui.SliderFloat("Length", &l, 1.0, 100.0))
-                global estimation = smoothPoseEstimation(estimation, Float64(σ), Float64(l))
                 updateEstimation = sum(updateVector) > 0
+                updateEstimation && global estimation = smoothPoseEstimation(estimation, Float64(σ), Float64(l))                
             end
+            CImGui.SetCursorPosY(35)
+            CImGui.SameLine()
+            CImGui.Button("Save To File") && saveStateToDataFile(estimation)   
+            CImGui.SetCursorPosY(100)
         end
         estimationMatrix = reduce(vcat, transpose.(estimation.position))  
     end
