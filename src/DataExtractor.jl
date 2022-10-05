@@ -73,6 +73,7 @@ function loadDataFromJSon(;rotateCameraCoords::Bool=true)
     filename = open_dialog("Select JSON to load")
     if filename == "" return posData end
     @info "Loading raw data..."
+    global rawSaveDataLength = 1    # reset display of pos data
     posDataDicts = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
     try        
         for dict in posDataDicts        
