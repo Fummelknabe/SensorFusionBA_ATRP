@@ -6,11 +6,11 @@ predictedStates = StructArray(PositionalState[])
 rateCameraConfidence(cc, exponent, useSin::Bool) = Float32(useSin ? sin(π/2 * cc)^exponent : cc^exponent)
 
 # linearized system matrices
-F_c(state::PositionalState, u::PositionalData) = [1 0 0 -u.deltaTime*state.v*sin(state.Ψ) 0;
-                                                  0 1 0 u.deltaTime*state.v*cos(state.Ψ) 0;
-                                                  0 0 1 0 u.deltaTime*state.v*cos(state.θ);
-                                                  0 0 0 1 0;
-                                                  0 0 0 0 1]
+F_c(state::PositionalState, u::PositionalData, β::Float32) = [1 0 0 -u.deltaTime*state.v*cos(state.θ)*sin(state.Ψ+β) -u.deltaTime*state.v*sin(state.θ)*cos(state.Ψ+β);
+                                                              0 1 0 u.deltaTime*state.v*cos(state.θ)*cos(state.Ψ+β) -u.deltaTime*state.v*sin(state.θ)*sin(state.Ψ+β);
+                                                              0 0 1 0 u.deltaTime*state.v*cos(state.θ);
+                                                              0 0 0 1 0;
+                                                              0 0 0 0 1]
 
 F_g(δt::Float32) = [1 δt;
                     0 1]
@@ -258,7 +258,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
       newPosition = posState.position + ((ws) ? δCamPos : (1-ratedCC)*δodometryPos + ratedCC*δCamPos)
       P_c_update = Matrix(I, 5, 5)
       if settings.kalmanFilterCamera
-            P_predict = P(F_c(posState, dataPoints[amountDataPoints]), settings.processNoiseC, posState.P_c, 5)
+            P_predict = P(F_c(posState, dataPoints[amountDataPoints], Float32(β(newData.steerAngle*π/180))), settings.processNoiseC, posState.P_c, 5)
             kalmanGain = K(P_predict, H_c, settings.measurementNoiseC, 3)
             P_c_update = P_predict .- kalmanGain*H_c*P_predict
             newPosition = posState.position + δodometryPos + kalmanGain[1:3, 1:3] * (dataPoints[amountDataPoints].cameraPos[1:3] - (posState.position + δodometryPos))
