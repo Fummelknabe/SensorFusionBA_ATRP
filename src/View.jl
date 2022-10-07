@@ -193,6 +193,7 @@ function handleShowDataWindow()
         @cstatic  dispDataPoints=Cint(1) play=false begin
             CImGui.Text("Display Datapoint: ")
             CImGui.SameLine()
+            if updateDispDataPoints dispDataPoints = Cint(rawSaveDataLength) end
             global updateEstimation = @c CImGui.SliderInt("", &dispDataPoints, 1, length(rawSavePosData), "%d")
             play || global rawSaveDataLength = dispDataPoints
             CImGui.SameLine()

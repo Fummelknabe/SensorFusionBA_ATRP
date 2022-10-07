@@ -2,7 +2,10 @@ using JSON
 # Used for select file dialog
 using Gtk
 
+# The first value of the magnetometer
 firstMagValue = -1
+# need to update the dispay of data points value because reloaded data
+updateDispDataPoints = false 
 
 export extractData
 """
@@ -74,6 +77,7 @@ function loadDataFromJSon(;rotateCameraCoords::Bool=true)
     if filename == "" return posData end
     @info "Loading raw data..."
     global rawSaveDataLength = 1    # reset display of pos data
+    global updateDispDataPoints = true
     posDataDicts = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
     try        
         for dict in posDataDicts        
