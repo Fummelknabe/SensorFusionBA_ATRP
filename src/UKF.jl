@@ -91,7 +91,6 @@ function UKF_update(μₜ̇::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vecto
     Σₜ = Σₜ̇ - Kₜ*Sₜ*transpose(Kₜ)
     Σₜ[isnan.(Σₜ)] .= 0.0
     Σₜ[isinf.(Σₜ)] .= 1e10
-    #Σₜ = round.(Σₜ, digits=4)
     #if !ishermitian(Σₜ) @warn "Sigma from update not hermitian!" end
     #println("DEBUG - new mean: $(μₜ)")
     #println("DEBUG - new covariance: $(Σₜ)")
@@ -135,10 +134,11 @@ function generateSigmaPoints(μₜ₋₁::Vector{Float32}, Σₜ₋₁::Matrix{F
 
     λ = p.α^2*(n + p.κ) - n
     
-    matrixRoot = real.(sqrt((n + λ) * Σₜ₋₁))
+    #matrixRoot = real.(sqrt((n + λ) * Σₜ₋₁))
     # This is not easily done as alot of matrix operations lead to inaccuray
     # So receiving matrix is often not hermitian
-    #matrixRoot = cholesky((n + λ) * Σₜ₋₁).U
+    println(Σₜ₋₁)
+    matrixRoot = cholesky((n + λ) * forceHermetian(Σₜ₋₁)).U
 
     # Add the remaining sigma points spread around mean
     for i ∈ 1:n
@@ -149,4 +149,27 @@ function generateSigmaPoints(μₜ₋₁::Vector{Float32}, Σₜ₋₁::Matrix{F
         push!(Χ, μₜ₋₁ - matrixRoot[:, i])#round.(μₜ₋₁ - matrixRoot[:, i], digits=4))
     end
     return Χ
+end
+
+function forceHermetian(m::Matrix{Float32})
+    s = size(m)
+    for x ∈ 1:s[1]
+        for y ∈ 1:s[2]
+            if x == y 
+                m[x,y] = abs(m[x,y])
+                continue 
+            end
+
+            if m[x,y] == m[y,x] continue end
+
+            m[x,y] = m[y,x]
+        end    
+    end
+
+    if !isposdef(m)
+        println(m)
+        #A = m'*m
+        #m = (A + A')/2
+    end
+    return m
 end
