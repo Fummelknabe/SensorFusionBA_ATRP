@@ -185,12 +185,16 @@ end
 function handleShowDataWindow()
     CImGui.Begin("Load Positional Data as JSON", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     CImGui.SetWindowFontScale(globalFontScale)
-    @cstatic check=false begin 
-        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadDataFromJSon(rotateCameraCoords=check)))
+    @cstatic check=false check2=false begin 
+        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadDataFromJSon(rotateCameraCoords=check, flipCameraCoords=check2)))
         CImGui.SameLine()    
         @c CImGui.Checkbox("Rotate Camera Coords", &check)
         CImGui.SameLine()
         ShowHelpMarker("Unnecessary if the correct initial transform is choosen for the camera.\n This transforms the camera data onto the predicted data.")
+        if check
+            CImGui.SameLine()
+            @c CImGui.Checkbox("Flip", &check2)
+        end
     end
     if showRecoredDataPlots
         @cstatic  dispDataPoints=Cint(1) play=false begin
@@ -240,7 +244,7 @@ function estimationSettingsWindow()
         return loadingSettingsJSON ? loadParamsFromJSon() : -1
     end  
 
-    @cstatic check=false check2=false check3=false exponent=Cfloat(5.0) useSin=false magInf=false speedExponent=Cfloat(5.0) useSinSpeed=false factor=Cfloat(1.0) steerFactor=Cfloat(0.33) gyroFactor=Cfloat(0.66) magFactor=Cfloat(0.0) r_c=Cfloat(0.1) q_c=Cfloat(0.0) r_g=Cfloat(0.1) q_g=Cfloat(0.0) r_s=Cfloat(1.0) q_s=Cfloat(0.1) σ=Cfloat(1/3) κ=Cfloat(1.0) α=Cfloat(1e-3) begin 
+    @cstatic check=true check2=false check3=true exponent=Cfloat(9.0) useSin=true magInf=false speedExponent=Cfloat(12.0) useSinSpeed=true factor=Cfloat(0.46) steerFactor=Cfloat(0.5) gyroFactor=Cfloat(0.5) magFactor=Cfloat(0.15) r_c=Cfloat(63.5) q_c=Cfloat(0.096) r_g=Cfloat(0.1) q_g=Cfloat(0.0) r_s=Cfloat(82.7) q_s=Cfloat(1.0) σ=Cfloat(0.93) κ=Cfloat(0.725) α=Cfloat(3e-3) begin 
         updateVector = Vector{Bool}(undef, 0)
         push!(updateVector, @c CImGui.Checkbox("Kalman Filter for Camera Data", &check))
         push!(updateVector, @c CImGui.Checkbox("Kalman Filter for Gyroscope Data", &check2))

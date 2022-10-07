@@ -46,7 +46,7 @@ function extractData(data::String)
     return posData
 end
 
-function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool)
+function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool, flipCameraCoords::Bool)
     posData = PositionalData()
         
     posData.steerAngle = dict["steerAngle"] - 120
@@ -58,7 +58,7 @@ function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool)
     camPos = [camPos[1], -camPos[3], camPos[2], camPos[4]]
     if rotateCameraCoords 
         firstMagValue == -1 && global firstMagValue = posData.imuMag
-        camPos = transformCameraCoords(Float32.(camPos), convertMagToCompass(firstMagValue)) 
+        camPos = transformCameraCoords(Float32.(camPos), convertMagToCompass(firstMagValue) + (flipCameraCoords ? π : 0)) 
     end
     posData.cameraPos = camPos
     posData.cameraOri = dict["cameraOri"]
@@ -71,7 +71,7 @@ function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool)
     return posData
 end
 
-function loadDataFromJSon(;rotateCameraCoords::Bool=true)   
+function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool=false)   
     posData = StructArray(PositionalData[])
     filename = open_dialog("Select JSON to load")
     if filename == "" return posData end
@@ -81,7 +81,7 @@ function loadDataFromJSon(;rotateCameraCoords::Bool=true)
     posDataDicts = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
     try        
         for dict in posDataDicts        
-            push!(posData, convertDictToPosData(dict, rotateCameraCoords))
+            push!(posData, convertDictToPosData(dict, rotateCameraCoords, flipCameraCoords))
         end
     catch e
         if e isa LoadError
