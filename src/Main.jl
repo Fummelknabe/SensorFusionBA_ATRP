@@ -14,7 +14,7 @@ using LinearAlgebra
 include("Structs.jl")
 
 # Change this value to adjust font scale uniformly
-const globalFontScale = 1.5
+globalFontScale = 1.0
 
 # How many positional data points to save
 const rawDataLength = 100
@@ -224,6 +224,12 @@ end
 This is the starting point of the program.
 """
 function main()
+    # Set global font scale on start up
+    for args in ARGS
+        global globalFontScale = tryparse(Float64, args)
+        isnothing(globalFontScale) && global globalFontScale = 1.0
+    end
+
     # Create window and start main loop
     window, ctx, program = setUpWindow(windowSize, "AT-RP Controller", "assets/icon_64.png")
     cam.aspectRatio = windowSize[1]/windowSize[2]
