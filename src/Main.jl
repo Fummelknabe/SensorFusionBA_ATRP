@@ -13,6 +13,9 @@ using LinearAlgebra
 
 include("Structs.jl")
 
+# Change this value to adjust font scale uniformly
+const globalFontScale = 1.5
+
 # How many positional data points to save
 const rawDataLength = 100
 rawSaveDataLength = 1
@@ -109,6 +112,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
             # Menu Bar
             begin 
                 CImGui.BeginMainMenuBar()
+                CImGui.SetWindowFontScale(globalFontScale)
                 CImGui.MenuItem("Help") && global showHelperWindow = !showHelperWindow
                 CImGui.MenuItem("Connect") && global showConnectWindow = !showConnectWindow
                 if connected 
@@ -129,7 +133,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 CImGui.EndMainMenuBar()
             end
 
-            # Helper Window             
+            # Helper Window         
             showHelperWindow && handleHelperWidow()
 
             # Connection Window  

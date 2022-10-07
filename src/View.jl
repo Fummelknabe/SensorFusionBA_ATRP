@@ -116,6 +116,7 @@ end
 function handleHelperWidow()
     CImGui.SetNextWindowPos((0, 20))
     CImGui.Begin("Help", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+    CImGui.SetWindowFontScale(globalFontScale)
     CImGui.ShowUserGuide()
     CImGui.Text("Tip: Double Click on Plots to recenter")
     CImGui.Text("Robot Control:")
@@ -134,6 +135,7 @@ end
 function handleConnectWindow(ipData, portData)
     # Create a window
     CImGui.Begin("Connect to Jetson", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize | CImGui.ImGuiWindowFlags_NoCollapse)
+    CImGui.SetWindowFontScale(globalFontScale)
 
     CImGui.Text("Please Enter the IP Adress and Port for the Jetson")
 
@@ -182,6 +184,7 @@ end
 
 function handleShowDataWindow()
     CImGui.Begin("Load Positional Data as JSON", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+    CImGui.SetWindowFontScale(globalFontScale)
     @cstatic check=false begin 
         CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadDataFromJSon(rotateCameraCoords=check)))
         CImGui.SameLine()    
@@ -210,6 +213,7 @@ end
 
 function handleRecordDataWindow(amountDataPoints)
     CImGui.Begin("Record Positional Data", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+    CImGui.SetWindowFontScale(globalFontScale)
     CImGui.Text(" Specify the amount of datapoints to save. \n Click 'Record' to save the next 'x' datapoints.")
     CImGui.Text("Enter Amount:")
     CImGui.SameLine()
@@ -227,6 +231,7 @@ end
 
 function estimationSettingsWindow()
     CImGui.Begin("Estimation Settings")
+    CImGui.SetWindowFontScale(globalFontScale)
     pred = PredictionSettings(false, false, false, 0, false, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0, 0, false, 1.0, 1.0)
 
     if CImGui.Button("Toggle use Parameters in JSON")
@@ -333,6 +338,7 @@ Has to be called inside the render loop.
 function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{PositionalData}, windowName::String, settings::PredictionSettings)
     CImGui.SetNextWindowSizeConstraints(rectSize, (rectSize[1], windowSize[2]))
     CImGui.Begin(windowName, C_NULL, CImGui.ImGuiWindowFlags_AlwaysVerticalScrollbar)    
+    CImGui.SetWindowFontScale(globalFontScale)
 
     showCameraPos = false
 
