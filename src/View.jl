@@ -363,21 +363,23 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
 
     # Atleast 3 data points are required to predict accurately
-    if estimating
-        updateVector = Vector{Bool}(undef, 0)
+    if estimating        
         if updateEstimation
             global estimation = predictFromRecordedData(posData, settings)
-            push!(updateVector, updateEstimation)
             global updateEstimation = false
         end
-        @cstatic smoothing=false σ=Cfloat(0.5) l=Cfloat(10.0) begin            
+        @cstatic smoothing=false σ=Cfloat(0.5) l=Cfloat(50.0) begin            
             CImGui.SameLine()
+            updateVector = Vector{Bool}(undef, 0)
             push!(updateVector, @c CImGui.Checkbox("Smooth", &smoothing))      
             if smoothing            
                 push!(updateVector, @c CImGui.SliderFloat("Sigma", &σ, 0.001, 20.0))
                 push!(updateVector, @c CImGui.SliderFloat("Length", &l, 1.0, 100.0))
-                updateEstimation = sum(updateVector) > 0
-                updateEstimation && global estimation = smoothPoseEstimation(estimation, Float64(σ), Float64(l))                
+
+                if sum(updateVector) > 0
+                    global estimation = predictFromRecordedData(posData, settings)
+                    global estimation = smoothPoseEstimation(estimation, Float64(σ), Float64(l))          
+                end      
             end
             CImGui.SetCursorPosY(35)
             CImGui.SameLine()
