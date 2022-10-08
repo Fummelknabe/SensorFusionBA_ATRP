@@ -7,7 +7,7 @@ mutable struct PositionalState
     P_c::Matrix{Float32}
     P_g::Matrix{Float32}
     Σ::Matrix{Float32}
-    Χ::Vector{Vector{Float32}}
+    Χ::Vector{Vector{Float32}}#Matrix{Float32}
 
     PositionalState(position, v, Ψ, θ, ϕ, P_c, P_g, Σ, Χ) = new(position, v, Ψ, θ, ϕ, P_c, P_g, Σ, Χ)
 

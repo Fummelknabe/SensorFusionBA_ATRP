@@ -27,11 +27,11 @@ function prediction(Σₖ₋₁::Matrix{Float32}, uₜ::Vector{Float32}, P::Matr
     return Pₖ, xₖ, W, Χ
 end
 
-function correction(Zₖ::Matrix{Float32}, Χₖ::Matrix{Float32}, xₖ::Vector{Float32}, W::Matrix{Float32}, measurement::Vector{Float32}, wₘ::Vector{Float32}, ratedCC::Float32)
+function correction(Zₖ::Matrix{Float32}, Χₖ::Matrix{Float32}, xₖ::Vector{Float32}, W::Matrix{Float32}, measurement::Vector{Float32}, wₘ::Vector{Float32}, ratedCC::Float32, p::PredictionSettings, Pₖ::Matrix{Float32})
     Sₖ = Zₖ*W*Zₖ'
     Cₖ = Χₖ*W*Zₖ'
 
-    K = Cₖ*inv(Sₖ + (ratedCC*p.measurementNoiseS+1)*Matrix(I, n, n))
+    K = Cₖ*inv(Sₖ+  (ratedCC*p.measurementNoiseS+1)*Matrix(I, n, n))
 
     xₖ = xₖ + K*(measurement - Zₖ*wₘ)
     Pₖ = Pₖ - K*Sₖ*K'
@@ -42,8 +42,9 @@ end
 function generateSigmaPoints(x::Vector{Float32}, Pₖ₋₁::Matrix{Float32}, p::PredictionSettings)
     c = p.α^2*(n+p.κ)
     
-    println(Pₖ₋₁)
-    S = cholesky(forceHermetian(Pₖ₋₁)).U
+    #println(Pₖ₋₁)
+    #S = cholesky(forceHermetian(Pₖ₋₁)).U
+    S = real.(sqrt(Pₖ₋₁))
     
     Σ = Matrix{Float32}(undef, n, 0)
     for i ∈ 0:n 

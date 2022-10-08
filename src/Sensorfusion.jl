@@ -231,8 +231,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                   # Update state
                   posState.Σ = Σₜ
                   posState.Χ = Χₜ
-
-
+                  
                   #=
                   wₘ = computeWeights(true, settings)
                   wₖ = computeWeights(false, settings)
@@ -245,7 +244,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
 
                   Zₖ = generateSigmaPoints(xₖ, Pₖ, settings)
 
-                  xₖ, Pₖ = correction(Zₖ, Χ, xₖ, W, [newData.cameraPos[1], newData.cameraPos[2], newData.cameraPos[3], convertMagToCompass(newData.imuMag), θ_acc], wₘ, ratedCC)
+                  xₖ, Pₖ = correction(Zₖ, Χ, xₖ, W, [newData.cameraPos[1], newData.cameraPos[2], newData.cameraPos[3], convertMagToCompass(newData.imuMag), θ_acc], wₘ, ratedCC, settings, Pₖ)
             
                   δOdoSteeringAngle = xₖ[1:3] - posState.position
 
@@ -361,7 +360,7 @@ function predictFromRecordedData(posData::StructVector{PositionalData}, settings
       Ψᵢₙᵢₜ = convertMagToCompass(posData[1].imuMag)
       θᵢₙᵢₜ, ϕᵢₙᵢₜ = θ_ϕ_acc(posData[1].imuAcc, Ψᵢₙᵢₜ)
       Σᵢₙᵢₜ = Float32.(Matrix(I, n, n))
-      Χᵢₙᵢₜ = settings.UKF ? generateSigmaPoints(Float32.([posData[1].cameraPos[1], posData[1].cameraPos[2], posData[1].cameraPos[3], Ψᵢₙᵢₜ, θᵢₙᵢₜ]), Σᵢₙᵢₜ, settings) : Vector{Vector{Float32}}(undef, 0)
+      Χᵢₙᵢₜ = settings.UKF ? generateSigmaPoints(Float32.([posData[1].cameraPos[1], posData[1].cameraPos[2], posData[1].cameraPos[3], Ψᵢₙᵢₜ, θᵢₙᵢₜ]), Σᵢₙᵢₜ, settings) : Vector{Vector{Float32}}(undef, 0)#Float32.(Matrix(I, 5, 2*n+1))#
       push!(estimatedStates, PositionalState(posData[1].cameraPos[1:3], posData[1].sensorSpeed, Ψᵢₙᵢₜ, θᵢₙᵢₜ, ϕᵢₙᵢₜ, Matrix(I, 5, 5), Matrix(I, 2, 2), Σᵢₙᵢₜ, Χᵢₙᵢₜ))
       # Predict for every coming positional value
       for i in 2:length(posData)
