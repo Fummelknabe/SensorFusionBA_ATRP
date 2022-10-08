@@ -32,6 +32,7 @@ This performs the whole prediction step for the UKF.
 """
 function UKF_prediction(μₜ₋₁::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vector{Float32}, Χₜ₋₁::Vector{Vector{Float32}}, uₜ::Vector{Float32}, Σₜ₋₁::Matrix{Float32}, p::PredictionSettings)
     #println("DEBUG - dimensions: mean: $(size(μₜ₋₁)), weight m: $(size(wₘ)), weight k: $(size(wₖ)), sigma points: $(size(Χₜ₋₁)), u: $(size(uₜ)), sigma: $(size(Σₜ₋₁))")
+    
     F = Matrix{Float32}(undef, n, 0)
     for i ∈ 0:2*n  F = hcat(F, f(Χₜ₋₁[i+1], uₜ)) end
     μₜ̇ = sum(wₘ[i+1]*F[:, i+1] for i ∈ 0:2*n)
@@ -134,11 +135,10 @@ function generateSigmaPoints(μₜ₋₁::Vector{Float32}, Σₜ₋₁::Matrix{F
 
     λ = p.α^2*(n + p.κ) - n
     
-    #matrixRoot = real.(sqrt((n + λ) * Σₜ₋₁))
+    matrixRoot = real.(sqrt((n + λ) * Σₜ₋₁))
     # This is not easily done as alot of matrix operations lead to inaccuray
     # So receiving matrix is often not hermitian
-    println(Σₜ₋₁)
-    matrixRoot = cholesky((n + λ) * forceHermetian(Σₜ₋₁)).U
+    #matrixRoot = cholesky((n + λ) * forceHermetian(Σₜ₋₁)).U
 
     # Add the remaining sigma points spread around mean
     for i ∈ 1:n
@@ -157,12 +157,16 @@ function forceHermetian(m::Matrix{Float32})
         for y ∈ 1:s[2]
             if x == y 
                 m[x,y] = abs(m[x,y])
+                if m[x,y] == 0.0
+                    m[x,y] = 0.001
+                end
+
                 continue 
             end
 
-            if m[x,y] == m[y,x] continue end
+            #if m[x,y] == m[y,x] continue end
 
-            m[x,y] = m[y,x]
+            m[x,y] = 0.0#m[y,x]
         end    
     end
 

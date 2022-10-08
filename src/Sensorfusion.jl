@@ -72,6 +72,7 @@ function changeInPosition(a::Vector{Float32}, v::Float32, Ψ::Float32, θ::Float
 end
 
 include("UKF.jl")
+#include("UKF2.jl")
 
 """
 This function transforms camera coords ontop of the prediction. This should be 
@@ -230,6 +231,27 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                   # Update state
                   posState.Σ = Σₜ
                   posState.Χ = Χₜ
+
+
+                  #=
+                  wₘ = computeWeights(true, settings)
+                  wₖ = computeWeights(false, settings)
+                  Pₖ, xₖ, W, Χ = prediction(posState.Χ, 
+                                          Float32.([newData.imuGyro[1], newData.imuGyro[2], newData.imuGyro[3], v, newData.deltaTime, newData.steerAngle]),
+                                          posState.Σ,
+                                          settings,
+                                          wₘ,
+                                          wₖ)
+
+                  Zₖ = generateSigmaPoints(xₖ, Pₖ, settings)
+
+                  xₖ, Pₖ = correction(Zₖ, Χ, xₖ, W, [newData.cameraPos[1], newData.cameraPos[2], newData.cameraPos[3], convertMagToCompass(newData.imuMag), θ_acc], wₘ, ratedCC)
+            
+                  δOdoSteeringAngle = xₖ[1:3] - posState.position
+
+                  posState.Σ = Pₖ
+                  posState.Χ = Zₖ
+                  =#
             catch e     
                   @error "Error occured with: $(settings)."
                   println("Sigma Points: $(posState.Χ)")
