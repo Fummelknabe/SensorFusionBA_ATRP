@@ -35,7 +35,7 @@ This method returns the rotational matrix in homogonous coordinates.
 # Returns
 `Matrix{Float64}`: 4x4 rotational matrix that describes the specified rotational behaviour.
 """
-function rotateAroundAxis(degrees::Float64, axis::Vector{Float64})
+function rotateAroundAxis(degrees::Float64, axis::Vector{Float32})
     ncos = 1 - cosd(degrees)
     sin = sind(degrees)
     cos = cosd(degrees)
@@ -53,11 +53,12 @@ function checkCameraMovement(mousePos::Vector{Float64}, cam::Camera)
         camX = cam.speed * difVector[1]
         camY = cam.speed * difVector[2]
 
+        #=
         translationVector = vcat(-cam.position + [camX, camY, 0.0], 0.0)
         baseTransDist = norm(cam.position) # This should be 2
         sideAxis = cross(cam.up, cam.position)
 
-        angleBetweenVecs(a, b) = acosd(clamp(a⋅b/(norm(a)*norm(b)), -1, 1))
+        angleBetweenVecs(a, b) = acos(clamp(dot(a,b)/(norm(a)*norm(b)), -1, 1))
         # angle between x axis and side axis and z axis and up vector
         θ = angleBetweenVecs([1.0, 0.0, 0.0], sideAxis)
         η = angleBetweenVecs([0.0, 1.0, 0.0], cam.up)
@@ -73,14 +74,15 @@ function checkCameraMovement(mousePos::Vector{Float64}, cam::Camera)
 
         cam.up = normalize!(deleteat!(invTransformMatrix * push!(cam.up, 1.0), 4))
 	    cam.position = deleteat!(invTransformMatrix * push!(cam.position, 1.0), 4);
+        =#
 
         # OLD CALCULATION
         # calculate side axis
-        #sideAxis = cross(cam.up, cam.position);
-        #transformMatrix = rotateAroundAxis(camX, cam.up) * rotateAroundAxis(camY, normalize!(sideAxis))
+        sideAxis = cross(cam.up, cam.position);
+        transformMatrix = rotateAroundAxis(camX, cam.up) * rotateAroundAxis(camY, normalize!(sideAxis))
 
-        #cam.up = normalize!(deleteat!(transformMatrix * push!(cam.up, 1.0), 4))
-	    #cam.position = deleteat!(transformMatrix * push!(cam.position, 1.0), 4);
+        cam.up = normalize!(deleteat!(transformMatrix * push!(cam.up, 1.0), 4))
+	    cam.position = deleteat!(transformMatrix * push!(cam.position, 1.0), 4);
     end 
     
     #= 
