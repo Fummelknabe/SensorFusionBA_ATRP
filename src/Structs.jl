@@ -65,8 +65,9 @@ mutable struct PositionalData
     deltaTime::Float32
     cameraConfidence::Float32
     command::String
+    gpsPosition::Vector{Float32}
 
-    PositionalData() = new(0, 0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, 0.0, String(""))
+    PositionalData() = new(0, 0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, 0.0, String(""), [0.0, 0.0, 0.0])
 end
 
 mutable struct Camera
