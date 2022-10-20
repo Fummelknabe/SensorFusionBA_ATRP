@@ -23,7 +23,7 @@ function extractData(data::String)
     splitted = split(data, "|")
 
     # if data is corrupted
-    if !(length(splitted) == 11)
+    if !(length(splitted) == 12)
         println(splitted)
         println("Length was not correct: " * string(length(splitted)))
         return
@@ -42,7 +42,7 @@ function extractData(data::String)
     posData.imuMag = parse.(Float32, split(chop(splitted[11]; head=1, tail=1), ','))
     posData.deltaTime = deltaTime
     posData.cameraConfidence = parse(Float32, splitted[8])
-    posData.gpsPosition = parse.(Float32, split(chop(splitted[11]; head=1, tail=1), ','))
+    posData.gpsPosition = parse.(Float32, split(chop(splitted[12]; head=1, tail=1), ','))
 
     return posData
 end

@@ -599,7 +599,19 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
                 ImPlot.EndPlot()
             end
         end
-    end # End CollapsingHeader
+
+        if CImGui.CollapsingHeader("GPS Position")
+            gpsMatrix = reduce(vcat, transpose.(posData.gpsPosition))
+            ImPlot.SetNextPlotLimits(0, length(posData), 0, 1)
+            if ImPlot.BeginPlot("GPS Position", "Data Point", "Position on Earth [°]")
+                values = float.(gpsMatrix[:, 1]) 
+                ImPlot.PlotLine("longitudinal", values, size(values, 1))
+                values = float.(gpsMatrix[:, 2]) 
+                ImPlot.PlotLine("lateral", values, size(values, 1))
+                ImPlot.EndPlot()
+            end
+        end
+    end # End Plots CollapsingHeader
 
     if CImGui.CollapsingHeader("Estimation Settings")
         CImGui.Text("Use Kalman Filter Camera: $(settings.kalmanFilterCamera)")
