@@ -68,6 +68,10 @@ mutable struct PositionalData
     gpsPosition::Vector{Float32}
 
     PositionalData() = new(0, 0, 0.0, 0.0, [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, 0.0, String(""), [0.0, 0.0])
+
+    PositionalData(p::PositionalData) = new(
+        p.steerAngle, p.sensorAngle, p.maxSpeed, p.sensorSpeed, p.cameraPos, p.cameraOri, p.imuGyro, p.imuAcc, p.imuMag, p.deltaTime, p.cameraConfidence, p.command, p.gpsPosition
+    )
 end
 
 mutable struct Camera

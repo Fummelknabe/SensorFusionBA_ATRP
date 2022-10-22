@@ -47,7 +47,7 @@ function extractData(data::String)
     return posData
 end
 
-function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool, flipCameraCoords::Bool)
+function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool, flipCameraCoords::Bool, loadGPSData::Bool)
     posData = PositionalData()
         
     posData.steerAngle = dict["steerAngle"] - 120
@@ -68,11 +68,47 @@ function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool, flipCameraCo
     posData.deltaTime = dict["deltaTime"]
     posData.cameraConfidence = dict["cameraConfidence"] ./ 100
     posData.command = dict["command"]
+    if loadGPSData
+        posData.gpsPosition = dict["gpsPosition"]
+    end
 
     return posData
 end
 
-function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool=false)   
+function modifyGPSPosition(posData::StructArray{PositionalData})    
+    gpsMatrix = reduce(vcat, transpose.(posData.gpsPosition))
+
+    # remove 0 vectors
+    initPos = Vector{Float32}(undef, 2)
+    for i ∈ axes(gpsMatrix, 1)
+        if gpsMatrix[i, :] != [0, 0]
+            # found the first element
+            initPos = gpsMatrix[i, :]            
+            break
+        end
+    end
+
+    for i ∈ axes(gpsMatrix, 1)
+        if gpsMatrix[i, :] == [0, 0]
+            gpsMatrix[i, :] = initPos
+        else
+            initPos = gpsMatrix[i, :]
+        end
+    end
+    
+    # declare starting position as zero and convert coordinates
+    gpsMatrix = (transpose(gpsMatrix) .- gpsMatrix[1, :]) .* -75_000
+    
+    # write back to posData
+    for i ∈ eachindex(posData)
+        d = PositionalData(posData[i])
+        d.gpsPosition = gpsMatrix[:, i]
+        posData[i] = d
+    end
+    return posData
+end
+
+function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool=false, loadGPSData::Bool=false)   
     posData = StructArray(PositionalData[])
     filename = open_dialog("Select JSON to load")
     if filename == "" return posData end
@@ -82,7 +118,7 @@ function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool
     posDataDicts = JSON.parsefile(filename, dicttype=Dict, inttype=Int64)
     try        
         for dict in posDataDicts        
-            push!(posData, convertDictToPosData(dict, rotateCameraCoords, flipCameraCoords))
+            push!(posData, convertDictToPosData(dict, rotateCameraCoords, flipCameraCoords, loadGPSData))
         end
     catch e
         if e isa LoadError
@@ -90,6 +126,8 @@ function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool
         end
     end    
     
+    if loadGPSData posData = modifyGPSPosition(posData) end
+
     return posData
 end
 

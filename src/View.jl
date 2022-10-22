@@ -185,16 +185,18 @@ end
 function handleShowDataWindow()
     CImGui.Begin("Load Positional Data as JSON", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     CImGui.SetWindowFontScale(globalFontScale)
-    @cstatic check=false check2=false begin 
-        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadDataFromJSon(rotateCameraCoords=check, flipCameraCoords=check2)))
+    @cstatic check=false check2=false check3=false begin 
+        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadDataFromJSon(rotateCameraCoords=check, flipCameraCoords=check2, loadGPSData=check3)))
         CImGui.SameLine()    
         @c CImGui.Checkbox("Rotate Camera Coords", &check)
         CImGui.SameLine()
         ShowHelpMarker("Unnecessary if the correct initial transform is choosen for the camera.\n This transforms the camera data onto the predicted data.")
         if check
             CImGui.SameLine()
-            @c CImGui.Checkbox("Flip", &check2)
+            @c CImGui.Checkbox("Flip", &check2)            
         end
+        CImGui.SameLine()
+        @c CImGui.Checkbox("load GPS Data", &check3)      
     end
     if showRecoredDataPlots
         @cstatic  dispDataPoints=Cint(1) play=false begin
@@ -345,6 +347,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     CImGui.SetWindowFontScale(globalFontScale)
 
     showCameraPos = false
+    showGPSPos = false
 
     # Draw the estimation button under map    
     if CImGui.Button(estimating ? "Estimating..." : "Update Estimation")
@@ -360,9 +363,12 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         global truePosData = truePosData .- ((truePosData[:, 1] - posData[1].cameraPos[1:3]) .* ones(size(truePosData)))
     end
     CImGui.SameLine()
-    @cstatic showCameraPosC=false begin
+    @cstatic showCameraPosC=false showGPSPosC=false begin
     @c CImGui.Checkbox("Show Raw Camera Position", &showCameraPosC) 
-    showCameraPos = showCameraPosC end
+    CImGui.SameLine()
+    @c CImGui.Checkbox("Show GPS Pos", &showGPSPosC) 
+    showCameraPos = showCameraPosC
+    showGPSPos = showGPSPosC end
 
     cameraPosMatrix = reduce(vcat, transpose.(posData.cameraPos))
 
@@ -393,6 +399,9 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         estimationMatrix = reduce(vcat, transpose.(estimation.position))  
     end
 
+    # Get gps information (is 0 when not using)
+    gpsMatrix = reduce(vcat, transpose.(posData.gpsPosition))
+
     # Scatter plot positions 
     ImPlot.SetNextPlotLimits(-50, 50, -50, 50)   
     if ImPlot.BeginPlot("Positions", "x [m]", "y [m]", ImVec2(rectSize[1], rectSize[2]))         
@@ -410,6 +419,11 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
             xValues = float.(truePosData[1, :])
             yValues = float.(truePosData[2, :])
             ImPlot.PlotScatter("Ground-Truth", xValues, yValues, Int(length(truePosData)/3))
+        end
+        if showGPSPos
+            xValues = float.(gpsMatrix[:, 1])
+            yValues = float.(gpsMatrix[:, 2])
+            ImPlot.PlotScatter("GPS Position", xValues, yValues, length(posData))
         end
         ImPlot.EndPlot()
     end
@@ -432,17 +446,6 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         if CImGui.CollapsingHeader("Estimated Orientation") && estimating
             ImPlot.SetNextPlotLimits(0, length(rawSavePosData), -π, π)
             if ImPlot.BeginPlot("Ψ", "Data Point", "Orientation [°]")
-                # Converting Ψ to compass course in degrees       
-                #=      
-                for i in 1:length(estimation.Ψ)
-                    estimation.Ψ[i] = estimation.Ψ[i] * 180/π
-                    #estimation.Ψ[i] = (estimation.Ψ[i] < 0) ? estimation.Ψ[i] + 360 : estimation.Ψ[i]
-                    estimation.θ[i] = estimation.θ[i] * 180/π
-                    #estimation.θ[i] = (estimation.θ[i] < 0) ? estimation.θ[i] + 360 : estimation.θ[i]
-                    estimation.ϕ[i] = estimation.ϕ[i] * 180/π
-                    #estimation.ϕ[i] = (estimation.ϕ[i] < 0) ? estimation.ϕ[i] + 360 : estimation.ϕ[i]
-                end
-                =#
                 values = float.(estimation.Ψ) 
                 ImPlot.PlotLine("Yaw Angle", values, size(values, 1))
                 values = float.(estimation.θ) 
@@ -601,7 +604,6 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
         end
 
         if CImGui.CollapsingHeader("GPS Position")
-            gpsMatrix = reduce(vcat, transpose.(posData.gpsPosition))
             ImPlot.SetNextPlotLimits(0, length(posData), 0, 1)
             if ImPlot.BeginPlot("GPS Position", "Data Point", "Position on Earth [°]")
                 values = float.(gpsMatrix[:, 1]) 
