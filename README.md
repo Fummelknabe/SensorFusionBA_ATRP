@@ -29,27 +29,3 @@ its current orientation. Also there will be a button __Record Data__ which lets 
 analyzed. 
 There is also the possibility to send automatic commands to the robot. The dialog for that lets you chain commands together
 which will be send to the robot when confirming.
-
-
-VEHICLE STATS:
-- Mass: 43.0kg
-- Axis Difference: 69cm
-- Wheel Distance: 45cm
-- Camera Offset: 5cm
-- Camera Height: 47cm
-- IMU Height: 39cm
-- IMU Offset: 10cm
-- IMU is vehilce reference point 
-    - l_f = 18cm
-    - l_r = 50cm
-- Correspondance between speedValue and m/s:
-    - speedValue = round(19 + v*2.1) with 36 km/h top speed
-- Battery Width: 15.5cm
-
-TODO:
-- Maybe:
-    - Redo Camera Movement
-    - Detect Wheel Slippage (two solutions plausible:
-        1. If camera position change is under 90° but orientation is way smaller
-        2. If camera position change is under 90° but angular vel is small)
-- What about the mag to influence state? I should rework that
