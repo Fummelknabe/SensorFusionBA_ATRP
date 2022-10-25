@@ -71,7 +71,7 @@ function UKF_update(μₜ̇::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vecto
     zₜ = sum(wₘ[i+1]*Zₜ[:, i+1] for i ∈ 0:2*n)
     #zₜ[isnan.(zₜ)] .= 0.0
 
-    Sₜ = sum(wₖ[i+1]*(Zₜ[:, i+1] - zₜ)*transpose(Zₜ[:, i+1] - zₜ) for i ∈ 0:2*n) + (ratedCC*p.measurementNoiseS+1)*Matrix(I, n, n)
+    Sₜ = sum(wₖ[i+1]*(Zₜ[:, i+1] - zₜ)*transpose(Zₜ[:, i+1] - zₜ) for i ∈ 0:2*n) + ((1-ratedCC)*p.measurementNoiseS)*Matrix(I, n, n)
     #Sₜ[isnan.(Sₜ)] .= 0.0
     #Sₜ = round.(Sₜ, digits=4)
     #Sₜ[abs.(Sₜ) .< 10^-4] .= 0.0
