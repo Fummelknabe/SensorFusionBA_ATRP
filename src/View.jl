@@ -185,18 +185,22 @@ end
 function handleShowDataWindow()
     CImGui.Begin("Load Positional Data as JSON", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     CImGui.SetWindowFontScale(globalFontScale)
-    @cstatic check=false check2=false check3=false begin 
-        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadDataFromJSon(rotateCameraCoords=check, flipCameraCoords=check2, loadGPSData=check3)))
-        CImGui.SameLine()    
+    @cstatic check=false check2=false check3=false check4=false begin 
+        CImGui.Button(showRecoredDataPlots ? "Close Plots" : "Load from data") && (toggleRecordedDataPlots(showRecoredDataPlots ? StructArray(PositionalData[]) : loadDataFromJSon(rotateCameraCoords=check, flipCameraCoords=check2, loadGPSData=check3, deleteData=check4)))  
         @c CImGui.Checkbox("Rotate Camera Coords", &check)
         CImGui.SameLine()
         ShowHelpMarker("Unnecessary if the correct initial transform is choosen for the camera.\n This transforms the camera data onto the predicted data.")
         if check
+            @c CImGui.Checkbox("Flip", &check2)      
             CImGui.SameLine()
-            @c CImGui.Checkbox("Flip", &check2)            
+        ShowHelpMarker("Flips camera data for 180 degrees.")      
         end
-        CImGui.SameLine()
         @c CImGui.Checkbox("load GPS Data", &check3)      
+        CImGui.SameLine()
+        ShowHelpMarker("Optionally loading GPS data. Can only be used if the data file contains GPS information, obviously.")
+        @c CImGui.Checkbox("Delete unimportant data", &check4)     
+        CImGui.SameLine()
+        ShowHelpMarker("Deletes data points at the end of the data stream, that do not hold important positional information.")
     end
     if showRecoredDataPlots
         @cstatic  dispDataPoints=Cint(1) play=false begin

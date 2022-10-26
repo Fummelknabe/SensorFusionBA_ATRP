@@ -108,7 +108,7 @@ function modifyGPSPosition(posData::StructArray{PositionalData})
     return posData
 end
 
-function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool=false, loadGPSData::Bool=false)   
+function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool=false, loadGPSData::Bool=false, deleteData::Bool=false)   
     posData = StructArray(PositionalData[])
     filename = open_dialog("Select JSON to load")
     if filename == "" return posData end
@@ -127,6 +127,8 @@ function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool
     end    
     
     if loadGPSData posData = modifyGPSPosition(posData) end
+
+    if deleteData posData = deleteUnimportantData(posData) end
 
     return posData
 end
@@ -185,6 +187,21 @@ function loadParamsFromJSon()
     params.α = paramsDict["α"]
 
     return params
+end
+
+"""
+This method deletes the last data points that are not holding interesting positional information.
+"""
+function deleteUnimportantData(posData::StructVector{PositionalData})
+    lastIndex = length(posData)
+    for i ∈ length(posData):-1:1
+        if posData[i].sensorSpeed == 0.0 && occursin("stop_", posData[i].command)
+            lastIndex = i
+        else
+            break
+        end
+    end
+    return posData[1:lastIndex]
 end
 
 function saveStateToDataFile(states::StructVector{PositionalState})
