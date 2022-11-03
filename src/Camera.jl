@@ -1,8 +1,17 @@
+# This file contains methods for handling with the rendering camera
 
 # distance to front and back plane
 const znear = 0.1
 const zfar = 100
 
+"""
+This function returns the projection matrix by given camera properties.
+
+# Arguments
+- `cam::Camera`: The camera object.
+# Returns
+- `Matrix{GLfloat}`: The 4x4 projection matrix.
+"""
 function getProjectionMatrix(cam::Camera)
     range = tan(0.5*cam.fov) * znear
     return GLfloat[(2.0*znear / (range*cam.aspectRatio + range*cam.aspectRatio)) 0.0 0.0 0.0;
@@ -11,13 +20,23 @@ function getProjectionMatrix(cam::Camera)
                     0.0 0.0 -1.0 0.0]
 end
 
+"""
+This method calculates the view matrix with given camera properties.
+
+# Arguments
+- `cam::Camera`: The camera object.
+# Returns
+- `Matrix{GLfloat}`: The 4x4 view matrix according to the transform of the camera.
+"""
 function getViewMatrix(cam::Camera)
+    # Construct the coordinate frame of the camera 
     zAxis = normalize(cam.target - cam.position)
     xAxis = normalize(cross(zAxis, cam.up))
     yAxis = cross(xAxis, zAxis)
 
     zAxis = -1 * zAxis
 
+    # Use coordinate axis to calculate view matrix
     viewMatrix = GLfloat[xAxis[1] xAxis[2] xAxis[3] -dot(xAxis, cam.position);
                   yAxis[1] yAxis[2] yAxis[3] -dot(yAxis, cam.position);
                   zAxis[1] zAxis[2] zAxis[3] -dot(zAxis, cam.position);
@@ -46,51 +65,32 @@ function rotateAroundAxis(degrees::Float64, axis::Vector{Float32})
             0.0 0.0 0.0 1.0]
 end
 
+"""
+Function to update the camera position according to mouse movements.
+
+# Arguments
+- `mousePos::Vector{Float64}`: The mouse position in pixel coordinates.
+- `cam::Camera`: The camera object to influence.
+"""
 function checkCameraMovement(mousePos::Vector{Float64}, cam::Camera)
+    # Only update mouse position if right mouse button is pressed
     if isRightMouseButtonDown
+        # calculate the change in mouse position
         difVector = mousePos - oldMousePosition
 
         camX = cam.speed * difVector[1]
         camY = cam.speed * difVector[2]
 
-        #=
-        translationVector = vcat(-cam.position + [camX, camY, 0.0], 0.0)
-        baseTransDist = norm(cam.position) # This should be 2
-        sideAxis = cross(cam.up, cam.position)
-
-        angleBetweenVecs(a, b) = acos(clamp(dot(a,b)/(norm(a)*norm(b)), -1, 1))
-        # angle between x axis and side axis and z axis and up vector
-        θ = angleBetweenVecs([1.0, 0.0, 0.0], sideAxis)
-        η = angleBetweenVecs([0.0, 1.0, 0.0], cam.up)
-
-        transformMatrix = rotateAroundAxis(θ, [0.0, 1.0, 0.0]) * rotateAroundAxis(η, [1.0, 0.0, 0.0]) * hcat(Matrix(I,4,3), translationVector)
-
-        # Modify camera position
-        cam.up = normalize!(deleteat!(transformMatrix * push!(cam.up, 1.0), 4))
-	    cam.position = deleteat!(transformMatrix * push!(cam.position, 1.0), 4);
-
-        # undo matrix transformation
-        invTransformMatrix = hcat(Matrix(I,4,3), baseTransDist*normalize!(translationVector)) * rotateAroundAxis(η, [1.0, 0.0, 0.0]) * rotateAroundAxis(θ, [0.0, 1.0, 0.0])
-
-        cam.up = normalize!(deleteat!(invTransformMatrix * push!(cam.up, 1.0), 4))
-	    cam.position = deleteat!(invTransformMatrix * push!(cam.position, 1.0), 4);
-        =#
-
-        # OLD CALCULATION
         # calculate side axis
         sideAxis = cross(cam.up, cam.position);
+        # create transformation matrix in homogonous coordinates
         transformMatrix = rotateAroundAxis(camX, cam.up) * rotateAroundAxis(camY, normalize!(sideAxis))
 
+        # update camera position and orientation 
         cam.up = normalize!(deleteat!(transformMatrix * push!(cam.up, 1.0), 4))
 	    cam.position = deleteat!(transformMatrix * push!(cam.position, 1.0), 4);
     end 
-    
-    #= 
-    it could be tried to transform the camera coordinate in the global coordinate frame in the 
-    origin. Then translate camera camX vertically and camY laterally. Remove the affects of the transform
-    by mutiplying with the inverse of the transform matrix.
-    Retrace steps and find wrong thoughts
-    =#
 
+    # update previous mouse position
     global oldMousePosition = mousePos
 end

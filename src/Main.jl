@@ -1,3 +1,5 @@
+# This software requires the CImGui library
+# This file is the starting point of the software
 using CImGui
 
 using CImGui.GLFWBackend
@@ -16,8 +18,9 @@ include("Structs.jl")
 # Change this value to adjust font scale uniformly
 globalFontScale = 1.0
 
-# How many positional data points to save
+# How many positional data points to display online
 const rawDataLength = 100
+# How many positional data points to display offline
 rawSaveDataLength = 1
 
 # Booleans for the open windows
@@ -30,7 +33,7 @@ showRecoredDataPlots = false
 showLoadDataWindow = false
 showAutomaticInputWindow = false
 useAutomaticInput = false
-automaticInputTimer = 0.0
+automaticInputTimer = 0.0 # A timer to time commands send through automatic inputs
 
 isLeftMouseButtonDown = false
 isRightMouseButtonDown = false
@@ -57,6 +60,14 @@ settings = PredictionSettings(false, false, false, 5, false, 5, false, 1.0, 0.33
 
 models = Vector{Model}(undef, 0)
 
+"""
+This is the main loop of the program.
+
+# Arguments 
+- `window::GLFW.Window`: The openGL window context
+- `ctx`: The openGL render context
+- `program`: The shader program
+"""
 function mainLoop(window::GLFW.Window, ctx, program)     
     saveDataLength = 0
 
@@ -68,8 +79,9 @@ function mainLoop(window::GLFW.Window, ctx, program)
             ImGui_ImplGlfw_NewFrame()            
             CImGui.NewFrame()
 
+            # Check whether to render the robot
             if renderRobot
-                # Before calculatin camera matrices check Inputs
+                # Before calculating camera matrices check Inputs
                 checkCameraMovement([CImGui.GetMousePos().x - windowSize[1] / 2, CImGui.GetMousePos().y - windowSize[2] / 2], cam)
                 if connected
                     # if connected orientate robot according to camera orientation in x and z axis
@@ -108,8 +120,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 end
             end
 
-            # CImGui Stuff:
-            # Menu Bar
+            # Display of the menu bar
             begin 
                 CImGui.BeginMainMenuBar()
                 CImGui.SetWindowFontScale(globalFontScale)
@@ -118,7 +129,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 if connected 
                     CImGui.MenuItem("Data Plots") && global showDataPlots = !showDataPlots 
                     if CImGui.MenuItem("Render Robot")
-                        # Load models when rendering
+                        # Load once models when rendering
                         if isempty(models)
                             push!(models, loadGLTFModelInBuffers(robotSource, robotData))
                             push!(models, loadGLTFModelInBuffers(plateSource, plateData))
@@ -155,7 +166,9 @@ function mainLoop(window::GLFW.Window, ctx, program)
 
             showAutomaticInputWindow && handleAutomaticInputWindow()
  
-            if useAutomaticInput              
+            # Send commands to robot and get positional data
+            if useAutomaticInput        
+                # If automatic inputs are used:
                 posData = commandLoop(window, automaticInput=automaticInput[automaticInputIndex][1])
             
                 time = automaticInput[automaticInputIndex][2]
@@ -167,10 +180,11 @@ function mainLoop(window::GLFW.Window, ctx, program)
                     if automaticInputIndex >= length(automaticInput) global useAutomaticInput = !useAutomaticInput end
                 end
             else 
+                # send commands to robot and retrieve information
                 posData = commandLoop(window)
             end
             
-            # Add Positional Data to storage
+            # Add positional data to storage
             if posData != 0 && !isnothing(posData)
                 # Draw over everyting dummy window
                 CImGui.SetNextWindowSize(windowSize)
@@ -185,6 +199,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
                     popfirst!(rawPositionalData)
                 end
 
+                # If the data should be recorded, it is saved in different vector
                 if recordData
                     push!(rawSavePosData, posData)
                     if size(rawSavePosData, 1) > saveDataLength
@@ -195,15 +210,19 @@ function mainLoop(window::GLFW.Window, ctx, program)
             end
 
             if estSettingWindow
+                # check if settings come from external file (s = -1)
                 let s = estimationSettingsWindow()
+                # if so, do not override them
                 global settings = (s == -1) ? settings : s
                 end  
             end
 
+            # Show data plots offline
             if showRecoredDataPlots
                 plotData((1000, 700), rawSavePosData[1:rawSaveDataLength], "Recorded data Plot", settings)
             end
 
+            # Show data plots online
             if showDataPlots && size(rawPositionalData, 1) > 0
                 plotData((1000, 700), rawPositionalData, "On time positional data", settings)
             end            

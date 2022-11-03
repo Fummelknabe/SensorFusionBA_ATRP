@@ -1,3 +1,5 @@
+# This file implements functions that are used to handle data.
+
 using JSON
 # Used for select file dialog
 using Gtk
@@ -10,11 +12,11 @@ updateDispDataPoints = false
 export extractData
 """
 This method extracts the data send by the AT-RP and 
-stores them into the PositionalData Type.
+stores them into the PositionalData datatype.
 
 # Arguments
 - `data::String`: The data as a string with structure: \n
-<repetition of command>-<status>-<speed value>-<steering angle>-<detected speed in m/s>-<camera vector>-<imu data>.
+<repetition of command>-<status>-<speed value>-<steering angle>-<detected speed in m/s>-<camera vector>-<imu data>-<gps data>.
 
 # Returns 
 - `PositionalData`: All the positional data combined in one datatype.
@@ -47,6 +49,17 @@ function extractData(data::String)
     return posData
 end
 
+"""
+Converts a dictionary to PositionalData datatype.
+
+# Arguments
+- `dict::Dict`: The dict to convert
+- `rotateCameraCoords::Bool`: Should the camera coordinates be rotated to match IMU data
+- `flipCameraCoords::Bool`: Additional rotation of the camera data by 180 degrees
+- `loadGPSData::Bool`: Should gps data be loaded, otherwise its `[0, 0]`
+# Returns 
+- `PositionalData`: All the positional data combined in one datatype
+"""
 function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool, flipCameraCoords::Bool, loadGPSData::Bool)
     posData = PositionalData()
         
@@ -75,10 +88,16 @@ function convertDictToPosData(dict::Dict, rotateCameraCoords::Bool, flipCameraCo
     return posData
 end
 
+"""
+Modifies GPS position to be comparable to estimation data.
+
+# Arguments 
+- `posData::StructArray{PositionalData}`: The positional data containing gps data to modify
+"""
 function modifyGPSPosition(posData::StructArray{PositionalData})    
     gpsMatrix = reduce(vcat, transpose.(posData.gpsPosition))
 
-    # remove 0 vectors
+    # remove vectors that are zero (caused by refresh rate of GPS)
     initPos = Vector{Float32}(undef, 2)
     for i ∈ axes(gpsMatrix, 1)
         if gpsMatrix[i, :] != [0, 0]
@@ -108,6 +127,17 @@ function modifyGPSPosition(posData::StructArray{PositionalData})
     return posData
 end
 
+"""
+Loads positional data from a json file. The file is selected manually through a dialog in the GUI.
+
+# Optional Arguments
+- `rotateCameraCoords::Bool`: Should the camera coordinates be rotated to match IMU data
+- `flipCameraCoords::Bool`: Additional rotation of the camera data by 180 degrees
+- `loadGPSData::Bool`: Should gps data be loaded, otherwise its `[0, 0]`
+- `deleteData::Bool`: Deletes part of positional data that contain no information
+# Returns 
+- `StructArray{PositionalData}`: An array holding the positional data
+"""
 function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool=false, loadGPSData::Bool=false, deleteData::Bool=false)   
     posData = StructArray(PositionalData[])
     filename = open_dialog("Select JSON to load")
@@ -133,6 +163,12 @@ function loadDataFromJSon(;rotateCameraCoords::Bool=true, flipCameraCoords::Bool
     return posData
 end
 
+"""
+This function loads only position information from json file. The file is selected manually through a dialog in the GUI.
+
+# Returns
+`Matrix{Float32}`: 3xN Matrix where N is the number of discrete positions to load 
+"""
 function loadPosFromJSon()    
     posData = Matrix{Float32}(undef, 3, 0)
     filename = open_dialog("Select JSON to load")
@@ -155,6 +191,12 @@ function loadPosFromJSon()
     return posData
 end
 
+"""
+This function loads parameters used for estimation from json file. The file is selected manually through a dialog in the GUI.
+
+# Returns
+- `PredictionSettings`: The settings described in the json file
+"""
 function loadParamsFromJSon()
     params = PredictionSettings(false, false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 0, 0, 1/3, false, 1.0, 1.0)
     filename = open_dialog("Select JSON to load")
@@ -191,10 +233,16 @@ end
 
 """
 This method deletes the last data points that are not holding interesting positional information.
+
+# Arguments 
+`posData::StructVector{PositionalData}`: The data points to modify 
+# Returns 
+`StructVector{PositionalData}`: The updated vector containing the positonal data
 """
 function deleteUnimportantData(posData::StructVector{PositionalData})
     lastIndex = length(posData)
     for i ∈ length(posData):-1:1
+        # If the speed value is 0 and no commands are send to the robot
         if posData[i].sensorSpeed == 0.0 && occursin("stop_", posData[i].command)
             lastIndex = i
         else
@@ -204,10 +252,17 @@ function deleteUnimportantData(posData::StructVector{PositionalData})
     return posData[1:lastIndex]
 end
 
+"""
+This method saves the estimated states to a data file, that might be used for LaTex or similar applications.
+
+# Arguments
+`states::StructVector{PositionalState}`: The positional states to save
+"""
 function saveStateToDataFile(states::StructVector{PositionalState})
     open("pos_state.data", "w") do file 
         for i ∈ eachindex(states)
             if i == 1
+                # The heading of the file
                 s = String("i positionX positionY positionZ v Psi Theta Phi")
                 write(file, s*"\n");
             end

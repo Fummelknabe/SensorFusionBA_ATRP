@@ -1,6 +1,12 @@
+# This file contains function and types to handle and describe 3D models
+
 # Used for model loading
 using GLTF
 
+"""
+This struct describes the transform of a 3D model. The properties of the transform can be given through 
+    a transform matrix or by the 3 vectors describing position, rotation and scale.
+"""
 mutable struct Transform
     position::Vector{Float64}
     eulerRotation::Vector{Float64}
@@ -16,6 +22,9 @@ mutable struct Transform
     end
 end
 
+"""
+This simple struct holds the basic properties of a material used in 3D graphics.
+"""
 mutable struct Material
     diffuseColor::Vector{Float32}
     specularColor::Vector{Float32}
@@ -25,6 +34,15 @@ mutable struct Material
     shininess::Float32
 end
 
+"""
+This struct holds the information required to display a mesh in 3D graphics using openGL. 
+# Fields
+- `vao::UInt32`: The vertex array object that contains position of each vertex. This object stored in VRAM and is accessed through a pointer.
+- `ebo::UInt32`: The element buffer object that contains the indice information of the triangles making up the mesh. This object stored in VRAM and is accessed through a pointer.
+- `sizeOfIndices::Int64`: Number of indices this mesh contains.
+- `transform::Transform`: The transform object describing the position, orientation and scale in 3D space. 
+- `material::Material`: The material object describing the mesh's appearance.
+"""
 mutable struct Mesh
     vao::UInt32
     ebo::UInt32
@@ -33,14 +51,22 @@ mutable struct Mesh
     material::Material
 end
 
+"""
+Struct that creates an abstract model consisting out of mutiple meshes.
+"""
 mutable struct Model
     meshes::Vector{Mesh}
     transform::Transform
 end
 
 """
-Transforms around a positional reference point. This is used because it is known where
-meshes are located in model.
+Transforms around a positional reference point. This is needed because the reference point of many
+of the meshes in a given model are not at the reference point of the model. This might not be useful when trying 
+to modify only one mesh in the model. For this it is necessary to know where meshes are located in the model.
+
+# Arguments
+- `transform::Transform`: The transform to manipulate
+- `pointOfReference::Vector{Float64}`: The refernce point in 3D space to move the transform to
 """
 function transformAroundReference(transform::Transform, pointOfReference::Vector{Float64})
     T = GLfloat[1.0 0.0 0.0 pointOfReference[1];
@@ -56,6 +82,14 @@ function transformAroundReference(transform::Transform, pointOfReference::Vector
     return T⁻¹ * transformToMatrix(transform) * T
 end
 
+"""
+Converts transform object to homogonous transformation matrix.
+
+# Arguments
+- `t::Transform`: The transform object to convert.
+# Returns
+- `Matrix{GLfloat}`: The transform matrix resulting from the given transform object
+"""
 function transformToMatrix(t::Transform)
     xRotation = GLfloat[1.0 0.0 0.0 0.0;
                         0.0 cos(t.eulerRotation[1]) -sin(t.eulerRotation[1]) 0.0;

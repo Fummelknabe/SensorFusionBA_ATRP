@@ -1,16 +1,32 @@
+# This file contains functions to handle input of the user
+
 include("DataExtractor.jl")
 
+# Does the user want to record data currently
 recordData = false
+# Vector containing automatic inputs as commands and the duration
 automaticInput = Vector{Tuple{String, Float64}}(undef, 0)
-automaticInputIndex = 1
+automaticInputIndex = 1 
 
+"""
+This function handles the key inputs and sends appropriate commands to robot. Also sensor data is received.
+
+# Arguments
+- `window::GLFW.Window`: The openGL window context
+# Optional Arguments
+- `automaticInput::Union{String, Nothing}=nothing`: The command for the robot to execute
+# Returns 
+- `PositionalData`: The sensor data saved in one datatype
+"""
 function commandLoop(window::GLFW.Window; automaticInput::Union{String, Nothing}=nothing)
     # Key Inputs:
     #a = 65, d=68, w=87, s=83, shift =340,ctrl = 341, space=32, esc = 256
     if !connected
+        # if not connected to robot return immediately
         return 0
     end
     
+    # create command
     command = ""
 
     # Escape
@@ -52,14 +68,26 @@ function commandLoop(window::GLFW.Window; automaticInput::Union{String, Nothing}
     end    
 
     try
+        # send command to robot 
         answer = sendAndRecvData(isnothing(automaticInput) ? command : automaticInput)
 
+        # return the sensor data as positional data datatype
         return extractData(answer)
     catch error
         @warn "Error was caught: " * string(error)
     end    
 end
 
+"""
+This method creates a command for the robot using specified items in the automatic input dialog.
+
+# Arguments
+- `itemL::Int32`: Index of comboBox specifying longitudinal inputs 
+- `itemS::Int32`: Index of comboBox specifying steering inputs 
+- `itemS::Int32`: Index of comboBox specifying acceleration inputs 
+# Returns
+- `String`: The command as can be interpreted by the robot
+"""
 function createCommand(itemL::Int32, itemS::Int32, itemA::Int32)
     command = ""
 
@@ -91,6 +119,9 @@ function createCommand(itemL::Int32, itemS::Int32, itemA::Int32)
     return command
 end
 
+"""
+This function is called when pressing a mouse button. Sets according global variables.
+"""
 function onMouseButton(button, action)
     if button == GLFW.MOUSE_BUTTON_LEFT && action == GLFW.PRESS
         global isLeftMouseButtonDown = true       
@@ -109,6 +140,14 @@ function onWindowResize(width, height)
     glViewport(0, 0, width, height)
 end
 
+"""
+This function is called when pressing the connect button in the connection dialog. The function checks
+    the correctness of inputs and tries to connect to specified port.
+
+# Arguments 
+- `ipData::String`: The string input as ip 
+- `portData::String`: The string input as port
+"""
 function connectButtonPress(ipData::String, portData::String)
     if connected
         disconnect()
@@ -134,8 +173,15 @@ function connectButtonPress(ipData::String, portData::String)
     global connectStatus = checkConnection(ip, port)
 end
 
+"""
+This method enables the recording of positional data. 
+
+# Arguments 
+- `amountDataPoints::String` How many data points to record. Should be numerical.
+"""
 function toggleRecordData(amountDataPoints::String)
     if recordData 
+        # disable recording and save data to json file
         global recordData = false 
 
         if size(rawSavePosData, 1) > 0 
@@ -146,6 +192,7 @@ function toggleRecordData(amountDataPoints::String)
         return 0
     end
 
+    # check for correctness of input
     amount = ""
     for char in amountDataPoints
         if isdigit(char)
@@ -164,6 +211,7 @@ function toggleRecordData(amountDataPoints::String)
         return 0
     end
 
+    # enable recording of data
     global recordData = true
     return dataLength
 end

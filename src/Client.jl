@@ -1,8 +1,14 @@
-using PyCall
+# This file implements functions that are used for TCP communication
 
+#= Since the host program runs a python socket the PyCall package 
+is used to simplify communication. =#
+using PyCall 
+
+# set up of variables and defining constants
 pysockets = pyimport("socket")
 
-export HOST, PORT
+# standard port and ip
+export HOST, PORT 
 const HOST = "10.42.0.1";
       PORT = 2222
 
@@ -16,7 +22,7 @@ pysocket.settimeout(20)
 
 export connectToJetson
 """
-Connects to the Jetson
+Connects to the host program run on the robot.
 
 # Arguments
 - `ip::String`: The IP-Address as string to connect to.
@@ -26,6 +32,7 @@ Connects to the Jetson
 - `boolean`: True if connection to a valid controller was succesful.
 """
 function connectToJetson(ip::String=HOST, port::Integer=PORT)    
+    # Update connect status (displayed in GUI)
     global connectStatus = "Trying to connect to: " * string(ip) * " on " * string(port)
     global pysocket = pysockets.socket(pysockets.AF_INET, pysockets.SOCK_STREAM)
 
@@ -67,6 +74,14 @@ function sendAndRecvData(data::String)
     return pysocket.recv(2048)
 end
 
+"""
+This function tries to connect with given ip and port to the host.
+Note that the arguments are both of type string.
+
+# Arguments
+- `ip::String`: The ipv4 address of the host
+- `post::String`: The port of the host program.
+"""
 function checkConnection(ip::String, port::String)    
     try        
         if connectToJetson(ip, parse(Int64, port))
@@ -77,6 +92,7 @@ function checkConnection(ip::String, port::String)
         return "Connection failed, try again!"
     catch error
         if isa(error, ArgumentError)
+            # If no port or ip is given, the program tries to connect with standard settings 
             @warn "Port or IP incorrect \n Connection to standard port and IP"
             if connectToJetson()
                 global connected = true
@@ -90,6 +106,9 @@ function checkConnection(ip::String, port::String)
     end
 end
 
+"""
+Disconnects from established connection and resets according settings.
+"""
 function disconnect()
     @info "Disconnecting..."
 
