@@ -1,8 +1,14 @@
+# This file contains functions to estimate pose from positional data
+
 using DSP
 using LinearAlgebra
 
+# Vector that contains estimated states 
 predictedStates = StructArray(PositionalState[])
 
+"""
+This function rates the camera confidence value. The outcome depends on the parameters given. 
+"""
 rateCameraConfidence(cc, exponent, useSin::Bool) = Float32(useSin ? sin(π/2 * cc)^exponent : cc^exponent)
 
 # linearized system matrices
@@ -44,20 +50,28 @@ function θ_ϕ_acc(a::Vector{Float32}, Ψ::Float32)
       # rotate horizontal axis by yaw angle
       x_plane = [cos(Ψ), sin(Ψ), 0]
 
+      # get axis on vehicle frame
       y_v = cross(a, x_plane)
       x_v = cross(y_v, a)
 
+      # compute final rotational values
       θ = sign(x_v[3])*Float32(acos(round(dot(x_v, x_plane)/(norm(x_v)*norm(x_plane)); digits=3)))
       ϕ = sign(y_v[3])*Float32(acos(round(dot(y_v, [y_v[1], y_v[2], 0])/(norm(y_v)*norm([y_v[1], y_v[2], 0])); digits=3)))
 
       return θ, ϕ
 end
 
+# calculate β from the kinematic bicycle model
 β(δ) = Float32(atan(lₕ/(lᵥ+lₕ)*tan(δ)))
 
+# the covariance matrix for the optional EKF
 P(F, Q, oldP, size) = F*oldP*transpose(F) .+ Q*Matrix(I, size, size)
+# the kalman gain for the optional EKF
 K(P, H, R, size) = P*transpose(H)*(H*P*transpose(H) .+ R*Matrix(I, size, size))^-1
 
+"""
+Compute change in position given many different parameters. 
+"""
 function changeInPosition(a::Vector{Float32}, v::Float32, Ψ::Float32, θ::Float32, δt::Float32; β::Float32=Float32(0.0))
       # Only when a significant deviation from z-Axis = 1g 
       θᵢₙ = abs(a[3] - 1) > 0.02
@@ -78,6 +92,12 @@ include("UKF.jl")
 This function transforms camera coords ontop of the prediction. This should be 
 unnecessary if the correct initial transform is choosen for the camera. 
 (for old data, this has to be used)
+
+# Arguments
+- `cameraCoords::Vector{Float32}`: The camera position to transform as vector.
+- `Ψ::Float32`: The angle to rotate given position.
+# Returns 
+- `Vector{Float32}`: The transformed camera position.
 """
 function transformCameraCoords(cameraCoords::Vector{Float32}, Ψ::Float32)
       # Create 2D rotational matrix
@@ -94,8 +114,7 @@ This function transforms a given position so that the z-vector points up in the 
 
 # Arguments
 `pos::Vector{Float32}`: The position to transform
-`up::Vector{Float32}`: The vector that holds the acceleration data 
-
+`up::Vector{Float32}`: The vector that holds the acceleration data !
 # Returns 
 `Vector{Float32}`: The transformed position
 """
