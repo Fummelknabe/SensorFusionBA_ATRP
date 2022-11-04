@@ -121,28 +121,52 @@ function convertQuaternionToEuler(q::Vector{Float32})
     return [atan(2*(w*x+y*z), 1-2*(x^2+y^2)); asin(2*(w*y-z*x)); atan(2*(w*z+x*y), 1-2*(y^2+z^2))]
 end
 
+"""
+This method loads a model from gltf objects. Note that texture coords are not used here.
+
+# Arguments 
+- `model::GLTF.Model`: The basic structure object of GLTF data format
+- `modelData::GLTF.ZVector`: The object containing the model information in bytes 
+
+# Returns
+- `Model`: The created model datatype 
+"""
 function loadGLTFModelInBuffers(model::GLTF.Object, modelData::GLTF.ZVector)
     newModel = Model(Vector{Mesh}(undef, 0), Transform())
     accessors = model.accessors
 
+    # looop over all meshes in model 
     for mesh in model.meshes
-        pos = accessors[mesh.primitives[0].attributes["POSITION"]]        
-        #texcoords = accessors[mesh.primitives[0].attributes["TEXCOORD_0"]]        
+        pos = accessors[mesh.primitives[0].attributes["POSITION"]]           
         normals = accessors[mesh.primitives[0].attributes["NORMAL"]]        
         indices = accessors[mesh.primitives[0].indices]   
         material = model.materials[mesh.primitives[0].material]   
 
-        mesh = loadGLTFMeshInBuffers(pos#=, texcoords=#, normals, indices, material, model, modelData)
+        # load information for each mesh 
+        mesh = loadGLTFMeshInBuffers(pos, normals, indices, material, model, modelData)
         push!(newModel.meshes, mesh)
     end
 
     return newModel
 end
 
-function loadGLTFMeshInBuffers(pos::GLTF.Accessor#=, texcoords::GLTF.Accessor=#, normals::GLTF.Accessor, indices::GLTF.Accessor, material, model::GLTF.Object, modelData::GLTF.ZVector)
+"""
+Create a mesh using information from GLTF file. 
+
+# Arguments 
+- `pos::GLTF.Accessor`: An object that hold positional information of vertices in mesh 
+- `normals::GLTF.Accessor`:  An object that hold normal vectors of vertices in mesh 
+- `indices::GLTF.Accessor`: An object that hold indices of vertices for the triangles in mesh 
+- `material::GLTF.Material`: Material object from GLTF package holding material information
+- `model::GLTF.Object`: The basic structure object of GLTF data format
+- `modelData::GLTF.ZVector`: The object containing the model information in bytes 
+
+# Returns 
+- `Mesh`: The created mesh datatype 
+"""
+function loadGLTFMeshInBuffers(pos::GLTF.Accessor, normals::GLTF.Accessor, indices::GLTF.Accessor, material::GLTF.Material, model::GLTF.Object, modelData::GLTF.ZVector)
     # Create Buffer views
     posBufferView = model.bufferViews[pos.bufferView]
-    #texBufferView = model.bufferViews[texcoords.bufferView]
     normalBufferView = model.bufferViews[normals.bufferView]
     idxBufferView = model.bufferViews[indices.bufferView]
 
@@ -161,15 +185,6 @@ function loadGLTFMeshInBuffers(pos::GLTF.Accessor#=, texcoords::GLTF.Accessor=#,
     glBufferData(normalBufferView.target, normalBufferView.byteLength, C_NULL, GL_STATIC_DRAW)
     normalData = modelData[normalBufferView.buffer]
     @c glBufferSubData(normalBufferView.target, 0, normalBufferView.byteLength, &normalData[normalBufferView.byteOffset])
-    # texure coordinates
-    #=
-    texVBO = GLuint(0)
-    @c glGenBuffers(1, &texVBO)
-    glBindBuffer(texBufferView.target, texVBO)
-    glBufferData(texBufferView.target, texBufferView.byteLength, C_NULL, GL_STATIC_DRAW)
-    texData = modelData[texBufferView.buffer]
-    @c glBufferSubData(texBufferView.target, 0, texBufferView.byteLength, &texData[texBufferView.byteOffset])
-    =#
     # indices
     idxEBO = GLuint(0)
     @c glGenBuffers(1, &idxEBO)
@@ -186,36 +201,48 @@ function loadGLTFMeshInBuffers(pos::GLTF.Accessor#=, texcoords::GLTF.Accessor=#,
     glVertexAttribPointer(0, 3, pos.componentType, pos.normalized, posBufferView.byteStride, Ptr{Cvoid}(pos.byteOffset))
     glBindBuffer(normalBufferView.target, normalsVBO)
     glVertexAttribPointer(1, 3, normals.componentType, normals.normalized, normalBufferView.byteStride, Ptr{Cvoid}(normals.byteOffset))
-    #glBindBuffer(idxBufferView.target, texVBO)
-    #glVertexAttribPointer(2, 2, texcoords.componentType, texcoords.normalized, texBufferView.byteStride, Ptr{Cvoid}(texcoords.byteOffset))
     glEnableVertexAttribArray(0)
     glEnableVertexAttribArray(1)
-    #glEnableVertexAttribArray(2)
 
     # unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0)
 	glBindVertexArray(0)
 
-    # Extract material values
+    # Extract color values and hardcode a other values
     newMaterial = Material(
         material.pbrMetallicRoughness.baseColorFactor[1:3],
         material.pbrMetallicRoughness.baseColorFactor[1:3],
-        1.0,#material.emissiveFactor[1],
-        0.5,#material.emissiveFactor[2],
-        0.2,#material.emissiveFactor[3],
-        32#material.pbrMetallicRoughness.metallicFactor
+        1.0,
+        0.5,
+        0.2,
+        32
     )
 
+    # create new mesh object
     return Mesh(vao, idxEBO, indices.count, Transform(), newMaterial)
 end
 
+"""
+Write data to uniforms. This is to give the shaders information about how to render vertices. 
+
+# Arguments 
+- `program`: The shader program used.
+- `transformMatrix::Matrix`: 4x4 matrix as transform matrix for model.
+- `cam::Camera`: The camera object. 
+- `ambientLightColor::Vector{GLfloat}`: The color of the ambient light (RGB). 
+- `material::Material`: The material of the mesh to render. 
+"""
 function writeToUniforms(program, transformMatrix::Matrix, cam::Camera, ambientLightColor::Vector{GLfloat}, material::Material)
+    # get uniform locations 
     modelMatrixLoc = glGetUniformLocation(program, "modelMatrix")
     viewMatrixLoc = glGetUniformLocation(program, "viewMatrix")
     projMatrixLoc = glGetUniformLocation(program, "projMatrix")
     camPositionLoc = glGetUniformLocation(program, "cameraPosition")
     ambientLightCoLoc = glGetUniformLocation(program, "ambientLightColor")
+
     glUseProgram(program)
+
+    # write to uniforms
     glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, transformMatrix)
     glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, getViewMatrix(cam))
     glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, getProjectionMatrix(cam))
