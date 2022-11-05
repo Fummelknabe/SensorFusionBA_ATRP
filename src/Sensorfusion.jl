@@ -110,13 +110,17 @@ function transformCameraCoords(cameraCoords::Vector{Float32}, Ψ::Float32)
 end
 
 """
-This function transforms a given position so that the z-vector points up in the intertial frame 
+This function transforms a given position so that the z-vector points up in the inertial frame 
 
-# Arguments
-`pos::Vector{Float32}`: The position to transform
-`up::Vector{Float32}`: The vector that holds the acceleration data !
+# Arguments 
+Definition: `T <: Real`
+- `pos::Vector{T}`: The position to transform.
+- `up::Vector{T}`: The vector that holds the acceleration data.
+- `angularSpeed::Vector{T}`: The angular speed measured in the vehicle reference point.
+- `weights::Tuple{T, T}`: Weights to influence influence of acceleration and angular velocity.
+- `δt::T`: The time passed since last state update.
 # Returns 
-`Vector{Float32}`: The transformed position
+- `Vector{T}`: The transformed position.
 """
 function transformCoords(pos::Vector{T}, up::Vector{T}, angularSpeed::Vector{T}, weights::Tuple{T, T}, δt::T) where {T <: Real}
     # Projection in planes
@@ -127,6 +131,7 @@ function transformCoords(pos::Vector{T}, up::Vector{T}, angularSpeed::Vector{T},
     α = weights[1] * -acos(projXZ[3] / norm(projXZ)) + weights[2] * angularSpeed[2]*δt 
     β = weights[1] * -acos(projYZ[3] / norm(projYZ)) + weights[2] * angularSpeed[1]*δt
 
+    # Define rotational matrices
     Rx = [1     0      0;
           0 cos(β) -sin(β); 
           0 sin(β) cos(β)]    
@@ -138,7 +143,19 @@ function transformCoords(pos::Vector{T}, up::Vector{T}, angularSpeed::Vector{T},
 end
 
 """
-This function computes the speed from measured speed and camera position.
+This function computes the speed from measured speed by wheel encoder and camera position.+
+
+# Arguments 
+- `cameraMatrix::Matrix{Float32}`: The last couple of estimates made by the VO-System in matrix form.
+- `δt::Vector{Float32}`: The time passed since last state update.
+- `v::Float32`: The speed as measured by the wheel encoder.
+- `ratedCamConfidence::Float32`: The rated camera confidence.
+- `σ::Float32`: The variance for the kernel to smooth camera change.
+- `command::String`: The command sent to the robot.
+- `pastBackwards::Bool`: If the robot was going backwards in prev. state.  
+- `δ::Float32`: The steering angle of the robot.
+# Returns 
+- `Tuple{Float32, Bool}`: Estimated speed value and if wheel slippage is suspected to be occuring.
 """
 function computeSpeed(cameraMatrix::Matrix{Float32}, δt::Vector{Float32}, v::Float32, ratedCamConfidence::Float32, σ::Float32, command::String, pastBackwards::Bool, δ::Float32)
       cameraChange = cameraMatrix[:, 4]
@@ -176,9 +193,19 @@ function computeSpeed(cameraMatrix::Matrix{Float32}, δt::Vector{Float32}, v::Fl
       return sign*(ws ? Float32(cameraSpeed[l]) : (Float32((1-ratedCamConfidence) * v + ratedCamConfidence * cameraSpeed[l]))), ws
 end
 
-function extractTaitbryanFromOrientation(state::PositionalState, dataPoints::StructVector{PositionalData})
-      cameraOrientation = (dataPoints[end].cameraOri, dataPoints[end-1].cameraOri)
+"""
+Extracts Taitbryan angles from camera orientation change. 
 
+# Arguments 
+- `state::PositionalState`: The previous positional state. 
+- `dataPoints::StructVector{PositionalData}`: The last few data points recorded.
+# Return 
+- `Float32, Float32, Float32`: The three Taitbryan angles. 
+"""
+function extractTaitbryanFromOrientation(state::PositionalState, dataPoints::StructVector{PositionalData})
+      cameraOrientation = (convertQuaternionToEuler(dataPoints[end].cameraOri), 
+                           convertQuaternionToEuler(dataPoints[end-1].cameraOri))
+      
       δt = dataPoints[end].deltaTime
       Ψᵥₒ = state.Ψ + δt*(cameraOrientation[1][2] - cameraOrientation[2][2])
       θᵥₒ = state.θ + δt*(cameraOrientation[1][1] - cameraOrientation[2][1])
@@ -193,11 +220,11 @@ This function predicts the next position from given datapoints and the last posi
 # Arguments
 - `posState::PositionalState`: The last positional state. 
 - `dataPoints::StructVector{PositionalData}`: An array of datapoints. There should atleast 2 data points to more accurately predict position. 
-
+- `settings::PredictionSettings`: The parameters to influence the estimation.
 # Returns
 - `PositionalState`: The new positional state of the robot.
 """
-function predict(posState::PositionalState, dataPoints::StructVector{PositionalData}, settings::PredictionSettings; #=onyl for debugging:=#iteration::Int=0)
+function predict(posState::PositionalState, dataPoints::StructVector{PositionalData}, settings::PredictionSettings)
       # Get data from data point
       amountDataPoints = length(dataPoints)
       amountDataPoints > 1 || throw("More than $(amountDataPoints) Data Points need to be given to predict position.")
@@ -231,8 +258,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                                                 newData.deltaTime,
                                                 β=Float32(β(newData.steerAngle*π/180)))
       else
-            #@info "Iteration: $(iteration)"
-            try   # JUST DEBUGGING
+            try  
                   wₘ = computeWeights(true, settings)
                   wₖ = computeWeights(false, settings)
                   μₜ̇, Χₜ, Σₜ̇ = UKF_prediction(Float32.([posState.position[1], posState.position[2], posState.position[3], posState.Ψ, posState.θ]),
@@ -252,26 +278,6 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                   # Update state
                   posState.Σ = Σₜ
                   posState.Χ = Χₜ
-                  
-                  #=
-                  wₘ = computeWeights(true, settings)
-                  wₖ = computeWeights(false, settings)
-                  Pₖ, xₖ, W, Χ = prediction(posState.Χ, 
-                                          Float32.([newData.imuGyro[1], newData.imuGyro[2], newData.imuGyro[3], v, newData.deltaTime, newData.steerAngle]),
-                                          posState.Σ,
-                                          settings,
-                                          wₘ,
-                                          wₖ)
-
-                  Zₖ = generateSigmaPoints(xₖ, Pₖ, settings)
-
-                  xₖ, Pₖ = correction(Zₖ, Χ, xₖ, W, [newData.cameraPos[1], newData.cameraPos[2], newData.cameraPos[3], convertMagToCompass(newData.imuMag), θ_acc], wₘ, ratedCC, settings, Pₖ)
-            
-                  δOdoSteeringAngle = xₖ[1:3] - posState.position
-
-                  posState.Σ = Pₖ
-                  posState.Χ = Zₖ
-                  =#
             catch e     
                   @error "Error occured with: $(settings)."
                   println("Sigma Points: $(posState.Χ)")
@@ -345,7 +351,7 @@ function convertMagToCompass(magnetometerVector::Vector{Float32}; accelerometerV
 end
 
 """
-This method is a part of postprocessing.
+This method is a part of postprocessing. This smoothes the prediction and can be enables through the GUI.
 """
 function smoothPoseEstimation(poses::StructVector{PositionalState}, σ::Float64, lengthInfluence::Float64)
       result = poses
@@ -374,6 +380,8 @@ This function predicts position from recorded data.
 # Arguments
 - `posData::StructVector{PositionalData}`: The recorded data points.
 - `settings::PredictionSettings`: The parameters to influence prediction quality.
+# Returns 
+- `StructVector{PositionalState}`: A vector containing the estimated positional states. 
 """
 function predictFromRecordedData(posData::StructVector{PositionalData}, settings::PredictionSettings)
       # Set up predicted states and initialize first one
@@ -389,7 +397,7 @@ function predictFromRecordedData(posData::StructVector{PositionalData}, settings
                   estimatedStates[i-1],
                   # give mutiple positional data points if possible
                   (i > 9) ? posData[(i-9):i] : posData[(i-1):i],
-                  settings, iteration=i
+                  settings
             ))
       end
 
@@ -397,10 +405,11 @@ function predictFromRecordedData(posData::StructVector{PositionalData}, settings
 end
 
 """
-Start sensor fusion with a continuous flow of data.
+Start sensor fusion with a continuous flow of data. Updates the global StructVector that holds the estimated states.
 
 # Arguments
 - `posData::StructVector{PositionalData}`: The last recorded data points. Length should be more than 2.
+- `settings::PredictionSettings`: The parameters to influence prediction quality.
 """
 function initializeSensorFusion(posData::StructVector{PositionalData}, settings::PredictionSettings)
       if length(predictedStates) == 0

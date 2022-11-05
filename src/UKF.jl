@@ -1,9 +1,20 @@
-#= Use as State: 
+# This file contains functionality to realize the UKF in code.
+
+#= 
+Use as State: 
     x = [p_x, p_y, p_z, Ψ, Θ]
-    # The Roll angle is not used here as it is not relevant for position change
-   Use as Input:
+The Roll angle is not used here as it is not relevant for position change
+
+Use as Input:
     u = [w_x, w_y, w_z, v, dt, steerAngle]
 =#
+
+"""
+This function updates the state according to definitions on top of the file.
+# Arguments 
+- `s::Vector{Float32}`: The last state of the system. 
+- `u::Vector{Float32}`: The input to update the estimation.
+"""
 function f(s::Vector{Float32}, u::Vector{Float32})
     Ψₜ = Ψ(s[4], u[5], u[6], β(u[6]), u[4])
     θₜ = θ_ang(s[5], u[5], [u[1], u[2], u[3]])
@@ -31,20 +42,18 @@ This performs the whole prediction step for the UKF.
 - `Σₜ`: New covariance.
 """
 function UKF_prediction(μₜ₋₁::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vector{Float32}, Χₜ₋₁::Vector{Vector{Float32}}, uₜ::Vector{Float32}, Σₜ₋₁::Matrix{Float32}, p::PredictionSettings)
-    #println("DEBUG - dimensions: mean: $(size(μₜ₋₁)), weight m: $(size(wₘ)), weight k: $(size(wₖ)), sigma points: $(size(Χₜ₋₁)), u: $(size(uₜ)), sigma: $(size(Σₜ₋₁))")
-    
+    # Compute F matrix
     F = Matrix{Float32}(undef, n, 0)
     for i ∈ 0:2*n  F = hcat(F, f(Χₜ₋₁[i+1], uₜ)) end
+
+    # mean of the state
     μₜ̇ = sum(wₘ[i+1]*F[:, i+1] for i ∈ 0:2*n)
-    #println("DEBUG - mean: $(μₜ̇)")
 
+    # generate new sigma points
     Χₜ = generateSigmaPoints(μₜ₋₁, Σₜ₋₁, p)
-    #println("DEBUG - sigma points: $(Χₜ)")
 
-    Σₜ = sum(wₖ[i+1]*(F[:, i+1] - μₜ̇)*transpose(F[:, i+1] - μₜ̇) for i ∈ 0:2*n) + p.processNoiseS*Matrix(I, size(Σₜ₋₁))# not sure if this should be added inside of sum
-    #println("DEBUG - covariance: $(Σₜ)")
-    #println("DEBUG - weights m: $(wₘ)")
-    #println("DEBUG - weight k: $(wₖ)")
+    # compute covariance
+    Σₜ = sum(wₖ[i+1]*(F[:, i+1] - μₜ̇)*transpose(F[:, i+1] - μₜ̇) for i ∈ 0:2*n) + p.processNoiseS*Matrix(I, size(Σₜ₋₁))
     #Σₜ[abs.(Σₜ) .< 10^-4] .= 0.0
     
     #Σₜ = round.(Σₜ, digits=4)
@@ -62,39 +71,27 @@ Update step of the unscented Kalman Filter.
 - `Σₜ`: The new covariance.
 """
 function UKF_update(μₜ̇::Vector{Float32}, wₘ::Vector{Float32}, wₖ::Vector{Float32}, Χₜ::Vector{Vector{Float32}}, Σₜ̇::Matrix{Float32}, p::PredictionSettings, measurement::Vector{Float32}, ratedCC::Float32)
+    # Compute measurement matrix
     Zₜ = Matrix{Float32}(undef, n, 0)
     for i ∈ 1:2*n+1
         Zₜ = hcat(Zₜ, Χₜ[i])# normally: Hₛ*Χₜ[i]
     end
-    #Zₜ[isnan.(Zₜ)] .= 0.0
 
+    # measurement mean
     zₜ = sum(wₘ[i+1]*Zₜ[:, i+1] for i ∈ 0:2*n)
-    #zₜ[isnan.(zₜ)] .= 0.0
 
+    # Define helper matrix 
     Sₜ = sum(wₖ[i+1]*(Zₜ[:, i+1] - zₜ)*transpose(Zₜ[:, i+1] - zₜ) for i ∈ 0:2*n) + ((1-ratedCC)*p.measurementNoiseS)*Matrix(I, n, n)
-    #Sₜ[isnan.(Sₜ)] .= 0.0
-    #Sₜ = round.(Sₜ, digits=4)
-    #Sₜ[abs.(Sₜ) .< 10^-4] .= 0.0
-    #if rank(Sₜ) != n
-    #    println("DEBUG - S: $(Sₜ)")
-    #    println("DEBUG - Z: $(Zₜ), size: $(size(Zₜ))")
-    #    println("DEBUG - z: $(zₜ)")
-    #    println("DEBUG - Size Sigma: $(size(Χₜ))")
-    #end
-    #println("DEBUG - Z: $(Zₜ)")
-    #println("DEBUG - z: $(zₜ)")
 
     # calculate Kalman gain
     Kₜ = sum(wₖ[i+1]*(Χₜ[i+1] - μₜ̇)*transpose(Zₜ[:, i+1] - zₜ) for i ∈ 0:2*n) * inv(Sₜ)
-    #Kₜ = round.(Kₜ, digits=4)
 
     μₜ = μₜ̇ + Kₜ*(measurement - zₜ)
     Σₜ = Σₜ̇ - Kₜ*Sₜ*transpose(Kₜ)
+
+    # Contrain the covariance matrix
     Σₜ[isnan.(Σₜ)] .= 0.0
     Σₜ[isinf.(Σₜ)] .= 1e10
-    #if !ishermitian(Σₜ) @warn "Sigma from update not hermitian!" end
-    #println("DEBUG - new mean: $(μₜ)")
-    #println("DEBUG - new covariance: $(Σₜ)")
     return μₜ, Σₜ
 end
 
@@ -104,6 +101,8 @@ Compute the weights for the unscented transform.
 # Arguments
 - `mean::Bool`: If true computes weights for mean, if not for covariance.
 - `params::PredictionSettings`: Parameters to influence estimation.
+# Returns 
+- `Vector{Float32}`: The new weights.
 """
 function computeWeights(mean::Bool, p::PredictionSettings)
     w = Vector{Float32}(undef, 0)
@@ -125,13 +124,15 @@ Generate Sigma points from previous mean and covariance.
 - `μₜ::Vector{Float32}`: The previous state containing the position and θ, Ψ
 - `Σₜ::Matrix{Float32}`: The covariance of previous estimation.
 - `p::PredictionSettings`: Parameters to influence estimation.
+# Returns
+- `Vector{Vector{Float32}}`: The new sigma points.
 """
 function generateSigmaPoints(μₜ₋₁::Vector{Float32}, Σₜ₋₁::Matrix{Float32}, p::PredictionSettings)
     # Define vector holding sigma points
     Χ = Vector{Vector{Float32}}(undef, 0)
 
     # Add the last mean
-    push!(Χ, μₜ₋₁)#round.(μₜ₋₁, digits=4))
+    push!(Χ, μₜ₋₁)
 
     λ = p.α^2*(n + p.κ) - n
     
@@ -142,15 +143,18 @@ function generateSigmaPoints(μₜ₋₁::Vector{Float32}, Σₜ₋₁::Matrix{F
 
     # Add the remaining sigma points spread around mean
     for i ∈ 1:n
-        push!(Χ, μₜ₋₁ + matrixRoot[:, i])#round.(μₜ₋₁ + matrixRoot[:, i], digits=4))
+        push!(Χ, μₜ₋₁ + matrixRoot[:, i])
     end
 
     for i ∈ 1:n
-        push!(Χ, μₜ₋₁ - matrixRoot[:, i])#round.(μₜ₋₁ - matrixRoot[:, i], digits=4))
+        push!(Χ, μₜ₋₁ - matrixRoot[:, i])
     end
     return Χ
 end
 
+"""
+Helper function to force a matrix to be hermetian as due to floating point errors, this might not be the case.
+"""
 function forceHermetian(m::Matrix{Float32})
     s = size(m)
     for x ∈ 1:s[1]
@@ -168,12 +172,6 @@ function forceHermetian(m::Matrix{Float32})
 
             m[x,y] = 0.0#m[y,x]
         end    
-    end
-
-    if !isposdef(m)
-        println(m)
-        #A = m'*m
-        #m = (A + A')/2
     end
     return m
 end

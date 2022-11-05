@@ -1,3 +1,5 @@
+# This file is mostly for the GUI and the controls desponsible.
+
 using GLFW
 using CImGui
 using ImPlot
@@ -16,6 +18,7 @@ include("Sensorfusion.jl")
 include("Client.jl")
 include("InputHandler.jl")
 
+# asset paths
 const robotSource = GLTF.load("assets/robot.gltf")
 const robotData = [read("assets/"*b.uri) for b in robotSource.buffers]
 
@@ -24,13 +27,18 @@ const plateData = [read("assets/"*b.uri) for b in plateSource.buffers]
 
 const vertShaderScript = read("shader/shader.vert", String)
 const fragShaderScript = read("shader/shader.frag", String)
+
+# Is the estimation going on
 estimating = false
+# The global struct holding positional states if estimation is enabled
 estimation = StructArray(PositionalState[])
 updateEstimation = false
 
+# variables that track open sub windows
 estSettingWindow = false
 loadingSettingsJSON = false
 
+# matrix that holds true ground data if loaded
 truePosData = Matrix{Float32}(undef, 3, 0)
 
 
@@ -76,6 +84,9 @@ function setUpWindow(size::Tuple{Integer, Integer}, title::String, iconPath::Str
     return window, ctx, program
 end
 
+"""
+Create shader program.
+"""
 function createShaders()
     # compile shaders
     vertShader = glCreateShader(GL_VERTEX_SHADER)
@@ -102,6 +113,12 @@ function createShaders()
     return program
 end
 
+"""
+Small helper function that displays a text when hovered over '(?)' symbol. 
+
+# Arguments 
+- `description::String`: The text to display. 
+"""
 function ShowHelpMarker(description)
     CImGui.TextDisabled("(?)")
     if CImGui.IsItemHovered()
@@ -113,6 +130,9 @@ function ShowHelpMarker(description)
     end
 end
 
+"""
+Displays the helper window. 
+"""
 function handleHelperWidow()
     CImGui.SetNextWindowPos((0, 20))
     CImGui.Begin("Help", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
@@ -132,6 +152,12 @@ function handleHelperWidow()
     CImGui.End()
 end
 
+"""
+Displays the connect to jetson window.
+
+# Arguments
+- Requires ipData and portData as references. 
+"""
 function handleConnectWindow(ipData, portData)
     # Create a window
     CImGui.Begin("Connect to Jetson", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize | CImGui.ImGuiWindowFlags_NoCollapse)
@@ -151,6 +177,9 @@ function handleConnectWindow(ipData, portData)
     CImGui.End()
 end
 
+"""
+This function shows the automatic inputs dialog.
+"""
 function handleAutomaticInputWindow()
     CImGui.Begin("Automatic Inputs", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
 
@@ -165,6 +194,8 @@ function handleAutomaticInputWindow()
         if !isempty(automaticInput) 
             CImGui.Button("Delete") && pop!(automaticInput) 
             CImGui.SameLine()
+
+            # Confirmation button (toggles sending of inputs)
             if CImGui.Button(useAutomaticInput ? "Stop Sending!" : "Send to Robot!") 
                 global useAutomaticInput = !useAutomaticInput
                 global automaticInputIndex = 1
@@ -174,6 +205,7 @@ function handleAutomaticInputWindow()
         ShowHelpMarker("Add Input to List of automatic inputs. Or delete last input")
     end 
 
+    # Display of the list of automatic inputs
     CImGui.Text("Input List:")
     for s ∈ automaticInput
         CImGui.Text(s[1]*" for $(s[2])s.")
@@ -182,6 +214,9 @@ function handleAutomaticInputWindow()
     CImGui.End()
 end
 
+"""
+Function that displays dialog of loading data and all the options that come with it.
+"""
 function handleShowDataWindow()
     CImGui.Begin("Load Positional Data as JSON", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     CImGui.SetWindowFontScale(globalFontScale)
@@ -221,6 +256,9 @@ function handleShowDataWindow()
     end
 end
 
+"""
+Recording of data when connected to the robot.
+"""
 function handleRecordDataWindow(amountDataPoints)
     CImGui.Begin("Record Positional Data", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
     CImGui.SetWindowFontScale(globalFontScale)
@@ -239,6 +277,12 @@ function toggleRecordedDataPlots(posData::StructArray)
     global rawSavePosData = posData
 end
 
+"""
+Display of the parameters window. All parameters can be influenced using this dialog.
+
+# Returns
+- `PredictionSettings`: The parameters to estimate pose.
+"""
 function estimationSettingsWindow()
     CImGui.Begin("Estimation Settings")
     CImGui.SetWindowFontScale(globalFontScale)
@@ -344,6 +388,7 @@ Has to be called inside the render loop.
 - `rectSize::Tuple{Integer, Integer}`: The size of the rectangle to draw position on.
 - `posData::StructVector{PositionalData}`: The positional data from the atrp to plot.
 - `windowName::String`: The name of the window.
+- `settings::PredictionSettings`: The parameters that control the estimation.
 """
 function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{PositionalData}, windowName::String, settings::PredictionSettings)
     CImGui.SetNextWindowSizeConstraints(rectSize, (rectSize[1], windowSize[2]))
@@ -644,6 +689,7 @@ function plotData(rectSize::Tuple{Integer, Integer}, posData::StructVector{Posit
     end
 end
 
+# Display of framerate and calculation of delta time
 let (previousTime, previousTimeCounting) = (time(), time())
     frame = 0
     global function updateFPS(window::GLFW.Window)
@@ -664,7 +710,7 @@ let (previousTime, previousTimeCounting) = (time(), time())
 end
 
 function onWindowClose()
-    @info "Window Closed"
+    @info "Program terminated."
 end
 
 
