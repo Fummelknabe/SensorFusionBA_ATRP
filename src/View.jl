@@ -50,12 +50,10 @@ Set up a GLFW window, callbacks and render context.
 - `size::Tuple{Integer, Integer}`: Size of the window.
 - `title::String`: The title of the window.
 """
-function setUpWindow(size::Tuple{Integer, Integer}, title::String, iconPath::String)
+function setUpWindow(size::Tuple{Integer, Integer}, title::String)
     window = GLFW.CreateWindow(size[1], size[2], title)    
-    #icon = reinterpret(NTuple{4, UInt8}, FileIO.load(iconPath))
-    #GLFW.SetWindowIcon(window,  icon)
     GLFW.MakeContextCurrent(window)
-    #GLFW.PollEvents()
+
     ctx = CImGui.CreateContext()
 
     # Create ImPlot context

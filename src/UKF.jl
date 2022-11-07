@@ -14,6 +14,9 @@ This function updates the state according to definitions on top of the file.
 # Arguments 
 - `s::Vector{Float32}`: The last state of the system. 
 - `u::Vector{Float32}`: The input to update the estimation.
+
+# Returns 
+- `Vector{Float32}`: The resulting updated state vector. 
 """
 function f(s::Vector{Float32}, u::Vector{Float32})
     Ψₜ = Ψ(s[4], u[5], u[6], β(u[6]), u[4])

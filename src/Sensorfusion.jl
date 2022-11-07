@@ -86,7 +86,6 @@ function changeInPosition(a::Vector{Float32}, v::Float32, Ψ::Float32, θ::Float
 end
 
 include("UKF.jl")
-#include("UKF2.jl")
 
 """
 This function transforms camera coords ontop of the prediction. This should be 
@@ -215,7 +214,7 @@ function extractTaitbryanFromOrientation(state::PositionalState, dataPoints::Str
 end
 
 """
-This function predicts the next position from given datapoints and the last positinal state.
+This function predicts the next state from given datapoints and the last positinal state.
 
 # Arguments
 - `posState::PositionalState`: The last positional state. 
@@ -259,8 +258,10 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                                                 β=Float32(β(newData.steerAngle*π/180)))
       else
             try  
+                  # compute weights for UKF
                   wₘ = computeWeights(true, settings)
                   wₖ = computeWeights(false, settings)
+                  # execute prediction step
                   μₜ̇, Χₜ, Σₜ̇ = UKF_prediction(Float32.([posState.position[1], posState.position[2], posState.position[3], posState.Ψ, posState.θ]),
                                           wₘ,
                                           wₖ,
@@ -269,6 +270,7 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
                                           posState.Σ,
                                           settings)
                       
+                  # execute update step
                   μₜ, Σₜ = UKF_update(μₜ̇, wₘ, wₖ, Χₜ, Σₜ̇, settings, [newData.cameraPos[1], newData.cameraPos[2], newData.cameraPos[3], convertMagToCompass(newData.imuMag), θ_acc], ratedCC)
 
                   δOdoSteeringAngle = μₜ[1:3] - posState.position
@@ -287,23 +289,29 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
             end  
       end
 
+      # compute change in position caused by angular velocity
       δOdoAngularVelocity = changeInPosition(newData.imuAcc, 
                                              v, 
                                              settings.kalmanFilterGyro ? Float32(Ψ_ang) : Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro),
                                              θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
                                              newData.deltaTime)
 
+      # compute change in position caused by compass course
       δOdoCompassCourse = changeInPosition(newData.imuAcc,
                                            v,
                                            convertMagToCompass(newData.imuMag, accelerometerVector=newData.imuAcc),
                                            θ_ang(posState.θ, newData.deltaTime, newData.imuGyro),
                                            newData.deltaTime)
 
+      # change in camera position
       δCamPos = dataPoints[amountDataPoints].cameraPos[1:3] - dataPoints[amountDataPoints - 1].cameraPos[1:3]
 
+      # combine using weights
       δodometryPos = (settings.odoGyroFactor.*δOdoAngularVelocity .+ settings.odoSteerFactor.*δOdoSteeringAngle .+ settings.odoMagFactor.*δOdoCompassCourse) ./ (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
-
+      # combine using weights
       newPosition = posState.position + ((ws) ? δCamPos : (1-ratedCC)*δodometryPos + ratedCC*δCamPos)
+
+      # use EKF for combining camera with odometry state
       P_c_update = Matrix(I, 5, 5)
       if settings.kalmanFilterCamera
             P_predict = P(F_c(posState, dataPoints[amountDataPoints], Float32(β(newData.steerAngle*π/180))), settings.processNoiseC, posState.P_c, 5)
@@ -312,11 +320,13 @@ function predict(posState::PositionalState, dataPoints::StructVector{PositionalD
             newPosition = posState.position + δodometryPos + kalmanGain[1:3, 1:3] * (dataPoints[amountDataPoints].cameraPos[1:3] - (posState.position + δodometryPos))
       end
 
+      # combine angles
       Ψᵥₒ, θᵥₒ, ϕᵥₒ = extractTaitbryanFromOrientation(posState, dataPoints)
       Ψₒ = (settings.odoSteerFactor*Ψ_acc+settings.odoGyroFactor*(settings.kalmanFilterGyro ? Float32(Ψ_ang) : Ψ(posState.Ψ, newData.deltaTime, newData.imuGyro))+(settings.ΨₒmagInfluence ? settings.odoMagFactor*convertMagToCompass(newData.imuMag) : 0)) / (settings.odoGyroFactor + (settings.ΨₒmagInfluence ? settings.odoMagFactor : 0) + settings.odoSteerFactor)
       θ₀ = (settings.odoSteerFactor*θ_acc+settings.odoGyroFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)+settings.odoMagFactor*θ_ang(posState.θ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoMagFactor + settings.odoSteerFactor)
       ϕ₀ = (settings.odoSteerFactor*ϕ_acc+settings.odoGyroFactor*ϕ_ang(posState.ϕ, newData.deltaTime, newData.imuGyro)) / (settings.odoGyroFactor + settings.odoSteerFactor)
 
+      # return updated state
       return PositionalState(newPosition,
                              v,
                              (ws) ? Ψᵥₒ : (1-ratedCC)*Ψₒ + ratedCC*Ψᵥₒ, 
