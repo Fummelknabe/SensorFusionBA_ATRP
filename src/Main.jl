@@ -20,17 +20,12 @@ globalFontScale = 1.0
 
 # How many positional data points to display online
 const rawDataLength = 100
-# How many positional data points to display offline
-rawSaveDataLength = 1
 
 # Booleans for the open windows
 showHelperWindow = false
 showConnectWindow = false
 showDataPlots = false
 renderRobot = false
-recordDataWindow = false
-showRecoredDataPlots = false
-showLoadDataWindow = false
 showAutomaticInputWindow = false
 useAutomaticInput = false
 automaticInputTimer = 0.0 # A timer to time commands send through automatic inputs
@@ -52,11 +47,7 @@ include("View.jl")
 
 # Raw Data
 rawPositionalData = StructArray(PositionalData[])
-# Raw Data to save
-rawSavePosData = StructArray(PositionalData[])
 
-# initialize standard settings
-settings = PredictionSettings(false, false, false, 5, false, 5, false, 1.0, 0.33, 0.66, 0, 0, 0, 0, 0, 0.1, 0.1, 1/3, false, 1.0, 1.0)
 
 models = Vector{Model}(undef, 0)
 
@@ -138,9 +129,7 @@ function mainLoop(window::GLFW.Window, ctx, program)
                         global renderRobot = !renderRobot
                     end
                     CImGui.MenuItem("Automatic Inputs") && global showAutomaticInputWindow = !showAutomaticInputWindow
-                    CImGui.MenuItem("Record Data") && global recordDataWindow = !recordDataWindow
                 end
-                CImGui.MenuItem("Load Data") && global showLoadDataWindow = !showLoadDataWindow
                 CImGui.EndMainMenuBar()
             end
 
@@ -153,16 +142,6 @@ function mainLoop(window::GLFW.Window, ctx, program)
                     handleConnectWindow(ipData, portData)
                 end  
             end   
-
-            # Record Data Window
-            if recordDataWindow
-            @cstatic amountDataPoints = ""*"\0"^115 begin
-                    !recordData && (saveDataLength = handleRecordDataWindow(amountDataPoints))
-                    recordData && handleRecordDataWindow(amountDataPoints)
-                end
-            end
-
-            showLoadDataWindow && handleShowDataWindow()
 
             showAutomaticInputWindow && handleAutomaticInputWindow()
  
@@ -198,33 +177,11 @@ function mainLoop(window::GLFW.Window, ctx, program)
                 if size(rawPositionalData, 1) > rawDataLength
                     popfirst!(rawPositionalData)
                 end
-
-                # If the data should be recorded, it is saved in different vector
-                if recordData
-                    push!(rawSavePosData, posData)
-                    if size(rawSavePosData, 1) > saveDataLength
-                        toggleRecordData("")
-                        global rawSavePosData = StructArray(PositionalData[])
-                    end
-                end
-            end
-
-            if estSettingWindow
-                # check if settings come from external file (s = -1)
-                let s = estimationSettingsWindow()
-                # if so, do not override them
-                global settings = (s == -1) ? settings : s
-                end  
-            end
-
-            # Show data plots offline
-            if showRecoredDataPlots
-                plotData((1000, 700), rawSavePosData[1:rawSaveDataLength], "Recorded data Plot", settings)
             end
 
             # Show data plots online
             if showDataPlots && size(rawPositionalData, 1) > 0
-                plotData((1000, 700), rawPositionalData, "On time positional data", settings)
+                plotData((1000, 700), rawPositionalData, "On time positional data")
             end            
 
             CImGui.Render()
