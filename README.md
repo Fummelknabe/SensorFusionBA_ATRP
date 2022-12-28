@@ -33,7 +33,7 @@ The python program on the robot itself has to be executed before a connection is
 2. Connect to the WiFi hotspot
     - It is an open network with the name `Jetson`
 3. Start the python program
-    - There are multiple ways to do this. An easy way to do this, is to connect via an SSH client such as `PuTTY` with the operating system of the robot. The IP would be *10.42.0.1* with Port: *22*. The program can then be started by `python3 ~/Documents/Code_AT-RP/atrp_remote_control.py`
+    - There are multiple ways to do this. An easy way to do this, is to connect via an SSH client such as `PuTTY` with the operating system of the robot. The IP would be *10.42.0.1* with Port: *22*. The default username is `at-sv` with `atsv` as the password. The program can then be started by `python3 ~/Documents/Code_AT-RP/atrp_remote_control.py`
 4. Connect to the robot through the connection dialog
     - Upon successful connection, more options appear, and sensor data can be displayed. 
 5. Before being able to control the robot, the motor and steering servo have to be activated
