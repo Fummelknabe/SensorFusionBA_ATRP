@@ -1,7 +1,7 @@
 # SensorFusion for vehicle in uneven terrain
 
 ## Execute software
-To use this software, Julia V1.7 or newer is required. 
+To use this software, Julia V1.7 or any version up to Julia V1.9.x is required. There are known issues with the newer versions and are not supported, as this software is not actively being maintained.
 
 Start the program from REPL: 
 1. Start Julia REPL in folder containing the repository
